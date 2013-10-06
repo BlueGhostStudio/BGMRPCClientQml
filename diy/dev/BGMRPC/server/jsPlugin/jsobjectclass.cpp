@@ -1,0 +1,1 @@
+#include "jsobjectclass.h"

@@ -1,0 +1,143 @@
+#include <bgmrpcinterface.h>
+#include <QJsonArray>
+#include <QJsonObject>
+#include <bgmrpccommon.h>
+#include <getopt.h>
+#include <iostream>
+#include <QJsonArray>
+
+using namespace std;
+using namespace BGMircroRPCInterface;
+using namespace BGMircroRPC;
+
+BGMRPCInterface theClient;
+
+void sendFile (const QString& op,  QString& src, const QString& target,
+               qint16 pathID)
+{
+    src.replace (QRegExp ("^\\s~"), QDir::homePath ());
+    QFile file(src);
+    if (!file.exists ())
+        cerr << "no file exist";
+    else if (!file.open (QIODevice::ReadOnly))
+        cerr << "open error";
+    else {
+        cliRawDataTrans* fileTrans
+                = theClient.callMethodRaw ("file", "open",
+                                           args_t () << target << op << pathID);
+        char rt = fileTrans->getRawData () [0];
+        if (rt == 1) {
+            QByteArray data = file.readAll();
+            fileTrans->sendRawData (data);
+        } else if (rt == -1)
+            cerr << "Remote file has exist";
+        else if (rt == -2)
+            cerr << "Remote file open fail";
+    }
+}
+
+void downloadFile (const QString& op, const QString& src, const QString& target,
+                   bool overlay, qint16 pathID)
+{
+    QFile file(target);
+    if (file.exists () && overlay)
+        cerr << "file has exist";
+    else if (!file.open (QIODevice::WriteOnly | QIODevice::Truncate))
+        cerr << "open error";
+    else {
+        cliRawDataTrans* fileTrans
+                = theClient.callMethodRaw ("file", "open",
+                                           args_t () << src << op << pathID);
+        char rt = fileTrans->getRawData (1)[0];
+        if (rt == -1)
+            cerr << "Remote file no exist";
+        else if (rt == -2)
+            cerr << "Remote file open fail";
+        else if (rt == 1) {
+            QByteArray data;
+            QByteArray part;
+            while (!(part = fileTrans->getRawData ()).isEmpty ())
+                data.append (part);
+
+            file.write (data);
+        }
+    }
+}
+
+int main(int argc, char *argv[])
+{
+    QCoreApplication a(argc, argv);
+
+    QString errMsg ("Invalid option.");
+    QHostAddress addr ("127.0.0.1");
+    quint16 port = 8000;
+    bool overlay = false;
+    qint16 pathID = -1;
+
+    int opt;
+    bool loop = false;
+    while ((opt = getopt (argc, argv, "a:p:o:ld:")) != -1) {
+        QString vstr (optarg);
+
+        switch (opt) {
+        case 'a':
+            addr.setAddress (vstr);
+            break;
+        case 'p':
+            port = vstr.toUInt ();
+            break;
+        case 'o':
+            if (vstr == "true")
+                overlay = true;
+            break;
+        case 'l':
+            loop = true;
+            break;
+        case 'd':
+            pathID = vstr.toInt ();
+            break;
+        default:
+            cerr << errMsg.toStdString () << "1" << endl;
+            exit (0);
+        }
+    }
+
+    QString fileOp;
+    QString src;
+    QString target;
+    if (argc - optind >= 2) {
+        for (int i = 0; optind < argc; ++optind, ++i) {
+            QString opt (argv [optind]);
+            if (i == 0) {
+                if (opt == "w" || opt == "wx" || opt == "r")
+                    fileOp = opt;
+                else {
+                    cerr << errMsg.toStdString () << "2"<< endl;
+                    exit (0);
+                }
+            } else if (i == 1)
+                src = opt;
+            else if (i == 2)
+                target = opt;
+            else
+                break;
+        }
+        theClient.setServerAddress (addr, port);
+        if (target.isEmpty ()) {
+            target = src.section (QRegExp ("[/\\\\]"), -1);
+            qDebug () << target;
+            exit (0);
+        }
+        if (fileOp == "r")
+            downloadFile (fileOp, src, target, overlay, pathID);
+        else
+            sendFile (fileOp, src, target, pathID);
+    } else {
+        cerr << errMsg.toStdString () << endl;
+        exit (0);
+    }
+
+    if (!loop)
+        QTimer::singleShot(0, &a, SLOT(quit()));
+    return a.exec();
+}

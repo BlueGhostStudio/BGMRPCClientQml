@@ -1,0 +1,120 @@
+#include <QFile>
+#include <bgmrpc.h>
+#include <QJsonArray>
+
+#include "jsplugin.h"
+
+
+QString jsObj::objectType() const
+{
+    return objType ();
+}
+
+QJsonArray jsObj::loadJsScript(BGMRProcedure*, const QJsonArray& args)
+{
+    QSettings* settings = RPC->settings ();
+    QString jsPluginDir = settings->value ("pluginDir", "~/.BGMR/plugins/").toString ();
+    jsPluginDir += "js/";
+    QString jsFileName = jsPluginDir + args[0].toString ();
+
+    QJsonArray ret;
+    QFile jsFile (jsFileName);
+    if (!jsFile.open (QIODevice::ReadOnly)) {
+        ret.append (false);
+        ret.append (QString ("%1 can't open").arg (jsFileName));
+    } else {
+        QString jsContent = jsFile.readAll ();
+        jsFile.close ();
+
+        QScriptValue result = JsEngine.evaluate (jsContent, jsFileName);
+        if (result.isError ()) {
+            ret.append (false);
+            ret.append (QString ("%0:%1: %2").arg (jsFileName)
+                                             .arg (result.property ("lineNumber").toInt32 ())
+                                             .arg (result.toString ()));
+        } else
+            ret.append (true);
+    }
+
+    return ret;
+}
+
+QJsonArray jsObj::js(BGMRProcedure*, const QJsonArray& args)
+{
+    QJsonArray ret;
+
+    QScriptValue global = JsEngine.globalObject ();
+    QScriptValue jsFun = global.property (args[0].toString ());
+
+    QScriptValueList scrArgs;
+    for (int i = 1; i < args.count (); i++)
+        scrArgs << jsonToScrValue (args [i]);
+
+    if (!jsFun.isFunction ())
+        qDebug () << "no fun";
+    else
+        qDebug () << jsFun.call (QScriptValue (),
+                                 scrArgs).toString ();
+
+    return ret;
+}
+
+QScriptValue jsObj::jsonToScrValue(const QJsonValue& jsonValue)
+{
+    QScriptValue scrValue;
+
+    QScriptValue JSON = JsEngine.globalObject ().property ("JSON");
+    QScriptValue parse = JSON.property ("parse");
+
+    switch (jsonValue.type ()) {
+    case QJsonValue::Bool:
+        scrValue = jsonValue.toBool ();
+        break;
+    case QJsonValue::Double:
+        scrValue = jsonValue.toDouble ();
+        break;
+    case QJsonValue::String:
+        scrValue = jsonValue.toString ();
+        break;
+    case QJsonValue::Array:
+    case QJsonValue::Object:
+    {
+        QJsonDocument jsonDoc;
+        if (jsonValue.type () == QJsonValue::Array)
+            jsonDoc.setArray (jsonValue.toArray ());
+        else
+            jsonDoc.setObject (jsonValue.toObject ());
+        QString jsContent (jsonDoc.toJson ());
+        scrValue = parse.call (JSON, QScriptValueList () << jsContent);
+        break;
+    }
+    case QJsonValue::Undefined:
+        scrValue = JsEngine.undefinedValue ();
+        break;
+    case QJsonValue::Null:
+        scrValue = JsEngine.nullValue ();
+        break;
+    }
+
+    return scrValue;
+}
+
+//================
+
+void jsAdaptor::registerMethods()
+{
+    Methods ["loadJsScript"] = &jsObj::loadJsScript;
+    Methods ["js"] = &jsObj::js;
+}
+
+//================
+
+BGMRObjectInterface* objCreator (BGMRPC* rpc)
+{
+    return new jsObj (rpc);
+}
+
+QString objType ()
+{
+    return "JSEngine";
+}

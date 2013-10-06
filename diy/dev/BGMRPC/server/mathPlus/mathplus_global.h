@@ -1,0 +1,12 @@
+#ifndef MATHPLUS_GLOBAL_H
+#define MATHPLUS_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+
+#if defined(MATHPLUS_LIBRARY)
+#  define MATHPLUSSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define MATHPLUSSHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // MATHPLUS_GLOBAL_H
