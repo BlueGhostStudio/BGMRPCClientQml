@@ -15,5 +15,6 @@ HEADERS += rpcfileplugin.h\
         rpcfileplugin_global.h \
     filestream.h
 
+AUTOLOAD = /autoload
 SERLIBPATH=../BGMRPC
 include (../plugin.pri)

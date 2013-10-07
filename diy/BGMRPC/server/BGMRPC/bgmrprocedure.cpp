@@ -123,7 +123,7 @@ QJsonArray BGMRProcedure::callMethod(const QString& obj,
                                      const QString& method,
                                      const QJsonArray& args)
 {
-    BGMRObjectInterface* aObj;
+    BGMRObjectInterface* aObj = NULL;
     if (!obj.isEmpty ())
         aObj = RPC->object (obj);
 

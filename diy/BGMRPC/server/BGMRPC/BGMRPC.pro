@@ -30,12 +30,8 @@ HEADERS +=\
     bgmrprocedure.h \
     relatedproc.h
 
-unix:!symbian {
-    maemo5 {
-        target.path = /opt/usr/lib
-    } else {
-        target.path = /usr/lib
-    }
+unix {
+    target.path = $${PREFIX}/lib
     INSTALLS += target
 }
 

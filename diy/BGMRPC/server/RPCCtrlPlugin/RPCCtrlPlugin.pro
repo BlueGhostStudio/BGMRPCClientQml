@@ -14,5 +14,6 @@ HEADERS += \
     rpcctrlplugin_global.h \
     rpcctrlplugin.h
 
+AUTOLOAD = /autoload
 SERLIBPATH=../BGMRPC
 include (../plugin.pri)

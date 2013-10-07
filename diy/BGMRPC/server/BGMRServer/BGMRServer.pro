@@ -17,6 +17,11 @@ TEMPLATE = app
 
 SOURCES += main.cpp
 
+unix {
+    target.path = $${PREFIX}/bin
+    INSTALLS += target
+}
+
 SERLIBPATH=../BGMRPC
 include (../server.pri)
 

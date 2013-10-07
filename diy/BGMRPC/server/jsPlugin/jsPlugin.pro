@@ -10,21 +10,16 @@ TARGET = jsPlugin
 DEFINES += JSPLUGIN_LIBRARY
 
 SOURCES += jsplugin.cpp \
-#    jsproc.cpp \
     jsmetatype.cpp \
-#    jsprocclass.cpp \
-#    jsglobalobject.cpp \
     jsobjectclass.cpp \
     jsobjectprototype.cpp
 
 HEADERS += jsplugin.h\
         jsplugin_global.h \
-#    jsproc.h \
     jsmetatype.h \
-#    jsprocclass.h \
-#    jsglobalobject.h \
     jsobjectclass.h \
     jsobjectprototype.h
 
+AUTOLOAD = /autoload
 SERLIBPATH = ../BGMRPC
 include (../plugin.pri)
