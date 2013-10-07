@@ -3,7 +3,7 @@ TEMPLATE = lib
 unix {
     !isEmpty (PREFIX) {
         target.path = $${PREFIX}/BGMRPC/plugins$${AUTOLOAD}
-        target.files = *.so
+        target.files = $${OUT_PWD}/*.so
         INSTALLS += target
     }
 }
