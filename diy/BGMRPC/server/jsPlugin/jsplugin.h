@@ -5,6 +5,7 @@
 #include <bgmrobject.h>
 #include <bgmradaptor.h>
 #include <relatedproc.h>
+#include <QThread>
 #include "jsplugin_global.h"
 #include "jsmetatype.h"
 #include "jsobjectprototype.h"

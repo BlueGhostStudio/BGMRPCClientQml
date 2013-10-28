@@ -8,6 +8,24 @@
 
 namespace BGMircroRPCServer {
 
+callThread::callThread(const QString& mID, BGMircroRPCServer::BGMRProcedure* p,
+                       BGMRObjectInterface* o, const QString& m,
+                       const QJsonArray& as, QObject* parent)
+    : QThread (parent), MID (mID), OwnProc (p), Object (o), Method (m), Args (as)
+{
+
+}
+
+void callThread::run()
+{
+    QJsonArray returnedValues;
+    returnedValues
+            = Object->adaptor ()->callMetchod (Object, OwnProc, Method, Args);
+    OwnProc->returnValues (returnedValues, MID);
+}
+
+// =====================
+
 qulonglong lastPID = 0;
 
 BGMRProcedure::BGMRProcedure(BGMRPC* r, __socket* socket,
@@ -133,6 +151,28 @@ QJsonArray BGMRProcedure::callMethod(const QString& obj,
         return QJsonArray ();
 }
 
+void BGMRProcedure::returnValues (const QJsonArray& values,
+                                  const QString mID) const
+{
+    if (ProcSocket) {
+        QJsonObject jsonValues;
+        jsonValues ["type"] = QString ("return");
+        jsonValues ["values"] = values;
+        jsonValues ["pID"] = (double)PID;
+        if (!mID.isEmpty ())
+            jsonValues ["mID"] = mID;
+
+#ifdef WEBSOCKET
+        ProcSocket->write (QString::fromUtf8 (QJsonDocument (jsonValues).toJson ()));
+#else
+        ProcSocket->write (QJsonDocument (jsonValues).toBinaryData ());
+#endif
+
+        ProcSocket->waitForBytesWritten ();
+    } else
+        qDebug () << "no return";
+}
+
 void BGMRProcedure::onClientSocketDisconnected()
 {
     qDebug () << tr ("On client disconnected");
@@ -141,7 +181,8 @@ void BGMRProcedure::onClientSocketDisconnected()
         ProcSocket->deleteLater ();
 //    emit procExited (PID);
 //    qDebug () << QObject::tr ("Free the Procedure (#%1) memory.").arg (PID);
-//    delete this;
+    //    delete this;
+
 }
 
 void BGMRProcedure::callMethod ()
@@ -171,44 +212,28 @@ void BGMRProcedure::callMethod ()
                          .arg (ProcSocket->peerAddress ().toString ())
                          .arg (ProcSocket->peerPort ())
                          .arg (Object->objectName ()).arg (methodName);
-            QJsonArray returnedValues;
             if (!Object->procIdentify (this, callJsonObj)) {
                 QJsonArray sigArgs;
                 sigArgs.append (methodName);
                 emitSignal (Object, "ERROR_ACCESS", sigArgs);
-            } else
-                returnedValues
-                        = Object->adaptor ()->callMetchod (Object, this,
-                                                           methodName, args);
-            returnValues (returnedValues, mID);
+                returnValues (QJsonArray ());
+            } else {
+                callThread* newCallThread = new callThread (mID, this, Object,
+                                                            methodName, args);
+                connect (newCallThread, SIGNAL(finished()), newCallThread,
+                         SLOT(deleteLater()));
+                connect (this, SIGNAL(destroyed()), newCallThread,
+                         SLOT(terminate()));
+                connect (this, SIGNAL(destroyed()), newCallThread,
+                         SLOT(deleteLater()));
+                newCallThread->start ();
+            }
         } else
             qDebug () << QObject::tr ("No any object be used.");
     }
 
     if (!KeepConnected || !ProcSocket)
         close ();
-}
-
-void BGMRProcedure::returnValues (const QJsonArray& values,
-                                  const QString mID) const
-{
-    if (ProcSocket) {
-        QJsonObject jsonValues;
-        jsonValues ["type"] = QString ("return");
-        jsonValues ["values"] = values;
-        jsonValues ["pID"] = (double)PID;
-        if (!mID.isEmpty ())
-            jsonValues ["mID"] = mID;
-
-#ifdef WEBSOCKET
-        ProcSocket->write (QString::fromUtf8 (QJsonDocument (jsonValues).toJson ()));
-#else
-        ProcSocket->write (QJsonDocument (jsonValues).toBinaryData ());
-#endif
-
-        ProcSocket->waitForBytesWritten ();
-    } else
-        qDebug () << "no return";
 }
 
 }

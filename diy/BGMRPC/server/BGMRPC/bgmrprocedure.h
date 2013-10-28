@@ -6,11 +6,29 @@
 #include <socket.h>
 #include <QJsonObject>
 #include <QJsonValue>
+#include <QThread>
 
 namespace BGMircroRPCServer {
 
 class BGMRPC;
 class BGMRObjectInterface;
+class BGMRProcedure;
+
+class callThread : public QThread {
+public:
+    explicit callThread (const QString& mID, BGMRProcedure* p, BGMRObjectInterface* o,
+                         const QString& m, const QJsonArray& as,
+                         QObject* parent = 0);
+
+protected:
+    void run ();
+
+    QString MID;
+    BGMRProcedure* OwnProc;
+    BGMRObjectInterface* Object;
+    QString Method;
+    QJsonArray Args;
+};
 
 class BGMRProcedure : public QObject
 {
@@ -40,6 +58,8 @@ public:
     __socket* detachSocket();
     QJsonArray callMethod (const QString& obj, const QString& method,
                            const QJsonArray& args);
+    void returnValues(const QJsonArray& values,
+                      const QString mID = QString ()) const;
 
 signals:
     void procExited (qulonglong id);
@@ -52,8 +72,6 @@ private slots:
 
 private:
     // private member method
-    void returnValues(const QJsonArray& values,
-                      const QString mID = QString ()) const;
 
     QMap < QString, QJsonObject > PrivateData;
     // private data

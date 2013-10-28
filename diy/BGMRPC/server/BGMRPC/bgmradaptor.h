@@ -3,6 +3,7 @@
 
 #include "bgmrpc_global.h"
 #include "bgmrobject.h"
+#include <QThread>
 
 namespace BGMircroRPCServer {
 
@@ -40,17 +41,19 @@ QJsonArray BGMRAdaptor<T>::callMetchod (BGMRObjectInterface* obj,
                                         const QString& method,
                                         const QJsonArray& args)
 {
+    QJsonArray ret;
     T* theObj = static_cast < T* > (obj);
     if (theObj && Methods.contains (method))
-        return (theObj->*Methods [method])(proc, args);
+        ret = (theObj->*Methods [method])(proc, args);
     else {
         if (!theObj)
             qCritical () << QObject::tr ("Object %1 unable to be converted.").arg (obj->objectName ());
         else
             qCritical () << QObject::tr ("Object %1 does not exist %2 method.").arg (obj->objectName ()).arg (method);
 
-        return QJsonArray ();
+        ret = QJsonArray ();
     }
+    return ret;
 }
 
 template < typename T >
