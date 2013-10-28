@@ -1,6 +1,7 @@
 #include "jsmetatype.h"
 #include <bgmrprocedure.h>
 #include "jsobjectprototype.h"
+#include "jsplugin.h"
 
 using namespace BGMircroRPCServer;
 
@@ -191,6 +192,15 @@ void scrObjToJsRPCObjList(const QScriptValue& scrObj, RPCObjList& objList)
     //objList = qvariant_cast < RPCObjList > (scrObj.data ().toVariant ());
 }
 
+void scrObjToBGMRObj (const QScriptValue& scrObj, BGMRObjectInterface*& data)
+{
+    QVariant theVariant = scrObj.data ().toVariant ();
+    if (scrObj.scriptClass ()->name () == "jsObj")
+        data = qvariant_cast < jsObj* > (theVariant);
+    else
+        data = qvariant_cast < BGMRObjectInterface* > (theVariant);
+}
+
 void registerMetaType(QScriptEngine* jsEngine)
 {
     qScriptRegisterMetaType (jsEngine, jsonValueToScrObj, scrObjToJsonValue);
@@ -204,7 +214,7 @@ void registerMetaType(QScriptEngine* jsEngine)
     qScriptRegisterMetaType (jsEngine, jsRelProcsToScrObj, scrObjToJsRelProcs);
 
     qScriptRegisterMetaType (jsEngine, jsCustomDataToScrObj < jsRPCObjectProto >,
-                             scrObjToCustomData < jsRPCObjectProto >);
+                             scrObjToBGMRObj);
     qScriptRegisterMetaType (jsEngine, jsRPCObjListToScrObj, scrObjToJsRPCObjList);
 
     qScriptRegisterMetaType (jsEngine, jsCustomDataToScrObj < jsSqlQueryProto >,

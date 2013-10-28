@@ -16,7 +16,7 @@ qulonglong jsProcProto::pID()
     return thisProc ()->pID ();
 }
 
-void jsProcProto::emitSignal(const BGMRObjectInterface* obj,
+void jsProcProto::emitSignal(BGMRObjectInterface* obj,
                              const QString& signal,
                              const QJsonArray& args)
 {
@@ -33,13 +33,13 @@ void jsProcProto::emitSignal(const BGMRObjectInterface* obj,
 //    return thisProc ()->privateData (key);
 //}
 
-void jsProcProto::setPrivateData(const BGMRObjectInterface* obj,
+void jsProcProto::setPrivateData(BGMRObjectInterface* obj,
                                  const QString& key, const QJsonValue& value)
 {
     thisProc ()->privateData (obj, key) = value;
 }
 
-QJsonValue jsProcProto::privateData(const BGMRObjectInterface* obj,
+QJsonValue jsProcProto::privateData(BGMRObjectInterface* obj,
                                     const QString& key) const
 {
     return thisProc ()->privateData (obj, key);
@@ -133,6 +133,18 @@ relProcsMap jsJsObjProto::relProcs() const
 BGMRProcedure* jsJsObjProto::relProc(qulonglong pID) const
 {
     return thisJsObj ()->relProcs ()->proc (pID);
+}
+
+void jsJsObjProto::onRelProcDisconnected (const QScriptValue& handel)
+{
+    qScriptConnect (thisJsObj ()->relProcs (),
+                    SIGNAL(disconnectedProc(qulonglong)), QScriptValue (),
+                    handel);
+}
+
+bool jsJsObjProto::containsRelProc(qulonglong pID) const
+{
+    return thisJsObj ()->relProcs ()->procs ().contains (pID);
 }
 
 void jsJsObjProto::emitSignal(const QString& signal, const QJsonArray& args) const
@@ -380,37 +392,22 @@ QString jsSqlQueryProto::escape(const QString& str)
 
 // ============================================================
 
-jsDB::jsDB(QObject* parent)
-    : QObject (parent)
+jsDB::jsDB(jsObj* obj, QObject* parent)
+    : QObject (parent), JsObj (obj)
 {
     QString rootDir = BGMRPC::Settings->value ("rootDir", "~/.BGMR").toString ();
     SqliteDBPath = rootDir + "/DB";
-
-    db = QSqlDatabase::database ();
-}
-
-bool jsDB::open(const QString& dbName, const QString& connectionName)
-{
-    if (!addDatabase ("QSQLITE", connectionName))
-        return false;
-
-    if (db.isOpen ())
-        db.close ();
-
-    db.setDatabaseName (SqliteDBPath + "/" + dbName);
-
-    return db.open ();
 }
 
 bool jsDB::open(const QScriptValue& dbDef)
 {
     QString driver = dbDef.property ("driver").toString ();
-    QString dbName = dbDef.property ("name").toString ();
+    QString dbName = dbDef.property ("dbName").toString ();
     QString usr = dbDef.property ("usr").toString ();
     QString pwd = dbDef.property ("pwd").toString ();
     QScriptValue jsPortVal = dbDef.property ("port");
     QString host = dbDef.property ("host").toString ();
-    QString connectionName = dbDef.property ("connection").toString ();
+    QString connName = dbDef.property ("connectName").toString ();
 
     int port = -1;
     if (jsPortVal.isNumber ())
@@ -419,30 +416,58 @@ bool jsDB::open(const QScriptValue& dbDef)
     if (driver.isEmpty ())
         driver = "QSQLITE";
 
-    if (!addDatabase (driver, connectionName))
-        return false;
+    QString connectBaseName = QString ("%1_%2_%3")
+                              .arg (JsObj->objectName ())
+                              .arg (driver)
+                              .arg (dbName);
+    if (connName.isEmpty ())
+        connName = connectBaseName;
+    else
+        connName = connectBaseName + '_' + connName;
 
-    if (driver == "QMYSQL") {
-        QString socket = dbDef.property ("socket").toString ();
-        if (!socket.isEmpty ())
-            db.setConnectOptions (QString ("UNIX_SOCKET=%1").arg (socket));
+    bool ok = false;
+    QSqlDatabase theDB;
+    if (QSqlDatabase::contains (connName)) {
+        theDB = QSqlDatabase::database (connName);
+        if (theDB.driverName () == driver
+                && QFileInfo (theDB.databaseName ()).fileName () == dbName)
+            ok = checkAuth (theDB, usr, pwd);
+    } else {
+        theDB = QSqlDatabase::addDatabase (driver, connName);
+        if (driver == "QMYSQL") {
+            QString socket = dbDef.property ("socket").toString ();
+            if (!socket.isEmpty ())
+                theDB.setConnectOptions (QString ("UNIX_SOCKET=%1").arg (socket));
+            if (port >= 0)
+                theDB.setPort (port);
+            if (!host.isEmpty ())
+                theDB.setHostName (host);
+            theDB.setUserName (usr);
+            theDB.setPassword (pwd);
+            theDB.setDatabaseName (dbName);
+            ok = theDB.open ();
+        } else if (driver == "QSQLITE") {
+            theDB.setDatabaseName (SqliteDBPath + "/" + dbName);
+            if (checkAuth (theDB, usr, pwd))
+                ok = theDB.open ();
+            else
+                ok = false;
+        }
 
-        db.setPort (port);
-        db.setHostName (host);
+        if (!ok)
+            QSqlDatabase::removeDatabase (connName);
+    }
 
-        db.setUserName (usr);
-        db.setPassword (pwd);
-        db.setDatabaseName (dbName);
-    }else if (driver == "QSQLITE")
-        db.setDatabaseName (SqliteDBPath + "/" + dbName);
+    if (ok)
+        DB = theDB;
 
-    if (port >= 0 || !host.isEmpty ())
-        db.close ();
+    return ok;
+}
 
-    if (db.isOpen ())
-        db.close ();
-
-    return db.open ();
+void jsDB::close()
+{
+    if (DB.isOpen ())
+        DB.close ();
 }
 
 //bool jsDB::switchDB(const QString& connectionName)
@@ -457,31 +482,25 @@ bool jsDB::open(const QScriptValue& dbDef)
 
 bool jsDB::isOpen() const
 {
-    return db.isOpen ();
+    return DB.isOpen ();
 }
 
 QString jsDB::dbName() const
 {
-    return db.databaseName ();
-}
+    QString name;
+    if (DB.isOpen ())
+        name = DB.databaseName ();
 
-bool jsDB::addDatabase(const QString& type,
-                       const QString& connectionName)
-{
-    if (db.connectionName ().isEmpty () || db.connectionName () != connectionName)
-    {
-        if (connectionName.isEmpty ())
-            db = QSqlDatabase::addDatabase (type);
-        else
-            db = QSqlDatabase::addDatabase (type, connectionName);
-    }
-
-    return db.isValid ();
+    return name;
 }
 
 QString jsDB::connectionName() const
 {
-    return db.connectionName ();
+    QString name;
+    if (DB.isOpen ())
+        name = DB.connectionName ();
+
+    return name;
 }
 
 QStringList jsDB::connectionNames() const
@@ -491,15 +510,164 @@ QStringList jsDB::connectionNames() const
 
 QString jsDB::hostName() const
 {
-    return db.hostName ();
+    QString name;
+    if (DB.isOpen ())
+        name = DB.hostName ();
+
+    return name;
 }
 
 QSqlQuery jsDB::newQuery() const
 {
-    return QSqlQuery (db);
+    if (DB.isOpen ())
+        return QSqlQuery (DB);
+    else
+        return QSqlQuery ();
 }
 
-//void jsDB::setQSqliteDBPath(const QString& path)
-//{
-//    SqliteDBPath = path;
-//}
+bool jsDB::lockDatabase(const QString& pwd)
+{
+    bool ok = false;
+
+    if (DB.isOpen () && DB.driverName () == "QSQLITE") {
+        QSqlDatabase adminDB = openSqliteAdminDatabase ();
+        if (adminDB.isOpen ()) {
+            QString dbName = DB.databaseName ();
+            dbName = QFileInfo (dbName).fileName ();
+
+            QSqlQuery adminQuery (adminDB);
+            adminQuery.prepare ("SELECT * FROM database "
+                                "WHERE dbname=:dbName");
+            adminQuery.bindValue (":dbName", dbName);
+            adminQuery.exec ();
+
+            if (adminQuery.next ())
+                adminQuery.prepare ("UPDATE database SET "
+                                    "pwd=:pwd WHERE dbname=:dbName");
+            else
+                adminQuery.prepare ("INSERT INTO database (dbname,pwd) "
+                                    "VALUES (:dbName, :pwd)");
+
+            adminQuery.bindValue (":dbName", dbName);
+            adminQuery.bindValue (":pwd", pwd);
+            ok = adminQuery.exec ();
+        }
+    }
+
+    return ok;
+}
+
+bool jsDB::lockDatabaseByObject()
+{
+    bool ok = false;
+
+    if (DB.isOpen () && DB.driverName () == "QSQLITE") {
+        QSqlDatabase adminDB = openSqliteAdminDatabase ();
+        if (adminDB.isOpen ()) {
+            QString dbName = DB.databaseName ();
+            dbName = QFileInfo (dbName).fileName ();
+
+            QSqlQuery adminQuery (adminDB);
+            adminQuery.prepare ("SELECT * FROM database "
+                                "WHERE dbname=:dbName");
+            adminQuery.bindValue (":dbName", dbName);
+            adminQuery.exec ();
+
+            if (adminQuery.next ())
+                adminQuery.prepare ("UPDATE database SET "
+                                    "obj=:obj WHERE dbname=:dbName");
+            else
+                adminQuery.prepare ("INSERT INTO database (dbname,obj) "
+                                    "VALUES (:dbName, :obj)");
+            adminQuery.bindValue (":dbName", dbName);
+            adminQuery.bindValue (":obj", JsObj->objectName ());
+
+            ok = adminQuery.exec ();
+        }
+    }
+
+    return ok;
+}
+
+bool jsDB::unlockDatabase()
+{
+    bool ok = false;
+
+    if (DB.isOpen () && DB.driverName () == "QSQLITE") {
+        QSqlDatabase adminDB = openSqliteAdminDatabase ();
+        if (adminDB.isOpen ()) {
+            QString dbName = DB.databaseName ();
+            dbName = QFileInfo (dbName).fileName ();
+
+            QSqlQuery adminQuery (adminDB);
+            adminQuery.prepare ("DELETE FROM database "
+                                "WHERE dbname=:dbName");
+            adminQuery.bindValue (":dbName", dbName);
+            ok = adminQuery.exec ();
+        }
+    }
+
+    return ok;
+}
+
+bool jsDB::checkAuth(const QSqlDatabase& db, const QString& usr,
+                     const QString& pwd)
+{
+    bool ok = false;
+    QString driver = db.driverName ();
+    if (db.driverName () == "QMYSQL")
+        ok = db.userName () == usr && db.password () == pwd;
+    else if (driver == "QSQLITE"){
+        QSqlDatabase adminDB = openSqliteAdminDatabase ();
+
+        if (adminDB.isOpen ()) {
+            QString dbName = db.databaseName ();
+            dbName = QFileInfo (dbName).fileName ();
+            QSqlQuery adminQuery (adminDB);
+
+            adminQuery.prepare ("SELECT * FROM database "
+                                "WHERE dbname=:dbName");
+            adminQuery.bindValue (":dbName", dbName);
+            adminQuery.exec ();
+
+            if (adminQuery.next ()) {
+                QString db_obj = adminQuery.value ("obj").toString ();
+                QString db_pwd = adminQuery.value ("pwd").toString ();
+                if (!db_obj.isEmpty ())
+                    ok = db_obj == JsObj->objectName ();
+                else
+                    ok = db_pwd == pwd;
+            } else
+                ok = true;
+
+            if (adminQuery.size () > 0)
+                ok = true;
+        }
+    }
+
+    return ok;
+}
+
+bool jsDB::initialAdminSqliteDatabase(QSqlDatabase& adminDB)
+{
+    QSqlQuery adminQuery (adminDB);
+
+    return adminQuery.exec ("CREATE TABLE database "
+                            "(dbname VARCHAR(20) PRIMARY KEY, "
+                            "pwd VARCHAR(20), obj VARCHAR(20))");
+}
+
+QSqlDatabase jsDB::openSqliteAdminDatabase()
+{
+    QSqlDatabase adminDB;
+    if (!QSqlDatabase::contains ("admin")) {
+        adminDB = QSqlDatabase::addDatabase ("QSQLITE", "admin");
+        adminDB.setDatabaseName (SqliteDBPath + "/admin");
+        adminDB.open ();
+        if (QFile::exists (SqliteDBPath + "/admin"))
+            initialAdminSqliteDatabase (adminDB);
+    } else
+        adminDB = QSqlDatabase::database ("admin");
+
+    return adminDB;
+}

@@ -19,7 +19,7 @@ bool BGMRTcpServer::activeServer(const QHostAddress& address)
     bool ok = listen (address, Port);
     if (ok)
         connect (this, SIGNAL(newConnection()),
-                 this, SLOT(newCall()));
+                 this, SLOT(newProc()));
     else
         qDebug () << "error" << errorString ();
 
@@ -31,7 +31,7 @@ void BGMRTcpServer::setPort(quint16 port)
     Port = port;
 }
 
-void BGMRTcpServer::newCall()
+void BGMRTcpServer::newProc()
 {
     __socket* procSocket = nextPendingConnection ();
     //connect (procSocket, SIGNAL(disconnected()),

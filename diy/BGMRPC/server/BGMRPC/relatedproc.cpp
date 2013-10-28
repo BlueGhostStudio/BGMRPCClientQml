@@ -43,7 +43,16 @@ void relatedProcs::emitSignal(BGMRObjectInterface* obj,
 
 bool relatedProcs::removeProc(qulonglong id)
 {
-    return Procs.remove (id) > 0 ? true : false;
+    bool ok = false;
+    if (Procs.contains (id)) {
+        ok = true;
+        BGMRProcedure* p = Procs [id];
+        disconnect (p, 0, this, 0);
+        emit disconnectedProc (id);
+        Procs.remove (id);
+    }
+
+    return ok;
 }
 
 }

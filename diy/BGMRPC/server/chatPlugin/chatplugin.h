@@ -4,6 +4,7 @@
 #include <bgmrobject.h>
 #include <bgmradaptor.h>
 #include <relatedproc.h>
+#include <QtCore>
 
 #include "chatplugin_global.h"
 
@@ -12,19 +13,27 @@ using namespace BGMircroRPCServer;
 class chatObj;
 class chatAdaptor;
 
-class chatObj : public BGMRObject < chatAdaptor >
+class chatObj : public QObject, public BGMRObject < chatAdaptor >
 {
+    Q_OBJECT
 public:
+    chatObj (QObject* parent = 0);
     QString objectType () const;
     QJsonArray say (BGMRProcedure* p, const QJsonArray& args);
     QJsonArray join (BGMRProcedure* p, const QJsonArray& args);
+    QJsonArray hasJoined (BGMRProcedure* p, const QJsonArray&);
     QJsonArray changeNickname (BGMRProcedure* p, const QJsonArray& args);
+    QJsonArray whoList (BGMRProcedure*p, const QJsonArray&);
+    QJsonArray leave (BGMRProcedure* p, const QJsonArray&);
+
+public slots:
+    void leaved (qulonglong id);
 
 private:
     relatedProcs RelProc;
 
     QString join (BGMRProcedure* p, const QString& nick = QString ());
-    bool hasJoin (BGMRProcedure* p);
+    bool hasJoined (BGMRProcedure* p);
 };
 
 class chatAdaptor : public BGMRAdaptor < chatObj >

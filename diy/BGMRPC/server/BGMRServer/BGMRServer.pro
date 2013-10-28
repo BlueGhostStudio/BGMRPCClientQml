@@ -18,7 +18,7 @@ TEMPLATE = app
 SOURCES += main.cpp
 
 unix {
-    target.path = $${PREFIX}/bin
+    target.path = $${PREFIX}/BGMRPC
     INSTALLS += target
 }
 

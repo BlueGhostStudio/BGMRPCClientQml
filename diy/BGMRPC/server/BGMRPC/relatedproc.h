@@ -18,6 +18,9 @@ public:
     void emitSignal (BGMRObjectInterface* obj, const QString& signal,
                      const QJsonArray& args) const;
 
+signals:
+    void disconnectedProc (qulonglong id);
+
 public slots:
     bool removeProc (qulonglong id);
     

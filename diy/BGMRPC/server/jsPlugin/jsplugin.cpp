@@ -13,7 +13,7 @@ using namespace BGMircroRPCServer;
 //    initial ();
 //}
 
-jsObj::jsObj()
+jsObj::jsObj() : JsDB (this)
 {
     initial ();
 }
@@ -26,7 +26,7 @@ QString jsObj::objectType() const
 bool jsObj::procIdentify(BGMRProcedure* p, const QJsonObject& call)
 {
     QScriptValue jsIdentify = JsEngine.globalObject ().property ("jsIdentify");
-    if (jsIdentify.isUndefined ())
+    if (jsIdentify.isUndefined () || !jsIdentify.isValid ())
         return true;
     else {
         QScriptValueList args;
@@ -43,10 +43,13 @@ QJsonArray jsObj::loadJsScript(BGMRProcedure*, const QJsonArray& args)
     QString error;
     bool ok = false;
 
+    qDebug () << "in loadJsScript";
+
     if (args [0].toDouble () == 0) {
         QString jsPluginDir = BGMRPC::Settings->value ("pluginDir", "~/.BGMR/plugins/").toString ();
         jsPluginDir += "/js/";
         QString jsFileName = jsPluginDir + args[1].toString ();
+        qDebug () << jsFileName;
 
         ok = loadJsScriptFile (jsFileName, error);
     } else
@@ -112,6 +115,7 @@ void jsObj::setRPC(BGMRPC* rpc)
 {
     JSRPC.setRPC (rpc);
     JsEngine.globalObject ().setProperty ("RPC", JsEngine.newQObject (&JSRPC));
+    v.setProperty ("RPC", JsEngine.newQObject (&JSRPC));
 }
 
 void jsObj::initial()
@@ -120,8 +124,6 @@ void jsObj::initial()
 
     JsJsObjClass = new jsJsObjClass (&JsEngine);
     globalObject.setProperty ("JS", JsJsObjClass->newInstance (this));
-
-//    globalObject.setProperty ("RPC", JsEngine.newQObject (&JSRPC));
 
     JsProcClass = new jsProcClass (&JsEngine);
     globalObject.setProperty (JsProcClass->name (), JsProcClass->construct ());
@@ -167,8 +169,8 @@ bool jsObj::loadJsScriptContent(const QString& jsContent, QString& error,
                                               JsEngine.newFunction (jsDebug));
 
         QScriptValue constructFun = globalObject.property ("construct");
-        if (!constructFun.isUndefined ())
-            constructFun.call (globalObject);
+        if (constructFun.isFunction ())
+            constructFun.call (QScriptValue ());
 
         ok = true;
     }
@@ -218,12 +220,13 @@ QString objType ()
     return "JSEngine";
 }
 
-bool initial (BGMRObjectStorage* storage, BGMRPC* rpc)
-{
-    QString pluginDir = BGMRPC::Settings->value ("pluginDir", "~/.BGMR/plugins/").toString ();
-    QDir autoloadJsDir (pluginDir + "/js/autoload");
 
+void loadAutoLoadScripts (BGMRObjectStorage* storage, BGMRPC* rpc,
+                  const QString& path, bool withRPC = false)
+{
+    QDir autoloadJsDir (path);
     QFileInfoList jsFiles = autoloadJsDir.entryInfoList (QStringList () << "*.js");
+
     foreach (QFileInfo jsFile, jsFiles) {
         QString error;
 
@@ -233,12 +236,36 @@ bool initial (BGMRObjectStorage* storage, BGMRPC* rpc)
 
         jsObj* theJsObj = dynamic_cast < jsObj* > (storage->object (jsObjName));
         if (theJsObj) {
-            theJsObj->setRPC (rpc);
+            if (withRPC)
+                theJsObj->setRPC (rpc);
             if (!theJsObj->loadJsScriptFile (jsFile.filePath (), error))
                 qDebug () << "Load js file error: " << error;
         } else
             qDebug () << "Not a jsObj";
     }
+}
+
+bool initial (BGMRObjectStorage* storage, BGMRPC* rpc)
+{
+    QString pluginDir = BGMRPC::Settings->value ("pluginDir", "~/.BGMR/plugins/").toString ();
+    loadAutoLoadScripts (storage, rpc, pluginDir + "/js/autoload_admin", true);
+    loadAutoLoadScripts (storage, rpc, pluginDir + "/js/autoload");
+
+//    foreach (QFileInfo jsFile, jsFiles) {
+//        QString error;
+
+//        QString jsObjName = jsFile.baseName ();
+//        if (!storage->installObject (jsObjName, objType ()))
+//            qDebug () << "Can't create " + jsObjName + " object";
+
+//        jsObj* theJsObj = dynamic_cast < jsObj* > (storage->object (jsObjName));
+//        if (theJsObj) {
+//            theJsObj->setRPC (rpc);
+//            if (!theJsObj->loadJsScriptFile (jsFile.filePath (), error))
+//                qDebug () << "Load js file error: " << error;
+//        } else
+//            qDebug () << "Not a jsObj";
+//    }
 
     return true;
 }

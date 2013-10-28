@@ -28,16 +28,16 @@ public:
 
     qulonglong pID ();
 
-    Q_INVOKABLE void emitSignal (const BGMRObjectInterface* obj,
+    Q_INVOKABLE void emitSignal (BGMRObjectInterface* obj,
                                  const QString& signal,
                                  const QJsonArray& args);
 //    Q_INVOKABLE void setPrivateData (const QString& key,
 //                                     const QJsonValue& value);
 //    Q_INVOKABLE QJsonValue privateData (const QString& key) const;
-    Q_INVOKABLE void setPrivateData (const BGMRObjectInterface* obj,
+    Q_INVOKABLE void setPrivateData (BGMRObjectInterface* obj,
                                      const QString& key,
                                      const QJsonValue& value);
-    Q_INVOKABLE QJsonValue privateData (const BGMRObjectInterface* obj,
+    Q_INVOKABLE QJsonValue privateData (BGMRObjectInterface* obj,
                                         const QString& key) const;
     Q_INVOKABLE bool isKeepConnected () const;
     Q_INVOKABLE QJsonArray callMethod (const QString& obj,
@@ -126,6 +126,8 @@ public:
     Q_INVOKABLE bool removeProc (qulonglong pID);
     Q_INVOKABLE relProcsMap relProcs () const;
     Q_INVOKABLE BGMRProcedure* relProc (qulonglong pID) const;
+    Q_INVOKABLE void onRelProcDisconnected (const QScriptValue& handel);
+    Q_INVOKABLE bool containsRelProc (qulonglong pID) const;
     Q_INVOKABLE void emitSignal (const QString& signal,
                                  const QJsonArray& args) const;
 
@@ -238,26 +240,31 @@ class jsDB : public QObject {
     Q_PROPERTY(QStringList connectionNames READ connectionNames)
     Q_OBJECT
 public:
-    jsDB (QObject* parent = 0);
+    jsDB (jsObj* obj, QObject* parent = 0);
 
-    Q_INVOKABLE bool open (const QString& dbName,
-                           const QString& connectionName);
     Q_INVOKABLE bool open (const QScriptValue& dbDef);
+    Q_INVOKABLE void close();
 //    Q_INVOKABLE bool switchDB (const QString& connectionName = QString ());
     Q_INVOKABLE bool isOpen () const;
     Q_INVOKABLE QString dbName () const;
-    Q_INVOKABLE bool addDatabase (const QString& type,
-                                  const QString& connectionName = QString ());
     Q_INVOKABLE QString connectionName () const;
     Q_INVOKABLE QStringList connectionNames () const;
     Q_INVOKABLE QString hostName () const;
     Q_INVOKABLE QSqlQuery newQuery () const;
+    Q_INVOKABLE bool lockDatabase (const QString& pwd);
+    Q_INVOKABLE bool lockDatabaseByObject ();
+    Q_INVOKABLE bool unlockDatabase ();
 
 //    void setQSqliteDBPath (const QString& path);
 
 private:
-    QSqlDatabase db;
+    bool checkAuth (const QSqlDatabase& db, const QString& usr,
+                    const QString& pwd);
+    bool initialAdminSqliteDatabase(QSqlDatabase& adminDB);
+    QSqlDatabase openSqliteAdminDatabase ();
+    QSqlDatabase DB;
     QString SqliteDBPath;
+    jsObj* JsObj;
 };
 
 #endif // JSOBJECTPROTOTYPE_H

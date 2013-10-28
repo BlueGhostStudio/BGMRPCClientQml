@@ -4,4 +4,5 @@ SUBDIRS = \
     BGMRPCInterface \
     BGMRCall \
     BGMRFile \
-    clientDemo
+    clientDemo \
+    BGMRPClientQuick

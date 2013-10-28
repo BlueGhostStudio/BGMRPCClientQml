@@ -4,6 +4,13 @@
 
 using namespace BGMircroRPCServer;
 
+chatObj::chatObj(QObject* parent)
+    : QObject (parent)
+{
+    connect (&RelProc, SIGNAL(disconnectedProc(qulonglong)),
+             SLOT(leaved(qulonglong)));
+}
+
 QString chatObj::objectType() const
 {
     return objType ();
@@ -12,7 +19,7 @@ QString chatObj::objectType() const
 QJsonArray chatObj::say(BGMRProcedure* p, const QJsonArray& args)
 {
     QJsonArray ret;
-    if (hasJoin (p)) {
+    if (hasJoined (p)) {
         QString nickname = p->privateData (this, "nickname").toString ();
 
         QJsonArray message (args);
@@ -29,7 +36,7 @@ QJsonArray chatObj::say(BGMRProcedure* p, const QJsonArray& args)
 QJsonArray chatObj::join(BGMRProcedure* p, const QJsonArray& args)
 {
     QJsonArray ret;
-    if (!hasJoin (p)) {
+    if (!hasJoined (p)) {
         ret.append (true);
         ret.append (join (p, args [0].toString ()));
     } else
@@ -38,12 +45,19 @@ QJsonArray chatObj::join(BGMRProcedure* p, const QJsonArray& args)
     return ret;
 }
 
+QJsonArray chatObj::hasJoined(BGMRProcedure* p, const QJsonArray&)
+{
+    QJsonArray ret;
+    ret.append (hasJoined (p));
+    return ret;
+}
+
 QJsonArray chatObj::changeNickname(BGMRProcedure* p, const QJsonArray& args)
 {
     QJsonArray ret;
     QString nickname = args [0].toString ();
 
-    if (hasJoin (p)) {
+    if (hasJoined (p)) {
         QString oldNickname = p->privateData (this, "nickname").toString ();
         ret.append (true);
         if (!nickname.isEmpty ()) {
@@ -59,6 +73,45 @@ QJsonArray chatObj::changeNickname(BGMRProcedure* p, const QJsonArray& args)
         ret.append (false);
 
     return ret;
+}
+
+QJsonArray chatObj::whoList(BGMRProcedure* p, const QJsonArray&)
+{
+    QJsonArray ret;
+    if (hasJoined (p)) {
+        ret.append (true);
+        QJsonArray list;
+        QMap < qulonglong, BGMRProcedure* > procs = RelProc.procs ();
+        QMap < qulonglong, BGMRProcedure* >::const_iterator it;
+        for (it = procs.constBegin (); it != procs.constEnd (); ++it)
+            list.append (it.value ()->privateData (this, "nickname"));
+
+        if (!list.isEmpty ())
+            ret.append (list);
+    } else
+        ret.append (false);
+    return ret;
+}
+
+QJsonArray chatObj::leave(BGMRProcedure* p, const QJsonArray&)
+{
+    QJsonArray ret;
+    if (hasJoined (p)) {
+        ret.append (RelProc.removeProc (p->pID ()));
+    } else
+        ret.append (false);
+
+    return ret;
+}
+
+void chatObj::leaved(qulonglong id)
+{
+    BGMRProcedure* proc = RelProc.proc (id);
+    if (proc) {
+        QJsonArray sigArgs;
+        sigArgs.append (proc->privateData (this, "nickname"));
+        RelProc.emitSignal (this, "leaved", sigArgs);
+    }
 }
 
 QString chatObj::join(BGMRProcedure* p, const QString& nick)
@@ -81,7 +134,7 @@ QString chatObj::join(BGMRProcedure* p, const QString& nick)
     return nickname;
 }
 
-bool chatObj::hasJoin(BGMRProcedure* p)
+bool chatObj::hasJoined(BGMRProcedure* p)
 {
     return RelProc.procs ().contains (p->pID ());
 }
@@ -92,7 +145,10 @@ void chatAdaptor::registerMethods ()
 {
     Methods ["say"] = &chatObj::say;
     Methods ["join"] = &chatObj::join;
+    Methods ["hasJoined"] = &chatObj::hasJoined;
+    Methods ["leave"] = &chatObj::leave;
     Methods ["changeNickname"] = &chatObj::changeNickname;
+    Methods ["whoList"] = &chatObj::whoList;
 }
 
 

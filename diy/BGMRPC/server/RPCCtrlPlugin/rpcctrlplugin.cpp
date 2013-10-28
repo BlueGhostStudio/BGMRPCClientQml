@@ -5,7 +5,7 @@
 
 RPCCtrlObj::RPCCtrlObj()
 {
-    publicMethods << "login";
+    publicMethods << "login" << "RPCCreateObject";
 }
 
 QString RPCCtrlObj::objectType() const

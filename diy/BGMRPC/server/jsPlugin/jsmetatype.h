@@ -60,6 +60,8 @@ void scrObjToCustomData (const QScriptValue& scrObj,
     data = qvariant_cast < typename protoTypeInfo < PT >::dataType > (scrObj.data ().toVariant ());
 }
 
+void scrObjToBGMRObj (const QScriptValue& scrObj, BGMRObjectInterface*& data);
+
 void registerMetaType (QScriptEngine* jsEngine);
 
 #endif // MISFUNCTION_H

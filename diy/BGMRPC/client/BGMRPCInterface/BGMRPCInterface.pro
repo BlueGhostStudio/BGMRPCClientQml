@@ -18,14 +18,9 @@ HEADERS += bgmrpcinterface.h\
         bgmrpcinterface_global.h \
     datatype.h
 
-unix:!symbian {
-    maemo5 {
-        target.path = /opt/usr/lib
-    } else {
-        target.path = /usr/lib
-    }
+!isEmpty (PREFIX) {
+    target.path = $${PREFIX}/lib
     INSTALLS += target
 }
-
 SHDROOT=../..
 include (../../base.pri)

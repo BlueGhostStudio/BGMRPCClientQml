@@ -1,0 +1,4 @@
+module qml.clientComponents
+Button 1.0 CliButton.qml
+RPC 1.0 RPC.js
+AdminTools 1.0 adminTools.js

@@ -7,4 +7,8 @@ INCLUDEPATH += \
     $$PWD/global
 DEPENDPATH += $$PWD/BGMRPCInterface
 
+!isEmpty (PREFIX) {
+    target.path = $${PREFIX}/BGMRPC/cli
+    INSTALLS += target
+}
 include (../base.pri)
