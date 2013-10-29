@@ -60,8 +60,9 @@ Rectangle {
 
             onHeightChanged: {
                 var y = txted_output.height - fli_chatOutput.height
+                console.log (y)
                 if (y > 0)
-                    fli_output.contentY = y
+                    fli_chatOutput.contentY = y
             }
         }
 
