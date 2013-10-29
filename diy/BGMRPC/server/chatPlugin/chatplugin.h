@@ -27,7 +27,7 @@ public:
     QJsonArray leave (BGMRProcedure* p, const QJsonArray&);
 
 public slots:
-    void leaved (qulonglong id);
+    void leaved (BGMRProcedure* proc);
 
 private:
     relatedProcs RelProc;

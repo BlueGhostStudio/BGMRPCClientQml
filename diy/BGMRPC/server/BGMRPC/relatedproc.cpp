@@ -15,7 +15,7 @@ bool relatedProcs::addProc(BGMircroRPCServer::BGMRProcedure* proc)
     if (proc) {
         Procs [proc->pID ()] = proc;
         connect (proc, SIGNAL(procExited(qulonglong)),
-                 this, SLOT(removeProc(qulonglong)));
+                 this, SLOT(removeProc(qulonglong)), Qt::DirectConnection);
         ok = true;
     }
 
@@ -27,9 +27,12 @@ QMap<qulonglong, BGMRProcedure*> relatedProcs::procs() const
     return Procs;
 }
 
-BGMRProcedure*relatedProcs::proc(qulonglong pID) const
+BGMRProcedure* relatedProcs::proc(qulonglong pID) const
 {
-    return Procs [pID];
+    if (Procs.contains (pID))
+        return Procs [pID];
+    else
+        return NULL;
 }
 
 void relatedProcs::emitSignal(BGMRObjectInterface* obj,
@@ -48,7 +51,7 @@ bool relatedProcs::removeProc(qulonglong id)
         ok = true;
         BGMRProcedure* p = Procs [id];
         disconnect (p, 0, this, 0);
-        emit disconnectedProc (id);
+        emit removedProc (p);
         Procs.remove (id);
     }
 

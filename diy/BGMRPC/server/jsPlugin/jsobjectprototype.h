@@ -55,6 +55,7 @@ class protoTypeInfo < jsProcProto >
 public:
     typedef procPtr dataType;
     static QString className () { return "BGMRProcedure"; }
+    static bool isNull (dataType d) { return !d; }
 };
 
 typedef jsObjectClass < jsProcProto > jsProcClass;
@@ -74,6 +75,7 @@ class protoTypeInfo < jsRPCObjectProto >
 public:
     typedef rpcObjPtr dataType;
     static QString className () { return "BGMRObject"; }
+    static bool isNull (dataType d) { return !d; }
 };
 
 class jsRPCObjectProto : public QObject, public QScriptable
@@ -113,6 +115,7 @@ class protoTypeInfo < jsJsObjProto >
 public:
     typedef jsObjPtr dataType;
     static QString className () { return "jsObj"; }
+    static bool isNull (dataType d) { return !d; }
 };
 
 class jsJsObjProto : public jsRPCObjectProto
@@ -126,7 +129,7 @@ public:
     Q_INVOKABLE bool removeProc (qulonglong pID);
     Q_INVOKABLE relProcsMap relProcs () const;
     Q_INVOKABLE BGMRProcedure* relProc (qulonglong pID) const;
-    Q_INVOKABLE void onRelProcDisconnected (const QScriptValue& handel);
+    Q_INVOKABLE void onRelProcRemoved (const QScriptValue& handel);
     Q_INVOKABLE bool containsRelProc (qulonglong pID) const;
     Q_INVOKABLE void emitSignal (const QString& signal,
                                  const QJsonArray& args) const;
@@ -169,6 +172,7 @@ class protoTypeInfo < jsSqlQueryProto >
 public:
     typedef QSqlQuery dataType;
     static QString className () { return "SQLQuery"; }
+    static bool isNull (dataType) { return false; }
 };
 
 // DB.open ("myDB");

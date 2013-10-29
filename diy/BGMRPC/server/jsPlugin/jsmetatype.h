@@ -44,6 +44,9 @@ template < typename PT >
 QScriptValue jsCustomDataToScrObj (QScriptEngine* jsEngine,
                                    const typename protoTypeInfo < PT >::dataType& data)
 {
+    if (protoTypeInfo < PT >::isNull (data))
+        return jsEngine->nullValue ();
+
     QScriptValue ctor
             = jsEngine->globalObject ().property (protoTypeInfo < PT >::className ());
     jsObjectClass < PT >* cls = qscriptvalue_cast < jsObjectClass < PT >* >(ctor.data ());

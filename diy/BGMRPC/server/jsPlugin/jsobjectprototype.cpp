@@ -135,10 +135,10 @@ BGMRProcedure* jsJsObjProto::relProc(qulonglong pID) const
     return thisJsObj ()->relProcs ()->proc (pID);
 }
 
-void jsJsObjProto::onRelProcDisconnected (const QScriptValue& handel)
+void jsJsObjProto::onRelProcRemoved (const QScriptValue& handel)
 {
     qScriptConnect (thisJsObj ()->relProcs (),
-                    SIGNAL(disconnectedProc(qulonglong)), QScriptValue (),
+                    SIGNAL(removedProc(BGMRProcedure*)), QScriptValue (),
                     handel);
 }
 

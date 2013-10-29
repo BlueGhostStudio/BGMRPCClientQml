@@ -19,7 +19,8 @@ public:
                      const QJsonArray& args) const;
 
 signals:
-    void disconnectedProc (qulonglong id);
+//    void removedProc (qulonglong id);
+    void removedProc (BGMRProcedure* p);
 
 public slots:
     bool removeProc (qulonglong id);

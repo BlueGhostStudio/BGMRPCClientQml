@@ -7,8 +7,8 @@ using namespace BGMircroRPCServer;
 chatObj::chatObj(QObject* parent)
     : QObject (parent)
 {
-    connect (&RelProc, SIGNAL(disconnectedProc(qulonglong)),
-             SLOT(leaved(qulonglong)));
+//    connect (&RelProc, SIGNAL(removedProc(BGMRProcedure*)),
+//             SLOT(leaved(BGMRProcedure*)));
 }
 
 QString chatObj::objectType() const
@@ -104,9 +104,8 @@ QJsonArray chatObj::leave(BGMRProcedure* p, const QJsonArray&)
     return ret;
 }
 
-void chatObj::leaved(qulonglong id)
+void chatObj::leaved(BGMRProcedure* proc)
 {
-    BGMRProcedure* proc = RelProc.proc (id);
     if (proc) {
         QJsonArray sigArgs;
         sigArgs.append (proc->privateData (this, "nickname"));
@@ -129,6 +128,7 @@ QString chatObj::join(BGMRProcedure* p, const QString& nick)
         QJsonArray sigArgs;
         sigArgs.append (nickname);
         RelProc.emitSignal (this, "joined", sigArgs);
+        qDebug () << "addProc";
     }
 
     return nickname;

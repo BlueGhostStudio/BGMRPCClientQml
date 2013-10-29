@@ -9,6 +9,7 @@
 #include <QThread>
 
 namespace BGMircroRPCServer {
+extern QMutex mutex;
 
 class BGMRPC;
 class BGMRObjectInterface;

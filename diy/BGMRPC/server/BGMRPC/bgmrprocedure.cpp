@@ -8,6 +8,8 @@
 
 namespace BGMircroRPCServer {
 
+QMutex mutex;
+
 callThread::callThread(const QString& mID, BGMircroRPCServer::BGMRProcedure* p,
                        BGMRObjectInterface* o, const QString& m,
                        const QJsonArray& as, QObject* parent)
@@ -82,11 +84,13 @@ void BGMRProcedure::emitSignal(const BGMRObjectInterface* obj,
         jsonValues ["object"] = obj->objectName ();
         jsonValues ["signal"] = signal;
         jsonValues ["args"] = args;
+        mutex.lock ();
 #ifdef WEBSOCKET
         ProcSocket->write (QString::fromUtf8 (QJsonDocument (jsonValues).toJson ()));
 #else
         ProcSocket->write (QJsonDocument (jsonValues).toBinaryData ());
 #endif
+        mutex.unlock ();
     }
 }
 
@@ -109,7 +113,7 @@ void BGMRProcedure::close ()
 
     emit procExited (PID);
     qDebug () << QObject::tr ("Free the Procedure (#%1) memory.").arg (PID);
-    delete this;
+    deleteLater ();
 }
 
 void BGMRProcedure::setObject(BGMRObjectInterface* object)
@@ -162,13 +166,15 @@ void BGMRProcedure::returnValues (const QJsonArray& values,
         if (!mID.isEmpty ())
             jsonValues ["mID"] = mID;
 
+        mutex.lock ();
 #ifdef WEBSOCKET
         ProcSocket->write (QString::fromUtf8 (QJsonDocument (jsonValues).toJson ()));
 #else
         ProcSocket->write (QJsonDocument (jsonValues).toBinaryData ());
 #endif
+        mutex.unlock ();
 
-        ProcSocket->waitForBytesWritten ();
+//        ProcSocket->waitForBytesWritten ();
     } else
         qDebug () << "no return";
 }
@@ -176,9 +182,13 @@ void BGMRProcedure::returnValues (const QJsonArray& values,
 void BGMRProcedure::onClientSocketDisconnected()
 {
     qDebug () << tr ("On client disconnected");
-    close ();
-    if (ProcSocket)
-        ProcSocket->deleteLater ();
+    ProcSocket->deleteLater ();
+    emit procExited (PID);
+    qDebug () << QObject::tr ("Free the Procedure (#%1) memory.").arg (PID);
+    deleteLater ();
+//    close ();
+//    if (ProcSocket)
+//        ProcSocket->deleteLater ();
 //    emit procExited (PID);
 //    qDebug () << QObject::tr ("Free the Procedure (#%1) memory.").arg (PID);
     //    delete this;
@@ -225,6 +235,8 @@ void BGMRProcedure::callMethod ()
                 connect (this, SIGNAL(destroyed()), newCallThread,
                          SLOT(terminate()));
                 connect (this, SIGNAL(destroyed()), newCallThread,
+                         SLOT(quit()));
+                connect (this, SIGNAL(destroyed()), newCallThread,
                          SLOT(deleteLater()));
                 newCallThread->start ();
             }
@@ -232,8 +244,8 @@ void BGMRProcedure::callMethod ()
             qDebug () << QObject::tr ("No any object be used.");
     }
 
-    if (!KeepConnected || !ProcSocket)
-        close ();
+//    if (!KeepConnected || !ProcSocket)
+//        close ();
 }
 
 }
