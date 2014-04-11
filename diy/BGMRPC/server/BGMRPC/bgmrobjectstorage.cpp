@@ -75,6 +75,18 @@ bool BGMRObjectStorage::installPlugin(const QString& pluginFileName)
     return ok;
 }
 
+bool BGMRObjectStorage::removeObject(const QString& objName)
+{
+    bool ok = false;
+    if (ObjectStorage.contains (objName)) {
+        BGMRObjectInterface* obj = ObjectStorage.take (objName);
+        delete obj;
+        ok = true;
+    }
+
+    return ok;
+}
+
 BGMRObjectInterface*
 BGMRObjectStorage::object (const QString& obj) const
 {

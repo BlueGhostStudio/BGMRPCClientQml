@@ -22,6 +22,7 @@ public:
                         BGMRObjectInterface* obj);
     bool installObject (const QString& objName, const QString& creator);
     bool installPlugin (const QString& pluginFileName);
+    bool removeObject (const QString& objName);
     BGMRObjectInterface* object (const QString& obj) const;
     QList<BGMRObjectInterface*> objects() const;
     QStringList types () const;

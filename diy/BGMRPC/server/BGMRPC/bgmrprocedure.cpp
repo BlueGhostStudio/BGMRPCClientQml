@@ -15,7 +15,10 @@ callThread::callThread(const QString& mID, BGMircroRPCServer::BGMRProcedure* p,
                        const QJsonArray& as, QObject* parent)
     : QThread (parent), MID (mID), OwnProc (p), Object (o), Method (m), Args (as)
 {
-
+    connect (this, SIGNAL(finished()), this,
+             SLOT(deleteLater()), Qt::DirectConnection);
+    connect (OwnProc, SIGNAL(destroyed()), this,
+             SLOT(terminate()), Qt::DirectConnection);
 }
 
 void callThread::run()
@@ -23,7 +26,8 @@ void callThread::run()
     QJsonArray returnedValues;
     returnedValues
             = Object->adaptor ()->callMetchod (Object, OwnProc, Method, Args);
-    OwnProc->returnValues (returnedValues, MID);
+
+    OwnProc->returnValues (returnedValues, false, MID);
 }
 
 // =====================
@@ -31,36 +35,29 @@ void callThread::run()
 qulonglong lastPID = 0;
 
 BGMRProcedure::BGMRProcedure(BGMRPC* r, __socket* socket,
-                             QObject *parent) :
-    QObject(parent), RPC (r), ProcSocket (socket), KeepConnected (false)
+                             QObject *parent)
+    : QObject(parent), RPC (r),
+      ProcSocket (socket), SocketBuffer (socket, this),
+      DirectSock (false)//, KeepConnected (false)
 {
     PID = lastPID;
     lastPID++;
     connect (ProcSocket, SIGNAL(disconnected()),
              this, SLOT(onClientSocketDisconnected()));
-    connect (ProcSocket, SIGNAL(readyRead()),
+    connect (&SocketBuffer, SIGNAL(readyRead()),
              this, SLOT(callMethod()));
+    connect (this, SIGNAL(emitSignal(const BGMRObjectInterface*,
+                                     QString, QJsonArray)),
+             this, SLOT(onEmitSignal(const BGMRObjectInterface*,
+                                     QString,QJsonArray)));
+    connect (this, SIGNAL(returnValues(QJsonArray, bool, QString)),
+             this, SLOT(onReturnValues(QJsonArray,bool,QString)));
 }
 
 BGMRProcedure::~BGMRProcedure()
 {
 //    ProcSocket->deleteLater ();
 }
-
-//BGMRPC*BGMRProcedure::rpc() const
-//{
-//    return RPC;
-//}
-
-//QJsonValueRef BGMRProcedure::privateData(const QString& key)
-//{
-//    return PrivateData ["global"][key];
-//}
-
-//QJsonValue BGMRProcedure::privateData(const QString& key) const
-//{
-//    return PrivateData ["global"][key];
-//}
 
 QJsonValueRef BGMRProcedure::privateData(const BGMRObjectInterface* obj,
                                          const QString& key)
@@ -74,26 +71,6 @@ QJsonValue BGMRProcedure::privateData(const BGMRObjectInterface* obj,
     return PrivateData [obj->objectName ()][key];
 }
 
-void BGMRProcedure::emitSignal(const BGMRObjectInterface* obj,
-                               const QString& signal,
-                               const QJsonArray& args) const
-{
-    if (ProcSocket) {
-        QJsonObject jsonValues;
-        jsonValues ["type"] = QString ("signal");
-        jsonValues ["object"] = obj->objectName ();
-        jsonValues ["signal"] = signal;
-        jsonValues ["args"] = args;
-        mutex.lock ();
-#ifdef WEBSOCKET
-        ProcSocket->write (QString::fromUtf8 (QJsonDocument (jsonValues).toJson ()));
-#else
-        ProcSocket->write (QJsonDocument (jsonValues).toBinaryData ());
-#endif
-        mutex.unlock ();
-    }
-}
-
 qulonglong BGMRProcedure::pID() const
 {
     return PID;
@@ -103,7 +80,8 @@ void BGMRProcedure::close ()
 {
     qDebug () << QObject::tr ("End the procedure (#%1) call.").arg(PID);
 
-    if (ProcSocket && ProcSocket->state () == QAbstractSocket::ConnectedState) {
+    //if (ProcSocket && ProcSocket->state () == QAbstractSocket::ConnectedState) {
+    if (!DirectSock && ProcSocket->state () == QAbstractSocket::ConnectedState) {
         qDebug () << tr ("Close socket when procedure (#%1) end.").arg (PID);
         ProcSocket->disconnect ();
         ProcSocket->disconnectFromHost ();
@@ -121,24 +99,40 @@ void BGMRProcedure::setObject(BGMRObjectInterface* object)
     Object = object;
 }
 
-bool BGMRProcedure::isKeepConnected() const
-{
-    return KeepConnected;
-}
+//bool BGMRProcedure::isKeepConnected() const
+//{
+//    return KeepConnected;
+//}
 
 __socket* BGMRProcedure::procSocket() const
 {
     return ProcSocket;
 }
 
-__socket* BGMRProcedure::detachSocket()
+__socket* BGMRProcedure::switchDirectSocket()
 {
-    __socket* theSocket = ProcSocket;
-    ProcSocket->disconnect ();
-    ProcSocket = NULL;
-    KeepConnected = false;
+    disconnect (&SocketBuffer, SIGNAL(readyRead()));
+    DirectSock = true;
 
-    return theSocket;
+    return ProcSocket;
+}
+
+bool BGMRProcedure::isDirectSocket() const
+{
+    return DirectSock;
+}
+
+BGMRPCSocketBuffer* BGMRProcedure::socketBuffer()
+{
+    return &SocketBuffer;
+}
+
+void BGMRProcedure::switchProcedure()
+{
+    DirectSock = false;
+    disconnect (&SocketBuffer, SIGNAL(readyRead()));
+    connect (&SocketBuffer, SIGNAL(readyRead()),
+             this, SLOT(callMethod()));
 }
 
 QJsonArray BGMRProcedure::callMethod(const QString& obj,
@@ -155,15 +149,17 @@ QJsonArray BGMRProcedure::callMethod(const QString& obj,
         return QJsonArray ();
 }
 
-void BGMRProcedure::returnValues (const QJsonArray& values,
-                                  const QString mID) const
+void BGMRProcedure::onReturnValues (const QJsonArray& values,
+                                  bool directSocketReturn,
+                                  const QString& mID)
 {
-    if (ProcSocket) {
+    if (!DirectSock || directSocketReturn) {
         QJsonObject jsonValues;
         jsonValues ["type"] = QString ("return");
         jsonValues ["values"] = values;
         jsonValues ["pID"] = (double)PID;
-        if (!mID.isEmpty ())
+        jsonValues ["switchDirect"] = DirectSock;
+        if (!DirectSock && !mID.isEmpty ())
             jsonValues ["mID"] = mID;
 
         mutex.lock ();
@@ -173,10 +169,29 @@ void BGMRProcedure::returnValues (const QJsonArray& values,
         ProcSocket->write (QJsonDocument (jsonValues).toBinaryData ());
 #endif
         mutex.unlock ();
+    }
+}
 
-//        ProcSocket->waitForBytesWritten ();
-    } else
-        qDebug () << "no return";
+void BGMRProcedure::onEmitSignal(const BGMRObjectInterface* obj,
+                               const QString& signal,
+                               const QJsonArray& args)
+{
+    //if (ProcSocket) {
+    if (!DirectSock) {
+        QJsonObject jsonValues;
+        jsonValues ["type"] = QString ("signal");
+        jsonValues ["object"] = obj->objectName ();
+        jsonValues ["signal"] = signal;
+        jsonValues ["args"] = args;
+
+        mutex.lock ();
+#ifdef WEBSOCKET
+        ProcSocket->write (QString::fromUtf8 (QJsonDocument (jsonValues).toJson ()));
+#else
+        ProcSocket->write (QJsonDocument (jsonValues).toBinaryData ());
+#endif
+        mutex.unlock ();
+    }
 }
 
 void BGMRProcedure::onClientSocketDisconnected()
@@ -186,19 +201,12 @@ void BGMRProcedure::onClientSocketDisconnected()
     emit procExited (PID);
     qDebug () << QObject::tr ("Free the Procedure (#%1) memory.").arg (PID);
     deleteLater ();
-//    close ();
-//    if (ProcSocket)
-//        ProcSocket->deleteLater ();
-//    emit procExited (PID);
-//    qDebug () << QObject::tr ("Free the Procedure (#%1) memory.").arg (PID);
-    //    delete this;
-
 }
 
 void BGMRProcedure::callMethod ()
 {
-    if (ProcSocket) {
-        QByteArray callJson = ProcSocket->readAll ();
+    if (!DirectSock) {
+        QByteArray callJson = SocketBuffer.readAll ();
 
 #ifdef WEBSOCKET
         const QJsonObject callJsonObj
@@ -211,7 +219,6 @@ void BGMRProcedure::callMethod ()
         QString objName  = callJsonObj ["object"].toString ();
         QString methodName = callJsonObj ["method"].toString ();
         QJsonArray args = callJsonObj ["args"].toArray ();
-        KeepConnected = callJsonObj ["keepConnected"].toBool ();
         QString mID = callJsonObj ["mID"].toString ();
 
         if (!objName.isEmpty ())
@@ -219,33 +226,19 @@ void BGMRProcedure::callMethod ()
 
         if (Object) {
             qDebug () << QObject::tr ("Client (%1:%2) call (%3) Object's method (%4).")
-                         .arg (ProcSocket->peerAddress ().toString ())
-                         .arg (ProcSocket->peerPort ())
-                         .arg (Object->objectName ()).arg (methodName);
-            if (!Object->procIdentify (this, callJsonObj)) {
-                QJsonArray sigArgs;
-                sigArgs.append (methodName);
-                emitSignal (Object, "ERROR_ACCESS", sigArgs);
-                returnValues (QJsonArray ());
-            } else {
-                callThread* newCallThread = new callThread (mID, this, Object,
-                                                            methodName, args);
-                connect (newCallThread, SIGNAL(finished()), newCallThread,
-                         SLOT(deleteLater()));
-                connect (this, SIGNAL(destroyed()), newCallThread,
-                         SLOT(terminate()));
-                connect (this, SIGNAL(destroyed()), newCallThread,
-                         SLOT(quit()));
-                connect (this, SIGNAL(destroyed()), newCallThread,
-                         SLOT(deleteLater()));
-                newCallThread->start ();
-            }
+                         .arg (ProcSocket->peerAddress ().toString (),
+                               QString::number(ProcSocket->peerPort ()), Object->objectName (), methodName);
+            ProcSocket->setParent (this);
+            callThread* newCallThread = new callThread (mID, this, Object,
+                                                        methodName, args);
+//            connect (newCallThread, SIGNAL(finished()), newCallThread,
+//                     SLOT(deleteLater()), Qt::DirectConnection);
+//            connect (this, SIGNAL(destroyed()), newCallThread,
+//                     SLOT(terminate()), Qt::DirectConnection);
+            newCallThread->start ();
         } else
             qDebug () << QObject::tr ("No any object be used.");
+
     }
-
-//    if (!KeepConnected || !ProcSocket)
-//        close ();
 }
-
 }

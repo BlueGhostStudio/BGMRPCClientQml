@@ -43,9 +43,17 @@ QJsonArray BGMRAdaptor<T>::callMetchod (BGMRObjectInterface* obj,
 {
     QJsonArray ret;
     T* theObj = static_cast < T* > (obj);
-    if (theObj && Methods.contains (method))
-        ret = (theObj->*Methods [method])(proc, args);
-    else {
+    if (theObj && Methods.contains (method)) {
+        if (theObj->procIdentify (proc, method, args))
+            ret = (theObj->*Methods [method])(proc, args);
+        else {
+            QJsonArray sigArgs;
+            sigArgs.append (method);
+            for (int i = 0; i < args.count (); i++)
+                sigArgs.append (args [i].toString ());
+            proc->emitSignal (theObj, "ERROR_ACCESS", sigArgs);
+        }
+    } else {
         if (!theObj)
             qCritical () << QObject::tr ("Object %1 unable to be converted.").arg (obj->objectName ());
         else

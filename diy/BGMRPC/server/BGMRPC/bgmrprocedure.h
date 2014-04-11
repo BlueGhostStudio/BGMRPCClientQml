@@ -4,6 +4,7 @@
 #include <QObject>
 #include "bgmrpc_global.h"
 #include <socket.h>
+#include <bgmrpcsocketbuffer.h>
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QThread>
@@ -16,6 +17,7 @@ class BGMRObjectInterface;
 class BGMRProcedure;
 
 class callThread : public QThread {
+    Q_OBJECT
 public:
     explicit callThread (const QString& mID, BGMRProcedure* p, BGMRObjectInterface* o,
                          const QString& m, const QJsonArray& as,
@@ -49,24 +51,31 @@ public:
                             const QString& key) const;
 
 
-    void emitSignal (const BGMRObjectInterface* obj, const QString& signal,
-                     const QJsonArray& args) const;
     qulonglong pID () const;
     void close ();
     void setObject (BGMRObjectInterface* object);
-    bool isKeepConnected () const;
+//    bool isKeepConnected () const;
     __socket* procSocket() const;
-    __socket* detachSocket();
+    __socket* switchDirectSocket();
+    bool isDirectSocket () const;
+    BGMRPCSocketBuffer* socketBuffer (); //
+    void switchProcedure ();
     QJsonArray callMethod (const QString& obj, const QString& method,
                            const QJsonArray& args);
-    void returnValues(const QJsonArray& values,
-                      const QString mID = QString ()) const;
 
 signals:
     void procExited (qulonglong id);
+    void emitSignal (const BGMRObjectInterface* obj, const QString& signal,
+                     const QJsonArray& args);
+    void returnValues (const QJsonArray& values, bool directSocketReturn,
+                       const QString& mID = QString ());
 
 public slots:
     void onClientSocketDisconnected ();
+    void onReturnValues(const QJsonArray& values, bool directSocketReturn,
+                        const QString& mID);
+    void onEmitSignal (const BGMRObjectInterface* obj, const QString& signal,
+                       const QJsonArray& args);
 
 private slots:
     void callMethod ();
@@ -79,9 +88,11 @@ private:
     BGMRPC* RPC;
     BGMRObjectInterface* Object;
     __socket* ProcSocket;
+    BGMRPCSocketBuffer SocketBuffer;
+    bool DirectSock;
 
     qulonglong PID;
-    bool KeepConnected;
+//    bool KeepConnected;
 };
 
 }

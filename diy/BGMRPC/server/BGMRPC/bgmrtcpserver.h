@@ -20,7 +20,7 @@ public:
     void setPort (quint16 port);
 
 signals:
-    
+
 public slots:
     void newProc();
 

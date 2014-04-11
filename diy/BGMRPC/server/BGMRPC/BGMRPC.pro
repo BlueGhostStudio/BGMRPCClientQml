@@ -35,4 +35,5 @@ unix {
     INSTALLS += target
 }
 
+COMMONPATH=../../BGMRPCCommon
 include (../../base.pri)

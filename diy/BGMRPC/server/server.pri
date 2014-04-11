@@ -5,4 +5,5 @@ else:unix:!macx: LIBS += -L$$OUT_PWD/$$SERLIBPATH/ -lBGMRPC
 INCLUDEPATH += $$PWD/BGMRPC
 DEPENDPATH += $$PWD/BGMRPC
 
+COMMONPATH=../../BGMRPCCommon
 include (../base.pri)

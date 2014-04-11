@@ -12,25 +12,25 @@ class BGMRProcedure;
 class BGMRObjectInterface
 {
 public:
+    virtual ~BGMRObjectInterface () {}
     virtual BGMRAdaptorInterface* adaptor () = 0;
     virtual void setObjectName (const QString& objName) = 0;
     virtual QString objectName () const = 0;
     virtual QString objectType () const = 0;
-    virtual bool procIdentify (BGMRProcedure*, const QJsonObject& call) = 0;
+    virtual bool procIdentify (BGMRProcedure*, const QString&,
+                               const QJsonArray&) = 0;
 };
 
 template < typename T >
 class BGMRObject : public BGMRObjectInterface {
 public:
-//    BGMRObject (BGMRPC* rpc) : RPC (rpc) {}
     BGMRAdaptorInterface* adaptor () { return AdaptorRef; }
     QString objectName () const { return ObjectName; }
     void setObjectName (const QString& objName) { ObjectName = objName; }
-    bool procIdentify (BGMRProcedure*, const QJsonObject&)
+    bool procIdentify (BGMRProcedure*, const QString&, const QJsonArray&)
     {
         return true;
     }
-
 
 protected:
     static T* AdaptorRef;
