@@ -13,7 +13,7 @@ using namespace BGMircroRPCServer;
 //    initial ();
 //}
 
-jsObj::jsObj() : JsDB (this)
+jsObj::jsObj() : JsDB (this), AutoLoad (false)
 {
     initial ();
 }
@@ -23,15 +23,26 @@ QString jsObj::objectType() const
     return objType ();
 }
 
-bool jsObj::procIdentify(BGMRProcedure* p, const QJsonObject& call)
+bool jsObj::procIdentify (BGMRProcedure* p, const QString& method, const QJsonArray& as)
 {
+    if (method == "loadJsScript" || method == "lock") {
+        if (AutoLoad)
+            return false;
+
+        if (Password.isEmpty () || Password == as[0].toString ())
+            return true;
+        else
+            return false;
+    }
+
     QScriptValue jsIdentify = JsEngine.globalObject ().property ("jsIdentify");
     if (jsIdentify.isUndefined () || !jsIdentify.isValid ())
         return true;
     else {
         QScriptValueList args;
         args << JsEngine.toScriptValue < BGMRProcedure* > (p)
-             << JsEngine.toScriptValue < QJsonObject > (call);
+             << JsEngine.toScriptValue < QString > (method)
+             << JsEngine.toScriptValue < QJsonArray > (as);
 
         return jsIdentify.call (QScriptValue (), args).toBool ();
     }
@@ -43,18 +54,15 @@ QJsonArray jsObj::loadJsScript(BGMRProcedure*, const QJsonArray& args)
     QString error;
     bool ok = false;
 
-    qDebug () << "in loadJsScript";
-
-    if (args [0].toDouble () == 0) {
+    if (args [1].toDouble () == 0) {
         QString jsPluginDir = BGMRPC::Settings->value ("pluginDir", "~/.BGMR/plugins/").toString ();
         jsPluginDir += "/js/";
-        QString jsFileName = jsPluginDir + args[1].toString ();
-        qDebug () << jsFileName;
+        QString jsFileName = jsPluginDir + args[2].toString ();
 
         ok = loadJsScriptFile (jsFileName, error);
     } else
-        ok = loadJsScriptContent (args [1].toString (), error,
-                args [2].toString ("noName"));
+        ok = loadJsScriptContent (args [2].toString (), error,
+                args [3].toString ("noName"));
 
     ret.append (ok);
     if (!error.isEmpty ())
@@ -104,6 +112,21 @@ QJsonArray jsObj::js(BGMRProcedure* p, const QJsonArray& args)
     }
 
     return ret;
+}
+
+QJsonArray jsObj::lock(BGMRProcedure*, const QJsonArray& args)
+{
+    Password = args [1].toString ();
+
+    QJsonArray ret;
+    ret.append (true);
+
+    return ret;
+}
+
+void jsObj::setAutoLoad()
+{
+    AutoLoad = true;
 }
 
 relatedProcs* jsObj::relProcs()
@@ -206,6 +229,7 @@ void jsAdaptor::registerMethods()
 {
     Methods ["loadJsScript"] = &jsObj::loadJsScript;
     Methods ["js"] = &jsObj::js;
+    Methods ["lock"] = &jsObj::lock;
 }
 
 //================
@@ -236,6 +260,8 @@ void loadAutoLoadScripts (BGMRObjectStorage* storage, BGMRPC* rpc,
 
         jsObj* theJsObj = dynamic_cast < jsObj* > (storage->object (jsObjName));
         if (theJsObj) {
+            theJsObj->setAutoLoad ();
+
             if (withRPC)
                 theJsObj->setRPC (rpc);
             if (!theJsObj->loadJsScriptFile (jsFile.filePath (), error))

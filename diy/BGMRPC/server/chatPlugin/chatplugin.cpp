@@ -7,8 +7,8 @@ using namespace BGMircroRPCServer;
 chatObj::chatObj(QObject* parent)
     : QObject (parent)
 {
-//    connect (&RelProc, SIGNAL(removedProc(BGMRProcedure*)),
-//             SLOT(leaved(BGMRProcedure*)));
+    connect (&RelProc, SIGNAL(removedProc(BGMRProcedure*)),
+             SLOT(leaved(BGMRProcedure*)));
 }
 
 QString chatObj::objectType() const

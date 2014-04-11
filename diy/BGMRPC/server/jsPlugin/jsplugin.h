@@ -22,10 +22,15 @@ public:
     jsObj ();
 
     QString objectType () const;
-    bool procIdentify (BGMRProcedure* p, const QJsonObject& call);
+
+    bool procIdentify (BGMRProcedure* p, const QString& method, const QJsonArray& as);
     QJsonArray loadJsScript (BGMRProcedure*, const QJsonArray& args);
     bool loadJsScriptFile (const QString& jsFileName, QString& error);
-    QJsonArray js (BGMRProcedure*p, const QJsonArray& args);
+    QJsonArray js (BGMRProcedure* p, const QJsonArray& args);
+    QJsonArray lock (BGMRProcedure*, const QJsonArray& args);
+
+    void setAutoLoad ();
+
     relatedProcs* relProcs ();
     void setRPC (BGMRPC* rpc);
 
@@ -39,6 +44,8 @@ private:
     jsRPCObjectClass* JsRPCObjectClass;
     jsSqlQueryClass* JsSqlClass;
     jsDB JsDB;
+    QString Password;
+    bool AutoLoad;
 
     void initial ();
     bool loadJsScriptContent (const QString& jsContent, QString& error,

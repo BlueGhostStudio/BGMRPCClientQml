@@ -164,9 +164,9 @@ void RPCCtrlObj::setRPC(BGMRPC* rpc)
     RPC = rpc;
 }
 
-bool RPCCtrlObj::procIdentify(BGMRProcedure*p, const QJsonObject& call)
+bool RPCCtrlObj::procIdentify (BGMRProcedure* p, const QString& method, const QJsonArray&)
 {
-    if (publicMethods.contains (call ["method"].toString ()))
+    if (publicMethods.contains (method))
         return true;
     else {
         const QJsonValue allow = p->privateData (this, "allow");

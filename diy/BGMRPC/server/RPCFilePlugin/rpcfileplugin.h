@@ -18,12 +18,13 @@ class RPCFileObj : public BGMRObject < RPCFileAdaptor >
 {
 public:
     QString objectType () const;
-    QJsonArray connect (BGMRProcedure*p, const QJsonArray&);
-    QJsonArray open (BGMRProcedure* p, const QJsonArray& args);
+    QJsonArray connect (BGMRProcedure* p, const QJsonArray&);
+    QJsonArray download (BGMRProcedure* p, const QJsonArray& args);
+    QJsonArray upload (BGMRProcedure* p, const QJsonArray& args);
     QJsonArray cp (BGMRProcedure*, const QJsonArray& args);
     QJsonArray rm (BGMRProcedure*, const QJsonArray& args);
     QJsonArray rename (BGMRProcedure*, const QJsonArray& args);
-    QJsonArray dir (BGMRProcedure*, const QJsonArray& args);
+    QJsonArray dir (BGMRProcedure*proc, const QJsonArray& args);
     QJsonArray mkdir (BGMRProcedure*, const QJsonArray& args);
     QJsonArray rmdir (BGMRProcedure*, const QJsonArray& args);
     QJsonArray setPath (BGMRProcedure*, const QJsonArray& args);

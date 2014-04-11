@@ -203,20 +203,21 @@ void scrObjToBGMRObj (const QScriptValue& scrObj, BGMRObjectInterface*& data)
 
 void registerMetaType(QScriptEngine* jsEngine)
 {
-    qScriptRegisterMetaType (jsEngine, jsonValueToScrObj, scrObjToJsonValue);
-    qScriptRegisterMetaType (jsEngine, jsonArrayToScrObj, scrObjToJsonArray);
-    qScriptRegisterMetaType (jsEngine, jsonObjToScrObj, scrObjToJsonObj);
+    qScriptRegisterMetaType < QJsonValue > (jsEngine, jsonValueToScrObj, scrObjToJsonValue);
+    qScriptRegisterMetaType < QJsonArray > (jsEngine, jsonArrayToScrObj, scrObjToJsonArray);
+    qScriptRegisterMetaType < QJsonObject > (jsEngine, jsonObjToScrObj, scrObjToJsonObj);
 
-    qScriptRegisterMetaType (jsEngine, mapToScrObj, scrObjToMap);
+    qScriptRegisterMetaType < QVariantMap > (jsEngine, mapToScrObj, scrObjToMap);
 
-    qScriptRegisterMetaType (jsEngine, jsCustomDataToScrObj < jsProcProto >,
-                             scrObjToCustomData < jsProcProto >);
-    qScriptRegisterMetaType (jsEngine, jsRelProcsToScrObj, scrObjToJsRelProcs);
+    qRegisterMetaType < procPtr > ("BGMRProcedure*");
+    qScriptRegisterMetaType < procPtr > (jsEngine, jsCustomDataToScrObj < jsProcProto >,
+                                               scrObjToCustomData < jsProcProto >);
+    qScriptRegisterMetaType < relProcsMap > (jsEngine, jsRelProcsToScrObj, scrObjToJsRelProcs);
 
-    qScriptRegisterMetaType (jsEngine, jsCustomDataToScrObj < jsRPCObjectProto >,
+    qScriptRegisterMetaType < rpcObjPtr > (jsEngine, jsCustomDataToScrObj < jsRPCObjectProto >,
                              scrObjToBGMRObj);
-    qScriptRegisterMetaType (jsEngine, jsRPCObjListToScrObj, scrObjToJsRPCObjList);
+    qScriptRegisterMetaType < RPCObjList > (jsEngine, jsRPCObjListToScrObj, scrObjToJsRPCObjList);
 
-    qScriptRegisterMetaType (jsEngine, jsCustomDataToScrObj < jsSqlQueryProto >,
+    qScriptRegisterMetaType < QSqlQuery > (jsEngine, jsCustomDataToScrObj < jsSqlQueryProto >,
                              scrObjToCustomData < jsSqlQueryProto >);
 }

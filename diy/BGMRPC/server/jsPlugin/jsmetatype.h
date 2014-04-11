@@ -60,7 +60,10 @@ template < typename PT >
 void scrObjToCustomData (const QScriptValue& scrObj,
                          typename protoTypeInfo < PT >::dataType& data)
 {
-    data = qvariant_cast < typename protoTypeInfo < PT >::dataType > (scrObj.data ().toVariant ());
+    if (scrObj.isUndefined () || scrObj.isNull ())
+        data = protoTypeInfo < PT >::nullData ();
+    else
+        data = qvariant_cast < typename protoTypeInfo < PT >::dataType > (scrObj.data ().toVariant ());
 }
 
 void scrObjToBGMRObj (const QScriptValue& scrObj, BGMRObjectInterface*& data);

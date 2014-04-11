@@ -15,15 +15,18 @@ QJsonArray RPCFileObj::connect(BGMRProcedure* p, const QJsonArray&)
     return QJsonArray ();
 }
 
-QJsonArray RPCFileObj::open(BGMRProcedure* p, const QJsonArray& args)
+QJsonArray RPCFileObj::download(BGMRProcedure* p, const QJsonArray& args)
 {
-    //__socket* tcpSocket = p->detachSocket ();
-    fileStream* theFileStream = new fileStream (this, p->detachSocket ());
+    fileStream* newFileStream = new fileStream (p);
+    newFileStream->sendFile (rootPath () + args [0].toString ());
 
-    QString fileName = getPath (args[2].toString ()) + args [0].toString ();
-    QString op = args [1].toString ();
+    return QJsonArray ();
+}
 
-    theFileStream->openFile (fileName, op);
+QJsonArray RPCFileObj::upload(BGMRProcedure* p, const QJsonArray& args)
+{
+    fileStream* newFileStream = new fileStream (p);
+    newFileStream->receiveFile (rootPath () + args [0].toString ());
 
     return QJsonArray ();
 }
@@ -64,16 +67,35 @@ QJsonArray RPCFileObj::dir (BGMRProcedure*, const QJsonArray& args)
 {
     QJsonArray ret;
 
-    QDir theDir (getPath (args[1].toString ()) + args [0].toString ());
-    QStringList ls;
-    foreach (QFileInfo theEntry, theDir.entryInfoList ()) {
+    QString path (args [0].toString());
+    if (path.contains(QRegExp ("^\\s*/?\\.\\."))) {
+        ret.append(false);
+        return ret;
+    } else
+        ret.append(true);
+
+    QString theBasePath (getPath (args[1].toString ()));
+    path = theBasePath + path;
+
+    QDir theDir (path);
+    QJsonArray ls;
+
+    foreach (QFileInfo theEntry, theDir.entryInfoList (QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot, QDir::DirsFirst)) {
+        QJsonObject entry_json;
+        entry_json ["name"] = theEntry.fileName ();
         if (theEntry.isDir ())
-            ls.append ("[" + theEntry.fileName () + "]");
-        else
-            ls.append (theEntry.fileName () + "  " + QString::number (theEntry.size ()));
+            entry_json ["type"] = QString ("dir");
+        else {
+            entry_json ["type"] = QString ("file");
+            entry_json ["size"] = QString::number (theEntry.size ());
+        }
+        ls.append (entry_json);
     }
 
-    ret.append (QJsonArray::fromStringList (ls));
+    ret.append (ls);
+
+    QDir theBaseDir (theBasePath);
+    ret.append (theBaseDir.relativeFilePath (path));
 
     return ret;
 }
@@ -196,7 +218,8 @@ QString RPCFileObj::getPath(const QString& pathID)
 void RPCFileAdaptor::registerMethods()
 {
     Methods ["connect"] = &RPCFileObj::connect;
-    Methods ["open"] = &RPCFileObj::open;
+    Methods ["download"] = &RPCFileObj::download;
+    Methods ["upload"] = &RPCFileObj::upload;
     Methods ["cp"] = &RPCFileObj::cp;
     Methods ["rm"] = &RPCFileObj::rm;
     Methods ["rename"] = &RPCFileObj::rename;

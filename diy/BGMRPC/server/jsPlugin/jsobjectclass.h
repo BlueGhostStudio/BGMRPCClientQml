@@ -34,7 +34,10 @@ jsObjectClass < PT >::jsObjectClass(QScriptEngine* engine)
     : QScriptClass (engine)
 {
     Proto = engine->newQObject (new PT,
-                                QScriptEngine::ScriptOwnership);
+                                QScriptEngine::ScriptOwnership,
+                                QScriptEngine::SkipMethodsInEnumeration
+                                | QScriptEngine::ExcludeSuperClassMethods
+                                | QScriptEngine::ExcludeSuperClassProperties);
     Proto.setPrototype (engine->globalObject ().property ("Object").property("prototype"));
     Ctor = engine->newFunction (construct, Proto);
     Ctor.setData (engine->toScriptValue (this));

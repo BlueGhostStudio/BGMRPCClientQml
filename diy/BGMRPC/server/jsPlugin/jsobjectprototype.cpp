@@ -16,10 +16,11 @@ qulonglong jsProcProto::pID()
     return thisProc ()->pID ();
 }
 
-void jsProcProto::emitSignal(BGMRObjectInterface* obj,
+void jsProcProto::emitSignal(/*BGMRObjectInterface* */const QScriptValue& _obj,
                              const QString& signal,
                              const QJsonArray& args)
 {
+    BGMRObjectInterface* obj = engine ()->fromScriptValue < BGMRObjectInterface* > (_obj);
     thisProc ()->emitSignal (obj, signal, args);
 }
 
@@ -33,22 +34,24 @@ void jsProcProto::emitSignal(BGMRObjectInterface* obj,
 //    return thisProc ()->privateData (key);
 //}
 
-void jsProcProto::setPrivateData(BGMRObjectInterface* obj,
+void jsProcProto::setPrivateData(/*BGMRObjectInterface* obj*/const QScriptValue& _obj,
                                  const QString& key, const QJsonValue& value)
 {
+    BGMRObjectInterface* obj = engine ()->fromScriptValue < BGMRObjectInterface* > (_obj);
     thisProc ()->privateData (obj, key) = value;
 }
 
-QJsonValue jsProcProto::privateData(BGMRObjectInterface* obj,
+QJsonValue jsProcProto::privateData(/*BGMRObjectInterface**/const QScriptValue& _obj,
                                     const QString& key) const
 {
+    BGMRObjectInterface* obj = engine ()->fromScriptValue < BGMRObjectInterface* > (_obj);
     return thisProc ()->privateData (obj, key);
 }
 
-bool jsProcProto::isKeepConnected() const
-{
-    return thisProc ()->isKeepConnected ();
-}
+//bool jsProcProto::isKeepConnected() const
+//{
+//    return thisProc ()->isKeepConnected ();
+//}
 
 QJsonArray jsProcProto::callMethod(const QString& obj,
                                    const QString& method,
@@ -92,10 +95,11 @@ QStringList jsRPCObjectProto::objectMethods() const
     return thisRPCObj ()->adaptor ()->methods ();
 }
 
-QJsonArray jsRPCObjectProto::callMethod(BGMRProcedure* proc,
+QJsonArray jsRPCObjectProto::callMethod(/*BGMRProcedure**/const QScriptValue& _proc,
                                         const QString& method,
                                         const QJsonArray& args)
 {
+    BGMRProcedure* proc = engine ()->fromScriptValue < BGMRProcedure* > (_proc);
     BGMRObjectInterface* obj = thisRPCObj ();
     return obj->adaptor ()->callMetchod (obj, proc, method, args);
 }
@@ -113,17 +117,29 @@ BGMRObjectInterface*jsRPCObjectProto::thisRPCObj() const
 jsJsObjProto::jsJsObjProto(QObject* parent)
     :jsRPCObjectProto (parent)
 {
+//    connect (thisJsObj ()->relProcs (),SIGNAL(removedProc(BGMRProcedure*)),
+//             SLOT (test(BGMRProcedure*)));
 }
 
-void jsJsObjProto::addProc(BGMRProcedure* proc)
+void jsJsObjProto::addProc(/*BGMRProcedure**/const QScriptValue& _proc)
 {
+    BGMRProcedure* proc = engine ()->fromScriptValue < BGMRProcedure* > (_proc);
     thisJsObj ()->relProcs ()->addProc (proc);
 }
 
-bool jsJsObjProto::removeProc(qulonglong pID)
+bool jsJsObjProto::removeProc(/*BGMRProcedure**/const QScriptValue& _proc)
 {
-    return thisJsObj ()->relProcs ()->removeProc (pID);
+    BGMRProcedure* proc = engine ()->fromScriptValue < BGMRProcedure* > (_proc);
+    if (proc)
+        return thisJsObj ()->relProcs ()->removeProc (proc->pID ());
+    else
+        return false;
 }
+
+//bool jsJsObjProto::removeProc(qulonglong pID)
+//{
+//    return thisJsObj ()->relProcs ()->removeProc (pID);
+//}
 
 relProcsMap jsJsObjProto::relProcs() const
 {
@@ -142,14 +158,29 @@ void jsJsObjProto::onRelProcRemoved (const QScriptValue& handel)
                     handel);
 }
 
-bool jsJsObjProto::containsRelProc(qulonglong pID) const
+bool jsJsObjProto::containsRelProc(/*BGMRProcedure**/const QScriptValue& _proc) const
 {
-    return thisJsObj ()->relProcs ()->procs ().contains (pID);
+    BGMRProcedure* proc = engine()->fromScriptValue < BGMRProcedure* > (_proc);
+    if (proc)
+        return thisJsObj ()->relProcs ()->procs ().contains (proc->pID ());
+    else
+        return false;
 }
+
+//bool jsJsObjProto::containsRelProc(qulonglong pID) const
+//{
+//    return thisJsObj ()->relProcs ()->procs ().contains (pID);
+//}
 
 void jsJsObjProto::emitSignal(const QString& signal, const QJsonArray& args) const
 {
     thisJsObj ()->relProcs ()->emitSignal (thisRPCObj (), signal, args);
+}
+
+void jsJsObjProto::test(BGMRProcedure* p)
+{
+    qDebug () << "test";
+    qDebug () << p->pID ();
 }
 
 BGMRObjectInterface* jsJsObjProto::thisRPCObj() const
@@ -191,6 +222,11 @@ bool jsRPC::creatorObject(const QString& type, const QString& objName)
     return RPC->objectStorage ()->installObject (objName, type);
 }
 
+bool jsRPC::removeObject(const QString& objName)
+{
+    return RPC->objectStorage ()->removeObject (objName);
+}
+
 bool jsRPC::installPlugin(const QString& pluginFileName)
 {
     return RPC->objectStorage ()->installPlugin (pluginFileName);
@@ -228,7 +264,7 @@ QScriptValue jsSqlQueryProto::fetch(const QString& q)
     if (ok) {
         int index = 0;
         while (query->next ()) {
-            jsResult.setProperty (index, record (query));
+            jsResult.setProperty (index, _record (query));
             index++;
         }
     }
@@ -322,7 +358,22 @@ bool jsSqlQueryProto::seek(int index)
     return thisQuery ()->seek (index);
 }
 
-QScriptValue jsSqlQueryProto::record(QSqlQuery* query) const
+QScriptValue jsSqlQueryProto::record(/*QSqlQuery**/const QScriptValue& _query) const
+{
+    return _record (engine ()->fromScriptValue < QSqlQuery* > (_query));
+}
+
+QString jsSqlQueryProto::lastError() const
+{
+    return thisQuery ()->lastError ().text ();
+}
+
+QString jsSqlQueryProto::lastQuery() const
+{
+    return thisQuery ()->lastQuery ();
+}
+
+QScriptValue jsSqlQueryProto::_record(QSqlQuery* query) const
 {
     QScriptEngine* theEngine = engine ();
     QScriptValue jsRec = theEngine->newObject ();
@@ -336,11 +387,6 @@ QScriptValue jsSqlQueryProto::record(QSqlQuery* query) const
     }
 
     return jsRec;
-}
-
-QString jsSqlQueryProto::lastError() const
-{
-    return thisQuery ()->lastError ().text ();
 }
 
 QSqlQuery*jsSqlQueryProto::thisQuery() const
@@ -401,8 +447,11 @@ jsDB::jsDB(jsObj* obj, QObject* parent)
 
 bool jsDB::open(const QScriptValue& dbDef)
 {
-    QString driver = dbDef.property ("driver").toString ();
     QString dbName = dbDef.property ("dbName").toString ();
+    if (dbName.isEmpty ())
+        return false;
+
+    QString driver = dbDef.property ("driver").toString ();
     QString usr = dbDef.property ("usr").toString ();
     QString pwd = dbDef.property ("pwd").toString ();
     QScriptValue jsPortVal = dbDef.property ("port");
@@ -429,8 +478,13 @@ bool jsDB::open(const QScriptValue& dbDef)
     QSqlDatabase theDB;
     if (QSqlDatabase::contains (connName)) {
         theDB = QSqlDatabase::database (connName);
+        QString openedDBName = theDB.databaseName ();
+        QString openedDBName_sqlite = (driver == "QSQLITE")
+                                      ? QFileInfo (openedDBName).fileName ()
+                                      : "";
+
         if (theDB.driverName () == driver
-                && QFileInfo (theDB.databaseName ()).fileName () == dbName)
+                && (openedDBName == dbName || openedDBName_sqlite == dbName))
             ok = checkAuth (theDB, usr, pwd);
     } else {
         theDB = QSqlDatabase::addDatabase (driver, connName);
@@ -489,7 +543,7 @@ QString jsDB::dbName() const
 {
     QString name;
     if (DB.isOpen ())
-        name = DB.databaseName ();
+        name = QFileInfo (DB.databaseName ()).fileName ();
 
     return name;
 }

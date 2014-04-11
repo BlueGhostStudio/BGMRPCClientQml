@@ -20,7 +20,7 @@ typedef BGMRProcedure* procPtr;
 class jsProcProto : public QObject, public QScriptable
 {
     Q_PROPERTY( qulonglong pID READ pID )
-    Q_PROPERTY(bool isKeepConnected READ isKeepConnected)
+//    Q_PROPERTY(bool isKeepConnected READ isKeepConnected)
 
 Q_OBJECT
 public:
@@ -28,18 +28,18 @@ public:
 
     qulonglong pID ();
 
-    Q_INVOKABLE void emitSignal (BGMRObjectInterface* obj,
+    Q_INVOKABLE void emitSignal (/*BGMRObjectInterface**/const QScriptValue& _obj,
                                  const QString& signal,
                                  const QJsonArray& args);
 //    Q_INVOKABLE void setPrivateData (const QString& key,
 //                                     const QJsonValue& value);
 //    Q_INVOKABLE QJsonValue privateData (const QString& key) const;
-    Q_INVOKABLE void setPrivateData (BGMRObjectInterface* obj,
+    Q_INVOKABLE void setPrivateData (/*BGMRObjectInterface* obj*/const QScriptValue& _obj,
                                      const QString& key,
                                      const QJsonValue& value);
-    Q_INVOKABLE QJsonValue privateData (BGMRObjectInterface* obj,
+    Q_INVOKABLE QJsonValue privateData (const QScriptValue& obj,
                                         const QString& key) const;
-    Q_INVOKABLE bool isKeepConnected () const;
+//    Q_INVOKABLE bool isKeepConnected () const;
     Q_INVOKABLE QJsonArray callMethod (const QString& obj,
                                        const QString& method,
                                        const QJsonArray& args);
@@ -56,6 +56,7 @@ public:
     typedef procPtr dataType;
     static QString className () { return "BGMRProcedure"; }
     static bool isNull (dataType d) { return !d; }
+    static procPtr nullData () { return NULL; }
 };
 
 typedef jsObjectClass < jsProcProto > jsProcClass;
@@ -76,6 +77,7 @@ public:
     typedef rpcObjPtr dataType;
     static QString className () { return "BGMRObject"; }
     static bool isNull (dataType d) { return !d; }
+    static rpcObjPtr nullData () { return NULL; }
 };
 
 class jsRPCObjectProto : public QObject, public QScriptable
@@ -90,7 +92,7 @@ public:
     Q_INVOKABLE QString objectName () const;
     Q_INVOKABLE QString objectType () const;
     Q_INVOKABLE QStringList objectMethods () const;
-    Q_INVOKABLE QJsonArray callMethod (BGMRProcedure* proc,
+    Q_INVOKABLE QJsonArray callMethod (const QScriptValue& _proc,
                                        const QString& method,
                                        const QJsonArray& args);
 
@@ -116,6 +118,7 @@ public:
     typedef jsObjPtr dataType;
     static QString className () { return "jsObj"; }
     static bool isNull (dataType d) { return !d; }
+    static jsObjPtr nullData () { return NULL; }
 };
 
 class jsJsObjProto : public jsRPCObjectProto
@@ -125,14 +128,17 @@ class jsJsObjProto : public jsRPCObjectProto
 public:
     jsJsObjProto(QObject* parent = 0);
 
-    Q_INVOKABLE void addProc (BGMRProcedure* proc);
-    Q_INVOKABLE bool removeProc (qulonglong pID);
+    Q_INVOKABLE void addProc (const QScriptValue& _proc);
+//    Q_INVOKABLE bool removeProc (qulonglong pID);
+    Q_INVOKABLE bool removeProc (const QScriptValue& _proc);
     Q_INVOKABLE relProcsMap relProcs () const;
     Q_INVOKABLE BGMRProcedure* relProc (qulonglong pID) const;
     Q_INVOKABLE void onRelProcRemoved (const QScriptValue& handel);
-    Q_INVOKABLE bool containsRelProc (qulonglong pID) const;
+//    Q_INVOKABLE bool containsRelProc (qulonglong pID) const;
+    Q_INVOKABLE bool containsRelProc (const QScriptValue& _proc) const;
     Q_INVOKABLE void emitSignal (const QString& signal,
                                  const QJsonArray& args) const;
+    Q_INVOKABLE void test (BGMRProcedure* p);
 
 protected:
     BGMRObjectInterface* thisRPCObj () const;
@@ -156,6 +162,7 @@ public:
     Q_INVOKABLE RPCObjList objects () const;
     Q_INVOKABLE QStringList types () const;
     Q_INVOKABLE bool creatorObject (const QString& type, const QString& objName);
+    Q_INVOKABLE bool removeObject (const QString& objName);
     Q_INVOKABLE bool installPlugin (const QString& pluginFileName);
     void setRPC (BGMRPC* rpc);
 
@@ -173,6 +180,7 @@ public:
     typedef QSqlQuery dataType;
     static QString className () { return "SQLQuery"; }
     static bool isNull (dataType) { return false; }
+    static QSqlQuery nullData () { return QSqlQuery (); }
 };
 
 // DB.open ("myDB");
@@ -192,6 +200,7 @@ class jsSqlQueryProto : public QObject, public QScriptable
 {
     Q_PROPERTY(QString lastError READ lastError)
     Q_PROPERTY(QScriptValue record READ record)
+    Q_PROPERTY(QString lastQuery READ lastQuery)
 
     Q_OBJECT
 public:
@@ -219,12 +228,14 @@ public:
     Q_INVOKABLE bool first();
     Q_INVOKABLE bool last ();
     Q_INVOKABLE bool seek (int index);
-    Q_INVOKABLE QScriptValue record (QSqlQuery* query = NULL) const;
+    Q_INVOKABLE QScriptValue record (const QScriptValue& _query = QScriptValue (QScriptValue::UndefinedValue)) const;
     Q_INVOKABLE QString escape (const QString& str);
 
     Q_INVOKABLE QString lastError () const;
+    Q_INVOKABLE QString lastQuery () const;
 
 private:
+    QScriptValue _record (QSqlQuery* query = NULL) const;
     QSqlQuery* thisQuery () const;
     QString toDBValue(const QScriptValue& fv);
     QString whereStatem (const QScriptValue& rec);

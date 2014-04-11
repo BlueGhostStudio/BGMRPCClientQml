@@ -1,44 +1,53 @@
-﻿#ifndef FILESTREAM_H
+#ifndef FILESTREAM_H
 #define FILESTREAM_H
 
 #include <QObject>
-#include "socket.h"
-#include <QFile>
+#include <bgmrprocedure.h>
 
-#define BUFSIZE 1024
+using namespace BGMircroRPCServer;
 
-class RPCFileObj;
-
-class fileStream : public QObject {
+class fileStream : public QObject
+{
     Q_OBJECT
 public:
-    /*explicit fileStream (RPCFileObj* fileObj,
-                         __socket* socket,
-                         const QString& fileName,
-                         const QString& op,
-                         qulonglong signalChannel,
-                         QObject* parent = 0);*/
-    explicit fileStream (RPCFileObj* fileObj,
-                         __socket* socket,
-                         QObject* parent = 0);
+    explicit fileStream(BGMRProcedure* proc, QObject *parent = 0);
 
-    void openFile (const QString& fileName, const QString& op);
+    void receiveFile (const QString& fileName);
+    void sendFile (const QString& fileName);
+    void resetStatus ();
+    void close () { resetStatus (); }
+
+signals:
 
 private slots:
-    void writeFile ();
-    void transFile (qint64);
-    void closeFile ();
+    void receiveData ();
+    void writenData (qint64 size);
 
-protected:
-   RPCFileObj* FileObj;
-   __socket* FileSocket;
-   qulonglong  SignalChannel;
-   QFile File;
-   QByteArray Buffer;
+private:
+    BGMRProcedure* OwnProc;
+    __socket* DataStream;
+    BGMRPCSocketBuffer* SocketBuffer;
+    QFile File;
 
-   void emitFileSignal (qulonglong, const QString&);
+    enum STREAMOP {
+        NOOP,
+        RECEIVEFILE,
+        SENDFILE
+    };
+
+    enum STREAMSTATUS {
+        NOACTIVE,
+        WAITTINGCLIENTREADY,
+        READING,
+        READY,
+        SENDING
+    };
+
+    STREAMSTATUS StreamStatus;
+    STREAMOP StreamOp;
+    qulonglong DataSize;
+    qulonglong StreamedSize;
+    qulonglong MaxLen;
 };
-
-
 
 #endif // FILESTREAM_H

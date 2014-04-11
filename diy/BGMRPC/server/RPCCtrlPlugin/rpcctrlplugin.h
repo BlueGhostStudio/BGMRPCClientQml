@@ -32,7 +32,7 @@ public:
     QJsonArray setPluginDir (BGMRProcedure*, const QJsonArray& args);
 
     void setRPC (BGMRPC* rpc);
-    bool procIdentify (BGMRProcedure*p, const QJsonObject& call);
+    bool procIdentify (BGMRProcedure* p, const QString& method, const QJsonArray&);
 
 protected:
     relatedProcs RelProcs;
