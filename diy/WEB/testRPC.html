@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>BGMRPC Web Demo</title>
+
+<script src="js/BGMRPC.js"></script>
+<script>
+var mainRPC = new RPC ("localhost", 8000)
+
+mainRPC.onMessage = function (obj,sig,args) {
+    alert (obj + "." + sig)
+}
+
+var dir = new Proc (mainRPC, function (path, nick) {
+    this.steps [0].done (function (rets) {
+        alert (JSON.stringify(rets, null, " "))
+        this.steps [2].call (nick)
+    })
+    this.steps [1].done (function (rets) {
+        alert (JSON.stringify(rets, null, " "))
+    })
+    this.steps [2].done (function (ret) {
+        this.steps [1].call (nick)
+    })
+    this.steps [0].call (path)
+}).assignSteps ([
+    {t: "r", o: "file", m: "dir"},
+    {t: "j", o: "chatJs", m: "join"},
+    {t: "l", f: function () {
+            alert ("LStep")
+        }
+    }
+])
+// dir.steps = [
+//     new RStep (dir, "file", "dir"),
+//     new RStep (dir, "ctrl", "RPCTypes"),
+//     new LStep (dir, function () {
+//         alert ("LStep")
+//         this.Proc.steps [1].call ()
+//     })
+// ]
+
+mainRPC.onConnected = function () { alert ("connected"); dir.call ("./plugins", "bg") }
+// mainRPC.onDisconnected = function () { alert ("disconnected") }
+//mainRPC.onConnected ()
+mainRPC.connectToHost ()
+</script>
+</head>
+
+<body>
+<p id="test"></p>
+</body>
+</html>

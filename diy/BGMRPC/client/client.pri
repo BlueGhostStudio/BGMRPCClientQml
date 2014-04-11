@@ -11,4 +11,5 @@ DEPENDPATH += $$PWD/BGMRPCInterface
     target.path = $${PREFIX}/BGMRPC/cli
     INSTALLS += target
 }
+COMMONPATH=../../BGMRPCCommon
 include (../base.pri)

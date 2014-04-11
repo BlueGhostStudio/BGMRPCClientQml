@@ -15,6 +15,7 @@ function loadObject (admin_pwd, plugin, pluginFile, obj, logCallback) {
         for (var i in rets[0]) {
             if (rets[0][i] === plugin) {
                 logCallback (logTitle, true)
+//                RPC.call (check_obj)
                 check_obj.call ()
                 return false
             }

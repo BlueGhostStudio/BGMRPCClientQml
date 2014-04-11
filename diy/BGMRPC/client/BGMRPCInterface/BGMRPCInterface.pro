@@ -23,4 +23,5 @@ HEADERS += bgmrpcinterface.h\
     INSTALLS += target
 }
 SHDROOT=../..
+COMMONPATH=../../BGMRPCCommon
 include (../../base.pri)
