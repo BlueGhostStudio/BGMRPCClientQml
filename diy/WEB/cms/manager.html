@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>BlueGhost content manager</title>
+<link href="css/contentManager.css" type="text/css" rel="stylesheet">
+<script src="../jquery-1.11.0/jquery.min.js"></script>
+<script src="../js/BGMRPC.js"></script>
+<script src="../js/flow.js"></script>
+<script src="js/cmsClient.js"></script>
+<script src="js/contentEditor.js"></script>
+<script>
+
+
+var managerContents = new cmsClient ('192.168.1.101', 8000)
+$(document).ready(function(){
+    initialContentEditor ()
+    managerContents.loginAdmin ()
+});
+
+</script>
+<style>
+</style>
+</head>
+
+<body>
+<div class="contents" data-pro-cms="managerContents">
+</div>
+</body>
+</html>

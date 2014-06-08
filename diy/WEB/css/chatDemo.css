@@ -1,0 +1,314 @@
+#chat a, #chat a:visited {
+    color: #FF3300;
+}
+
+#chat {
+    height: 334px;
+    font-size: 10pt;
+}
+
+#chat h1 {
+    color: #FFCC00;
+}
+
+#chat .left {
+    flex: 1;
+    -webkit-flex: 1;
+    margin-top: 70px;
+    margin-bottom: 60px;
+}
+
+#chat article abbr,
+#chat article dfn {
+    font-weight: bold;
+    margin: 0 0.5em;
+}
+
+#chat article h1 {
+	font-size: 140%;
+}
+
+
+#chat input[type="text"] {
+    background-color: transparent;
+    color: #666;
+}
+#chat input[type="text"], #chat label,#chat button {
+    margin: 0;
+    padding: 0;
+    border: 1px solid #666;
+}
+#chat input[type="text"]:focus,#chat label:focus, #chat button:focus {
+    outline: none;
+}
+#chat button {
+    background-color: #930;
+    color: black;
+    padding: 1px;
+}
+#chat button:hover {
+    opacity: 0.8;
+}
+#chat button:active {
+    opacity: 0.5;
+}
+#chat label {
+    color: black;
+    background-color: #666;
+    padding: 1px;
+    white-space: nowrap;
+}
+
+
+#chat .join {
+    margin: auto;
+    margin-top: 24pt;
+    display: flex;
+    display: -webkit-flex;
+    width: 180px;
+}
+
+#chat .join label {
+    border-radius: 5px 0 0 5px;
+
+    padding-left: 2px;
+}
+#chat .join button {
+    width: 50px;
+    border-radius: 0 5px 5px 0;
+    border-left: 0;
+    
+    margin: 0;
+    padding: 0;
+}
+
+#chat .join input[type="text"] {
+    border-left: 0;
+    border-right: 0;
+    flex: 1;
+    -webkit-flex: 1;
+}
+#chat .client {
+    display: flex;
+    display: -webkit-flex;
+    flex-direction: column;
+    -webkit-flex-direction: column;
+}
+#chat .client .say {
+    margin-top: 12pt;
+    display: flex;
+    display: -webkit-flex;
+}
+#chat .client .say label {
+    border-right: 0;
+    border-radius: 5px 0 0 5px;
+    padding-left: 2px;
+}
+#chat .client .say input[type="text"] {
+    border-left: 0;
+    border-right: 0;
+    
+    flex: 1;
+    -webkit-flex: 1;
+}
+#chat .client .say button {
+    margin-right: 1px;
+}
+#chat .client .say button:first-of-type,
+#chat .client .say button:last-of-type {
+    border-radius: 0 5px 5px 0;
+    padding-right: 2px;
+    margin-right: 0;
+}
+#chat .client .say button:first-of-type {
+    border-left: 0;
+}
+#chat .client .say button:nth-of-type(2) {
+    margin-left: 5px;
+    border-radius: 5px 0 0 5px;
+    padding-left: 2px;
+}
+
+#chat .client #messbox {
+    font-size: 12pt;
+    overflow: hidden;
+    line-height: 14pt;
+    margin-top: 30px;
+    height: 140pt;
+}
+
+#chat .client #messbox .messLine {
+    display: flex;
+    display: -webkit-flex;
+}
+#chat .client #messbox .messLine:first-of-type {
+    background-color: #111;
+}
+#chat .client #messbox .messLine:nth-of-type(odd) {
+    color: #999;
+}
+#chat .client #messbox .messLine:nth-of-type(even) {
+    color: #333;
+}
+#chat .client #messbox .messLine .nickname {
+    text-align: right;
+    font-weight: bold;
+    white-space: nowrap;
+    text-overflow:ellipsis;
+
+    width: 100px;
+    margin-right: 5px;
+    
+    overflow: hidden;
+}
+#chat .client #messbox .messLine .mess {
+    flex: 1;
+    -webkit-flex: 1;
+}
+
+#chat .client #messbox .messLine .mess .who:after {
+    content: ", "
+}
+#chat .client #messbox .messLine .mess .who:last-of-type:after {
+    content: none;
+}
+
+#chat .flowbox {
+    font-size: 10pt;
+    color: #666;
+
+    background-image: url('../imgs/cat-eyes_p.jpg');
+    background-size: 100% 100%;
+    background-repeat:no-repeat;
+
+    width: 530px;
+    height: 134px;
+    padding-left: 20px;
+    padding-top: 200px;
+}
+
+/*@keyframes flowopacity
+{
+from {opacity: 1;}
+to {opacity: 0;}
+}*/
+
+#chat .flowbox .flow {
+    display: flex;
+    display: -webkit-flex;
+/*    animation:flowopacity 3s;
+    animation-fill-mode:forwards;*/
+}
+#chat .flowbox .flow:nth-of-type(1) {
+    opacity: 1
+}
+#chat .flowbox .flow:nth-of-type(2) {
+    opacity: 0.75
+}
+#chat .flowbox .flow:nth-of-type(3) {
+    opacity: 0.5
+}
+#chat .flowbox .flow:nth-of-type(4) {
+    opacity: 0.25
+}
+#chat .flowbox .flow:nth-of-type(5) {
+    opacity: 0.1
+}
+
+#chat .flowbox .flow .active,
+#chat .flowbox .flow .datastream,
+#chat .flowbox .flow .server {
+    margin: 0 2px;
+}
+
+#chat .flowbox .flow .active {
+    font-weight: bold;
+}
+
+#chat .flowbox .flow .active.call,
+#chat .flowbox .flow .active.return {
+    color: #090;
+}
+
+#chat .flowbox .flow .active.signal {
+    color: #990;
+}
+
+#chat .flowbox .flow .active.return .method {
+    font-weight: normal;
+}
+
+#chat .flowbox .flow .active.connecting,
+#chat .flowbox .flow .active.connected,
+#chat .flowbox .flow .active.disconnected
+{
+    color: rgba(255,255,255,0.25);
+}
+
+#chat .flowbox .flow .datastream {
+    font-size: 10px;
+    font-weight: bold;
+    text-align: center;
+    white-space:nowrap;
+    text-overflow:ellipsis;
+    
+    background-repeat: no-repeat; 
+
+    padding-top: 3px;
+    height: 16px;
+    max-width: 150px;
+    min-width: 50px;
+    overflow: hidden;
+}
+
+#chat .flowbox .flow .datastream span:not(:first-of-type):before
+{
+    content:',';
+}
+
+#chat .flowbox .flow .datastream.call,
+#chat .flowbox .flow .datastream.return {
+    color: #090;
+}
+#chat .flowbox .flow .datastream.call {
+    background-image: url('../imgs/callarrow.png');
+    background-position: right center;
+    padding-right: 24px;
+    padding-left:  10px;
+}
+#chat .flowbox .flow .datastream.return {
+    background-image: url('../imgs/returnarrow.png');
+    background-position: left center;
+    padding-left: 24px;
+    padding-right: 10px;
+}
+#chat .flowbox .flow .datastream.signal {
+    color: #990;
+    background-image: url('../imgs/signalarrow.png');
+    background-position: left center;
+    padding-left: 24px;
+    padding-right: 24px;
+}
+#chat .flowbox .flow .datastream.connecting,
+#chat .flowbox .flow .datastream.connected,
+#chat .flowbox .flow .datastream.disconnected {
+    background-position: center center;
+}
+#chat .flowbox .flow .datastream.connecting {
+    background-image: url('../imgs/connectingline.png');
+}
+#chat .flowbox .flow .datastream.connected {
+    background-image: url('../imgs/connectedline.png');
+}
+#chat .flowbox .flow .datastream.disconnected {
+    background-image: url('../imgs/disconnectedline.png');
+}
+
+#chat .flowbox .flow .server {
+    white-space:nowrap;
+}
+
+#chat .flowbox .flow .server .object {
+    color: #999;
+    font-weight: bold;
+}

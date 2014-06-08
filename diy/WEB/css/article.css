@@ -1,0 +1,92 @@
+body {
+    background: linear-gradient(#333, #333 250px, #666 260px, white 80%);
+    background-repeat: no-repeat;
+    background-color: #fff;
+}
+
+.layout.header {
+    background: none;
+}
+.layout.main {
+    max-width: 700px;
+    margin: auto;
+    margin-bottom: 50px;
+}
+
+.layout.main .contents {
+    background-color: white;
+    border-radius: 20px;
+}
+
+.layout.main .contents article {
+    padding: 30px 10px;
+    font-size: 16px;
+}
+.layout.main .contents article > header {
+    font-size: 18px;
+    margin-bottom: 35px;
+}
+.layout.main .contents article > header h1 {
+    font-size: 120%;
+}
+.layout.main .contents article > header p {
+    font-size: 80%;
+}
+.layout.main .contents article > h1,
+.layout.main .contents article > h2,
+.layout.main .contents article > h3,
+.layout.main .contents article > h4,
+.layout.main .contents article > h5,
+.layout.main .contents article > h6 {
+    margin: 1.5em 0 0;
+}
+.layout.main .contents article > h1 {
+    font-size: 120%;
+}
+.layout.main .contents article > h2 {
+    font-size: 110%;
+}
+.layout.main .contents article > h3 {
+    font-size: 100%;
+}
+.layout.main .contents article > h4 {
+    font-size: 100%;
+}
+.layout.main .contents article > h5 {
+    font-size: 90%;
+}
+.layout.main .contents article > h6 {
+    font-size: 90%;
+}
+.layout.main .contents article section {
+    font-size: 90%;
+}
+
+.layout.main .contents #related_articles > header {
+    border: none;
+}
+.layout.main .contents #related_articles {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 1px 1px 2px #ccc;
+    padding: 5px;
+    width: 32%;
+    min-width: 200px;
+    margin-top: 50px;
+    float: right;
+}
+
+.layout.main .contents #related_articles > header h1{
+    font-size: 16px;
+}
+.layout.main .contents #related_articles article {
+    font-size: 10px;
+    padding: 5px;
+}
+.layout.main .contents #related_articles article header {
+    font-size: 12px;
+    margin: 0;
+}
+.layout.main .contents #related_articles article header h1 {
+    font-size: 14px;
+}

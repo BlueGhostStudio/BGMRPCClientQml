@@ -4,9 +4,14 @@ function RPC (host,port)
     this.port = port
     this.callingSteps = new Object
     this.mID = 0
-    this.hasConnected = false
-
     this.ws = undefined
+
+    this.hasConnected = function () {
+        if (this.ws === undefined || this.ws.readyState !== 1)
+            return false;
+        else
+            return true;
+    } 
     this.reviceData = function (evt) {
         var data = JSON.parse (evt.data)
         if (data.type === "signal") {
@@ -43,8 +48,6 @@ function RPC (host,port)
         this.mID++
         this.callingSteps [mID] = step
         
-        console.log (mID)
-
         var callJson = new Object
         callJson.object = object
         callJson.method = method

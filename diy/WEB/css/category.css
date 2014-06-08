@@ -1,0 +1,47 @@
+.layout.main {
+    max-width: 960px;
+}
+.layout.main .contents {
+    background: none;
+    padding: 0;
+    margin: 0;
+}
+
+.layout.main .contents .frame.category {
+    display: flex;
+    flex-wrap: wrap;
+}
+.layout.main .contents .frame.category > header {
+    text-align: center;
+    
+    background: linear-gradient(#fff,#eec, #fff);
+    border: 1px solid white;
+    border-radius: 10px;
+    box-shadow: 0 0 3px #990;
+
+    padding: 5px;
+    margin: 0 300px -20px;
+    z-index: 1;
+
+    flex-basis: 100%;
+}
+.layout.main .contents .frame {
+    margin: 0;
+}
+.layout.main .contents .frame.category > * {
+    background-color: white;
+    margin: 1px;
+}
+.layout.main .contents .frame.category article {
+    font-size: 14px;
+    padding-left: 20px;
+    padding-right: 20px;
+    border: none;
+    
+    flex: 1;
+    flex-basis: 400px;
+}
+
+.layout.main .contents .frame.category article header {
+    font-size: 16px;
+}

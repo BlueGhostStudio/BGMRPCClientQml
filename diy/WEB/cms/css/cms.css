@@ -1,0 +1,74 @@
+nav.article_nav,
+nav.container_edit_nav,
+nav.content_edit_nav {
+    font-size: 8px;
+}
+nav a {
+    margin: 0 3px;
+}
+
+.content_edit_nav {
+    background-color: white;
+    padding: 2px;
+    box-shadow: 0 0 3px #999;
+}
+.content_edit_nav,
+.container_edit_nav {
+    position: absolute;
+}
+article header h1:empty:after {
+    color: #ccc;
+    margin-left: 5em;
+    content: 'No header';
+}
+
+.content_edit_nav,
+.container_edit_nav {
+    display: none;
+}
+.content_edit_nav {
+}
+header:focus,
+header:focus,
+[data-hp-editing=true] {
+    background-color: #ffffcc;
+    outline: 1px dashed #cccc33;
+}
+header:focus,
+header :focus,
+article :focus {
+    min-height: 1em;
+    outline-style: solid;
+}
+.layout.main .contents article header h1:focus,
+.layout.main .contents article section header:focus {
+    font-variant:normal;
+}
+.container_edit_nav {
+    border: 1px solid #666;
+    background-color: white;
+}
+.container_edit_nav.top {
+    border-bottom: 0;
+}
+.content_edit_nav[data-which="SECTION"] #a_section,
+.container_edit_nav[data-which="SECTION"].top #a_section {
+    display: none;
+}
+#a_delSection {
+    display: none;
+}
+#a_header {
+    display: none;
+}
+.container_edit_nav[data-which="SECTION"].top #a_delSection {
+    display: initial;
+}
+.container_edit_nav[data-which="SECTION"].top #a_header {
+    display: initial;
+}
+.container_edit_nav[data-which="SECTION"].bottom #a_ol,
+.container_edit_nav[data-which="SECTION"].bottom #a_ul,
+.container_edit_nav[data-which="SECTION"].bottom #a_img {
+    display: none;
+}

@@ -6,10 +6,13 @@
 
 <script src="js/BGMRPC.js"></script>
 <script>
-var mainRPC = new RPC ("localhost", 8000)
+var mainRPC = new RPC ("microrpc.tk", 8000)
 
 mainRPC.onMessage = function (obj,sig,args) {
     alert (obj + "." + sig)
+}
+mainRPC.onError = function () {
+    alert ("can't connect to host")
 }
 
 var dir = new Proc (mainRPC, function (path, nick) {

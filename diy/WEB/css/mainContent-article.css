@@ -1,0 +1,184 @@
+.layout.main .contents article *:first-child {
+    margin-top: 0;
+}
+.layout.main .contents article *:last-child {
+    margin-bottom: 0;
+}
+
+.layout.main .contents article header,
+.layout.main .contents article header h1 {
+/*    font-family: 'Alegreya', 'serif';*/
+    font-family: 'Merriweather', 'serif';
+
+    font-style: italic;
+    font-size: 12pt;
+    font-weight: normal;
+}
+
+.layout.main .contents article header h1,
+.layout.main .contents article header p {
+    margin: 0;
+    line-height: initial;
+}
+
+.layout.main .contents article header p {
+    font-family: 'sans-serif';
+    font-variant: initial;
+    font-size: 90%;
+    font-style: initial;
+    font-weight: bold;
+    color: #999;
+    min-height: 10px;
+}
+
+.layout.main .contents article header {
+    font-variant:small-caps;
+/*    max-width: 61.8% */
+/*    font-weight: bold;*/
+/*    margin: 0.8em 0 1em;*/
+}
+
+.layout.main .contents article > header {
+    margin-bottom: 8px;
+}
+
+
+.layout.main .contents article p {
+    line-height: 1.5em;
+    margin: 8px 0;
+}
+
+.layout.main .contents article h1,
+.layout.main .contents article h2,
+.layout.main .contents article h3,
+.layout.main .contents article h4,
+.layout.main .contents article h5,
+.layout.main .contents article h6 {
+    margin: 10px 0 0;
+    font-weight: 700;
+}
+
+.layout.main .contents article h1,
+.layout.main .contents article h2,
+.layout.main .contents article h3,
+.layout.main .contents article h5 {
+    font-family: 'Philosopher', 'sans-serif';
+}
+.layout.main .contents article h4,
+.layout.main .contents article h6 {
+    font-family: 'Merriweather', 'serif';
+}
+
+.layout.main .contents article h1 {
+    font-size: 12pt;
+}
+
+.layout.main .contents article h2,
+.layout.main .contents article section h1 {
+    font-size: 11pt;
+}
+.layout.main .contents article h3,
+.layout.main .contents article section h2 {
+    font-size: 10pt;
+}
+.layout.main .contents article h4 {
+    font-style: italic;
+}
+.layout.main .contents article h4,
+.layout.main .contents article section h3 {
+    font-size: 9pt;
+}
+
+.layout.main .contents article h5 {
+    font-size: 8pt;
+}
+
+.layout.main .contents article h6 {
+    font-size: 8pt;
+    font-style: italic;
+}
+
+.layout.main .contents article aside {
+    font-family: 'Architects Daughter', 'cursive';
+    font-size: 14px;
+    margin: 1em 0 1em 2em;
+    border-left: 2px solid #ccc;
+    padding-left: 7px;
+}
+
+.layout.main .contents article aside.right {
+    max-width: 45%;
+    float: right;
+    margin: 0;
+    margin-left: 7px;
+}
+
+.layout.main .contents article section {
+    font-size: 8pt;
+    margin-left: 28px;
+    padding: 10px 0;
+}
+.layout.main .contents article section + section {
+    border-top: 1px dotted #999;
+}
+
+.layout.main .contents article > h1 {
+    counter-increment: article;
+    counter-reset: section;
+}
+.layout.main .contents article > h1.n:before {
+    content: counter(article) ". "
+}
+.layout.main .contents article > section header {
+    font-size: 12pt;
+    counter-increment: section;
+    position: relative;
+    z-index: 0;
+    margin: 0.3em 0 0.4em;
+}
+.layout.main .contents article section header.n1:before,
+.layout.main .contents article section header.n2:before {
+    text-align: right;
+    font-style: italic;
+    font-weight: bold;
+/*    font-size: 150%;*/
+    font-variant: initial;
+
+    width: 20px;
+    padding: 2px;
+    position: absolute;
+/*    top: -5px;*/
+    left: -28px;
+    z-index: -1;
+    color: #ccc;
+}
+.layout.main .contents article section header.n1::before {
+    content: counter(section,lower-roman);
+}
+.layout.main .contents article section header.n2::before {
+    content: counter(article,upper-roman) "." counter(section,lower-roman)
+}
+
+.layout.main .contents article section p {
+    margin: 0.6em 0;
+    line-height: initial;
+}
+
+/*.layout.main .contents article section:last-child p:last-child {
+    margin-bottom: 0.8em;
+}*/
+
+.layout.main .contents article section h1,
+.layout.main .contents article section h2,
+.layout.main .contents article section h3 {
+    margin: 0.4em 0 0.25em;
+}
+
+.layout.main .contents article iframe {
+    margin: 0.8em 0;
+    display: block;
+}
+
+.layout.main .contents article .content {
+    position: relative;
+}
