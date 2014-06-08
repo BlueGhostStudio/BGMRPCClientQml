@@ -13,7 +13,7 @@ using namespace BGMircroRPCServer;
 //    initial ();
 //}
 
-jsObj::jsObj() : JsDB (this), AutoLoad (false)
+jsObj::jsObj() : JsDB (this), AutoLoad (false), GlobalMutexLock (true)
 {
     initial ();
 }
@@ -25,27 +25,31 @@ QString jsObj::objectType() const
 
 bool jsObj::procIdentify (BGMRProcedure* p, const QString& method, const QJsonArray& as)
 {
+    mutex.lock ();
+    bool identify = false;
     if (method == "loadJsScript" || method == "lock") {
         if (AutoLoad)
-            return false;
-
-        if (Password.isEmpty () || Password == as[0].toString ())
-            return true;
+            identify = false;
+        else if (Password.isEmpty () || Password == as[0].toString ())
+            identify = true;
         else
-            return false;
-    }
+            identify = false;
+    } else {
+        QScriptValue jsIdentify = JsEngine.globalObject ().property ("jsIdentify");
+        if (jsIdentify.isUndefined () || !jsIdentify.isValid ())
+            identify = true;
+        else {
+            QScriptValueList args;
+            args << JsEngine.toScriptValue < BGMRProcedure* > (p)
+                 << JsEngine.toScriptValue < QString > (method)
+                 << JsEngine.toScriptValue < QJsonArray > (as);
 
-    QScriptValue jsIdentify = JsEngine.globalObject ().property ("jsIdentify");
-    if (jsIdentify.isUndefined () || !jsIdentify.isValid ())
-        return true;
-    else {
-        QScriptValueList args;
-        args << JsEngine.toScriptValue < BGMRProcedure* > (p)
-             << JsEngine.toScriptValue < QString > (method)
-             << JsEngine.toScriptValue < QJsonArray > (as);
-
-        return jsIdentify.call (QScriptValue (), args).toBool ();
+            identify = jsIdentify.call (QScriptValue (), args).toBool ();
+        }
     }
+    mutex.unlock ();
+
+    return identify;
 }
 
 QJsonArray jsObj::loadJsScript(BGMRProcedure*, const QJsonArray& args)
@@ -54,15 +58,15 @@ QJsonArray jsObj::loadJsScript(BGMRProcedure*, const QJsonArray& args)
     QString error;
     bool ok = false;
 
-    if (args [1].toDouble () == 0) {
+    if (args [0].toDouble () == 0) {
         QString jsPluginDir = BGMRPC::Settings->value ("pluginDir", "~/.BGMR/plugins/").toString ();
         jsPluginDir += "/js/";
-        QString jsFileName = jsPluginDir + args[2].toString ();
+        QString jsFileName = jsPluginDir + args[1].toString ();
 
         ok = loadJsScriptFile (jsFileName, error);
     } else
-        ok = loadJsScriptContent (args [2].toString (), error,
-                args [3].toString ("noName"));
+        ok = loadJsScriptContent (args [1].toString (), error,
+                args [2].toString ("noName"));
 
     ret.append (ok);
     if (!error.isEmpty ())
@@ -90,38 +94,62 @@ bool jsObj::loadJsScriptFile(const QString& jsFileName, QString& error)
 
 QJsonArray jsObj::js(BGMRProcedure* p, const QJsonArray& args)
 {
+    mutex.lock (); // 1 lock
     QJsonArray ret;
 
     QScriptValue global = JsEngine.globalObject ();
     QScriptValue jsFun = global.property (args[0].toString ());
+    mutex.unlock (); // 1 unlock
 
     if (jsFun.isFunction ()) {
+        mutex.lock (); // 2 lock
         QScriptValueList scrArgs;
         scrArgs << JsEngine.toScriptValue (p);
         for (int i = 1; i < args.count (); i++)
             scrArgs << jsonValueToScrObj (&JsEngine, args [i]);
+        mutex.unlock (); // 2 unlock
 
+        if (GlobalMutexLock)
+            mutex.lock (); // call lock
         QScriptValue scrRet = jsFun.call (QScriptValue (),
                                           scrArgs);
+        qDebug () << "\t" + args [0].toString ();
+        if (GlobalMutexLock)
+            mutex.unlock (); // call unlock
+
+        mutex.lock (); // 3 lock
         QJsonValue jsonRet;
         scrObjToJsonValue (scrRet, jsonRet);
         if (jsonRet.isArray ())
             ret = jsonRet.toArray ();
         else
             ret.append (jsonRet);
+        mutex.unlock (); // 3 unlock
     }
+
+//    mutex.unlock ();
 
     return ret;
 }
 
 QJsonArray jsObj::lock(BGMRProcedure*, const QJsonArray& args)
 {
-    Password = args [1].toString ();
+    Password = args [0].toString ();
 
     QJsonArray ret;
     ret.append (true);
 
     return ret;
+}
+
+void jsObj::setGlobalMutexLock(bool l)
+{
+    GlobalMutexLock = l;
+}
+
+bool jsObj::globalMutexLock() const
+{
+    return GlobalMutexLock;
 }
 
 void jsObj::setAutoLoad()

@@ -12,7 +12,7 @@ Rectangle {
 
     RPC {
         id: mainRPC
-        host: "localhost"
+        host: "microrpc.tk"
         port: 8000
 
         procs: [
@@ -46,7 +46,7 @@ Rectangle {
         ]
 
         onConnected: {
-            download.call (".", "hello world")
+            download.call ("hello world", "micro")
         }
     }
     Component.onCompleted: { mainRPC.connectToHost() }

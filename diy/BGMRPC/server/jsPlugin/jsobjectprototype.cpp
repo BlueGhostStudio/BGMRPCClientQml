@@ -177,10 +177,24 @@ void jsJsObjProto::emitSignal(const QString& signal, const QJsonArray& args) con
     thisJsObj ()->relProcs ()->emitSignal (thisRPCObj (), signal, args);
 }
 
-void jsJsObjProto::test(BGMRProcedure* p)
+void jsJsObjProto::mutexLock()
 {
-    qDebug () << "test";
-    qDebug () << p->pID ();
+    mutex.lock ();
+}
+
+void jsJsObjProto::mutexUnlock()
+{
+    mutex.unlock ();
+}
+
+bool jsJsObjProto::globalMutexLock() const
+{
+    return thisJsObj ()->globalMutexLock ();
+}
+
+void jsJsObjProto::setGlobalMutexLock(bool lock)
+{
+    thisJsObj ()->setGlobalMutexLock (lock);
 }
 
 BGMRObjectInterface* jsJsObjProto::thisRPCObj() const

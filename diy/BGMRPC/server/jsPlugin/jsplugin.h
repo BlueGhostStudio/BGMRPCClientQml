@@ -28,6 +28,8 @@ public:
     bool loadJsScriptFile (const QString& jsFileName, QString& error);
     QJsonArray js (BGMRProcedure* p, const QJsonArray& args);
     QJsonArray lock (BGMRProcedure*, const QJsonArray& args);
+    void setGlobalMutexLock (bool lock);
+    bool globalMutexLock () const;
 
     void setAutoLoad ();
 
@@ -46,6 +48,7 @@ private:
     jsDB JsDB;
     QString Password;
     bool AutoLoad;
+    bool GlobalMutexLock;
 
     void initial ();
     bool loadJsScriptContent (const QString& jsContent, QString& error,

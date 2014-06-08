@@ -124,6 +124,7 @@ public:
 class jsJsObjProto : public jsRPCObjectProto
 {
     Q_PROPERTY(relProcsMap relProcs READ relProcs)
+    Q_PROPERTY(bool globalMutexLock READ globalMutexLock WRITE setGlobalMutexLock)
     Q_OBJECT
 public:
     jsJsObjProto(QObject* parent = 0);
@@ -138,7 +139,10 @@ public:
     Q_INVOKABLE bool containsRelProc (const QScriptValue& _proc) const;
     Q_INVOKABLE void emitSignal (const QString& signal,
                                  const QJsonArray& args) const;
-    Q_INVOKABLE void test (BGMRProcedure* p);
+    Q_INVOKABLE void mutexLock ();
+    Q_INVOKABLE void mutexUnlock ();
+    Q_INVOKABLE bool globalMutexLock () const;
+    Q_INVOKABLE void setGlobalMutexLock (bool lock);
 
 protected:
     BGMRObjectInterface* thisRPCObj () const;
