@@ -185,6 +185,18 @@ void jsObj::initial()
     JsSqlClass = new jsSqlQueryClass (&JsEngine);
     globalObject.setProperty (JsSqlClass->name (), JsSqlClass->construct ());
 
+    QScriptValue fileFlag = JsEngine.newObject ();
+    fileFlag.setProperty ("READONLY", QIODevice::ReadOnly);
+    fileFlag.setProperty ("WRITEONLY", QIODevice::WriteOnly);
+    fileFlag.setProperty ("READWRITE", QIODevice::ReadWrite);
+    fileFlag.setProperty ("APPEND", QIODevice::Append);
+    fileFlag.setProperty ("TRUNCATE", QIODevice::Truncate);
+    fileFlag.setProperty ("TEXT", QIODevice::Text);
+    fileFlag.setProperty ("UNBUFFERED", QIODevice::Unbuffered);
+    globalObject.setProperty ("fileFlag", fileFlag);
+    JsFileClass = new jsFileClass (&JsEngine);
+    globalObject.setProperty (JsFileClass->name (), JsFileClass->construct ());
+
     globalObject.setProperty ("DB", JsEngine.newQObject (&JsDB));
 
     registerMetaType (&JsEngine);

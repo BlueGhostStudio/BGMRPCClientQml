@@ -9,6 +9,7 @@
 #include <bgmrobjectstorage.h>
 #include <QtSql/QtSql>
 #include <qsqldatabase.h>
+#include <QFile>
 
 #include "jsmetatype.h"
 #include "jsobjectclass.h"
@@ -57,6 +58,7 @@ public:
     static QString className () { return "BGMRProcedure"; }
     static bool isNull (dataType d) { return !d; }
     static procPtr nullData () { return NULL; }
+    static dataType newObject () { return NULL; }
 };
 
 typedef jsObjectClass < jsProcProto > jsProcClass;
@@ -78,6 +80,7 @@ public:
     static QString className () { return "BGMRObject"; }
     static bool isNull (dataType d) { return !d; }
     static rpcObjPtr nullData () { return NULL; }
+    static dataType newObject () { return NULL; }
 };
 
 class jsRPCObjectProto : public QObject, public QScriptable
@@ -119,6 +122,7 @@ public:
     static QString className () { return "jsObj"; }
     static bool isNull (dataType d) { return !d; }
     static jsObjPtr nullData () { return NULL; }
+    static dataType newObject () { return NULL; }
 };
 
 class jsJsObjProto : public jsRPCObjectProto
@@ -185,6 +189,7 @@ public:
     static QString className () { return "SQLQuery"; }
     static bool isNull (dataType) { return false; }
     static QSqlQuery nullData () { return QSqlQuery (); }
+    static dataType newObject () { return QSqlQuery (); }
 };
 
 // DB.open ("myDB");
@@ -257,7 +262,9 @@ class jsDB : public QObject {
     Q_PROPERTY(QString connectionName READ connectionName)
     Q_PROPERTY(QString hostName READ hostName)
     Q_PROPERTY(QStringList connectionNames READ connectionNames)
+
     Q_OBJECT
+
 public:
     jsDB (jsObj* obj, QObject* parent = 0);
 
@@ -285,5 +292,61 @@ private:
     QString SqliteDBPath;
     jsObj* JsObj;
 };
+
+// ============================================================
+
+/*class jsFileObj
+{
+public:
+    jsFileObj ();
+    ~jsFileObj ();
+
+    bool open (const QString& fileName, QIODevice::OpenMode mode);
+
+private:
+    QString DataRoot;
+    QFile* File;
+};*/
+
+typedef QFile* filePtr;
+
+class jsFileProto;
+
+template <>
+class protoTypeInfo < jsFileProto >
+{
+public:
+    typedef filePtr dataType;
+    static QString className () { return "JSFile"; }
+    static bool isNull (dataType d) { return !d; }
+    static filePtr nullData () { return NULL; }
+    static dataType newObject () {
+        QFile* file = new QFile (0);
+        file->deleteLater ();
+        return file;
+    }
+};
+
+class jsFileProto:public QObject, public QScriptable
+{
+    Q_OBJECT
+
+public:
+    jsFileProto (QObject* parent = 0);
+    ~jsFileProto ();
+
+    Q_INVOKABLE bool open (const QString& fileName, int mode);
+    Q_INVOKABLE void close ();
+    Q_INVOKABLE QByteArray readAll ();
+
+private:
+    filePtr thisFileObj () const;
+    QString dataRootDir () const;
+};
+
+typedef jsObjectClass < jsFileProto > jsFileClass;
+Q_DECLARE_METATYPE (const QFile*)
+Q_DECLARE_METATYPE (QFile*)
+Q_DECLARE_METATYPE (jsFileClass*)
 
 #endif // JSOBJECTPROTOTYPE_H

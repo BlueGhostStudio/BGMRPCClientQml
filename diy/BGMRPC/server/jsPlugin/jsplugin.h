@@ -45,6 +45,7 @@ private:
     jsJsObjClass* JsJsObjClass;
     jsRPCObjectClass* JsRPCObjectClass;
     jsSqlQueryClass* JsSqlClass;
+    jsFileClass* JsFileClass;
     jsDB JsDB;
     QString Password;
     bool AutoLoad;

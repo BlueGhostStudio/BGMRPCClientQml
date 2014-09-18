@@ -455,7 +455,7 @@ QString jsSqlQueryProto::escape(const QString& str)
 jsDB::jsDB(jsObj* obj, QObject* parent)
     : QObject (parent), JsObj (obj)
 {
-    QString rootDir = BGMRPC::Settings->value ("rootDir", "~/.BGMR").toString ();
+    QString rootDir = BGMRPC::Settings->value ("rootDir", "~/.BGMRPC").toString ();
     SqliteDBPath = rootDir + "/DB";
 }
 
@@ -738,4 +738,62 @@ QSqlDatabase jsDB::openSqliteAdminDatabase()
         adminDB = QSqlDatabase::database ("admin");
 
     return adminDB;
+}
+
+
+/*jsFileObj::jsFileObj():File (new QFile)
+{
+    QString rootDir = BGMRPC::Settings->value ("rootDir", "~/.BGMRPC").toString ();
+    DataRoot = rootDir + "/data/";
+    qDebug () << DataRoot;
+}
+
+jsFileObj::~jsFileObj()
+{
+//    qDebug () << "destructor";
+    File->deleteLater ();
+}
+
+bool jsFileObj::open(const QString& fileName, QIODevice::OpenMode mode)
+{
+    File->setFileName (DataRoot + fileName);
+    return true;
+}*/
+
+
+jsFileProto::jsFileProto(QObject* parent)
+    : QObject (parent)
+{
+}
+
+jsFileProto::~jsFileProto()
+{
+}
+
+bool jsFileProto::open(const QString& fileName, int mode)
+{
+    QFile* file = thisFileObj ();
+    file->setFileName (dataRootDir () + fileName);
+    return file->open ((QIODevice::OpenMode)mode);
+}
+
+void jsFileProto::close()
+{
+    thisFileObj ()->close ();
+}
+
+QByteArray jsFileProto::readAll()
+{
+    return thisFileObj ()->readAll ();
+}
+
+filePtr jsFileProto::thisFileObj() const
+{
+    return qvariant_cast < filePtr > (thisObject ().data ().toVariant ());
+}
+
+QString jsFileProto::dataRootDir() const
+{
+    return BGMRPC::Settings->value ("rootDir", "~/.BGMRPC").toString ()
+            + "/data/";
 }

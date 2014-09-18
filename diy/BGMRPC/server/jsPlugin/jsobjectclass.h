@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QtScript>
+#include <typeinfo>
 
 template < typename PT >
 class protoTypeInfo {};
@@ -28,8 +29,7 @@ private:
     QScriptValue Proto;
 };
 
-
-template < typename PT>
+template < typename PT >
 jsObjectClass < PT >::jsObjectClass(QScriptEngine* engine)
     : QScriptClass (engine)
 {
@@ -43,7 +43,7 @@ jsObjectClass < PT >::jsObjectClass(QScriptEngine* engine)
     Ctor.setData (engine->toScriptValue (this));
 }
 
-template < typename PT>
+template < typename PT >
 QScriptValue
 jsObjectClass < PT >::newInstance (const dataType& data)
 {
@@ -83,7 +83,8 @@ jsObjectClass < PT >::construct (QScriptContext* ctx, QScriptEngine*)
         if (arg.instanceOf (ctx->callee ()))
             return cls->newInstance (qscriptvalue_cast < dataType >(arg));
         else
-            return cls->newInstance (dataType ());
+            return cls->newInstance (protoTypeInfo < PT >::newObject ());
+
     } else
         return QScriptValue ();
 }
