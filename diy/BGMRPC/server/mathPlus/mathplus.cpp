@@ -21,6 +21,7 @@ QJsonArray mathObj::plus(BGMRProcedure*,
                         const QJsonArray& args)
 {
     qDebug () << "in plus";
+    qDebug () << args[0].toInt ();
     QJsonArray result;
     result.append (Math.plus (args [0].toDouble (), args [1].toDouble ()));
 
@@ -52,4 +53,11 @@ BGMRObjectInterface* objCreator()
 QString objType()
 {
     return QString ("mathDemo");
+}
+
+bool initial(BGMRObjectStorage* storage, BGMRPC*) // NOTE 测试
+{
+    storage->installObject ("math", new mathObj);
+
+    return true;
 }

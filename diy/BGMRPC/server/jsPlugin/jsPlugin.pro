@@ -18,7 +18,8 @@ HEADERS += jsplugin.h\
         jsplugin_global.h \
     jsmetatype.h \
     jsobjectclass.h \
-    jsobjectprototype.h
+    jsobjectprototype.h \
+    jsmetatypecommon.h
 
 AUTOLOAD = /autoload
 SERLIBPATH = ../BGMRPC

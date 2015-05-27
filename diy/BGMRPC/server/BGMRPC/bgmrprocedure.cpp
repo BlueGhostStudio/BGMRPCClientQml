@@ -8,6 +8,11 @@
 
 namespace BGMircroRPCServer {
 
+void defaultPDDeleter (void* data)
+{
+   delete data;
+}
+
 QMutex mutex;
 
 callThread::callThread(const QString& mID, BGMircroRPCServer::BGMRProcedure* p,
@@ -59,7 +64,7 @@ BGMRProcedure::~BGMRProcedure()
 //    ProcSocket->deleteLater ();
 }
 
-QJsonValueRef BGMRProcedure::privateData(const BGMRObjectInterface* obj,
+/*QJsonValueRef BGMRProcedure::privateData(const BGMRObjectInterface* obj,
                                          const QString& key)
 {
     return PrivateData [obj->objectName ()][key];
@@ -69,6 +74,45 @@ QJsonValue BGMRProcedure::privateData(const BGMRObjectInterface* obj,
                                       const QString& key) const
 {
     return PrivateData [obj->objectName ()][key];
+}*/
+
+void BGMRProcedure::setPrivateData (const BGMRObjectInterface* obj, const QString& name, void* data, void (*del)(void*))
+{
+    QString objName = obj->objectName();
+    ObjPriDataType& objPriData = PrivateData[objName];
+    objPriData[name] = PriDataType (data, del);
+}
+
+void* BGMRProcedure::privateData (const BGMRObjectInterface* obj, const QString& name)
+{
+    QString objName = obj->objectName();
+    void* pd = NULL;
+    if (PrivateData.contains (objName)) {
+        ObjPriDataType objPriData = PrivateData[objName];
+        if (objPriData.contains (name))
+            pd = objPriData[name].first;
+    }
+
+    return pd;
+}
+
+QJsonValue BGMRProcedure::privateDataJson (const BGMRObjectInterface* obj, const QString& name)
+{
+    void* PD_ptr = privateData (obj, name);
+    if (!PD_ptr)
+        return QJsonValue ();
+    else
+        return *(QJsonValue*)PD_ptr;
+}
+
+void BGMRProcedure::setPrivateDataJson(const BGMRObjectInterface* obj, const QString& name, const QJsonValue& value)
+{
+    void* PD_ptr = privateData (obj, name);
+    if (!PD_ptr) {
+        QJsonValue* priData = new QJsonValue (value);
+        setPrivateData (obj, name, priData, PDDeleter < QJsonValue >);
+    } else
+        *(QJsonValue*)PD_ptr = value;
 }
 
 qulonglong BGMRProcedure::pID() const
@@ -91,6 +135,12 @@ void BGMRProcedure::close ()
 
     emit procExited (PID);
     qDebug () << QObject::tr ("Free the Procedure (#%1) memory.").arg (PID);
+    foreach (ObjPriDataType objPriData, PrivateData) {
+        foreach (PriDataType priData, objPriData) {
+            priData.second (priData.first);
+        }
+    }
+
     deleteLater ();
 }
 

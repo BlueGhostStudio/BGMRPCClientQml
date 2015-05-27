@@ -1,11 +1,12 @@
-#ifndef MISFUNCTION_H
-#define MISFUNCTION_H
+#ifndef JSMETATYPE_H
+#define JSMETATYPE_H
 
 #include <QJsonArray>
 #include <QJsonValue>
 #include <QtScript>
 //#include "jsprocclass.h"
 #include "jsobjectclass.h"
+#include "jsmetatypecommon.h"
 #include <relatedproc.h>
 //#include "jsproc.h"
 
@@ -39,32 +40,6 @@ void scrObjToJsRelProcs (const QScriptValue& scrObj, relProcsMap&relProcs);
 QScriptValue jsRPCObjListToScrObj (QScriptEngine* jsEngine,
                                    const RPCObjList& objList);
 void scrObjToJsRPCObjList (const QScriptValue&scrObj, RPCObjList&objList);
-
-template < typename PT >
-QScriptValue jsCustomDataToScrObj (QScriptEngine* jsEngine,
-                                   const typename protoTypeInfo < PT >::dataType& data)
-{
-    if (protoTypeInfo < PT >::isNull (data))
-        return jsEngine->nullValue ();
-
-    QScriptValue ctor
-            = jsEngine->globalObject ().property (protoTypeInfo < PT >::className ());
-    jsObjectClass < PT >* cls = qscriptvalue_cast < jsObjectClass < PT >* >(ctor.data ());
-    if (!cls)
-        return jsEngine->newVariant (QVariant::fromValue (data));
-    else
-        return cls->newInstance (data);
-}
-
-template < typename PT >
-void scrObjToCustomData (const QScriptValue& scrObj,
-                         typename protoTypeInfo < PT >::dataType& data)
-{
-    if (scrObj.isUndefined () || scrObj.isNull ())
-        data = protoTypeInfo < PT >::nullData ();
-    else
-        data = qvariant_cast < typename protoTypeInfo < PT >::dataType > (scrObj.data ().toVariant ());
-}
 
 void scrObjToBGMRObj (const QScriptValue& scrObj, BGMRObjectInterface*& data);
 

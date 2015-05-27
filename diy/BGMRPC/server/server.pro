@@ -7,4 +7,6 @@ SUBDIRS += \
     BGMRServer \
     mathPlus \
     chatPlugin \
-    jsPlugin
+    jsPlugin \
+    jsPlugin/jsFile \
+    jsPlugin/jsDB

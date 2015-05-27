@@ -107,7 +107,7 @@ QJsonArray RPCCtrlObj::login(BGMRProcedure* p, const QJsonArray& args)
     } else
         allow = true;
 
-    p->privateData (this, "allow") = allow;
+    p->setPrivateDataJson (this, "allow", allow);
 
     QJsonArray ret;
     ret.append (allow);
@@ -117,7 +117,7 @@ QJsonArray RPCCtrlObj::login(BGMRProcedure* p, const QJsonArray& args)
 
 QJsonArray RPCCtrlObj::loginout(BGMRProcedure* p, const QJsonArray&)
 {
-    p->privateData (this, "allow") = false;
+    p->setPrivateDataJson (this, "allow", false);
 
     return QJsonArray ();
 }
@@ -169,7 +169,7 @@ bool RPCCtrlObj::procIdentify (BGMRProcedure* p, const QString& method, const QJ
     if (publicMethods.contains (method))
         return true;
     else {
-        const QJsonValue allow = p->privateData (this, "allow");
+        const QJsonValue allow = p->privateDataJson (this, "allow");
         return allow.toBool (false);
     }
 }

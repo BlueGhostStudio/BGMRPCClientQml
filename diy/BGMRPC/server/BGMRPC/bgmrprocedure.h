@@ -9,7 +9,15 @@
 #include <QJsonValue>
 #include <QThread>
 
+
 namespace BGMircroRPCServer {
+
+void defaultPDDeleter (void* data);
+template < typename T >
+void PDDeleter (void* data) {
+    delete (T*)data;
+}
+
 extern QMutex mutex;
 
 class BGMRPC;
@@ -45,11 +53,17 @@ public:
 //    QJsonValueRef privateData (const QString& key);
 //    QJsonValue privateData (const QString& key) const;
 
-    QJsonValueRef privateData (const BGMRObjectInterface* obj,
-                               const QString& key);
-    QJsonValue privateData (const BGMRObjectInterface* obj,
-                            const QString& key) const;
-
+//    QJsonValueRef privateData (const BGMRObjectInterface* obj,
+//                               const QString& key);
+//    QJsonValue privateData (const BGMRObjectInterface* obj,
+//                            const QString& key) const;
+    void setPrivateData (const BGMRObjectInterface* obj,
+                         const QString& name,
+                         void* data, void (*del)(void*));
+    void* privateData(const BGMRObjectInterface* obj,
+                      const QString& name);
+    QJsonValue privateDataJson (const BGMRObjectInterface* obj, const QString& name);
+    void setPrivateDataJson (const BGMRObjectInterface* obj, const QString& name, const QJsonValue& value);
 
     qulonglong pID () const;
     void close ();
@@ -83,7 +97,10 @@ private slots:
 private:
     // private member method
 
-    QMap < QString, QJsonObject > PrivateData;
+//    QMap < QString, QJsonObject > PrivateData;
+    typedef QPair < void*, void (*)(void*) > PriDataType;
+    typedef QMap < QString, PriDataType > ObjPriDataType;
+    QMap < QString, ObjPriDataType > PrivateData;
     // private data
     BGMRPC* RPC;
     BGMRObjectInterface* Object;

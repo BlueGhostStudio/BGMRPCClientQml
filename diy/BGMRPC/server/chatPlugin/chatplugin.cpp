@@ -20,7 +20,7 @@ QJsonArray chatObj::say(BGMRProcedure* p, const QJsonArray& args)
 {
     QJsonArray ret;
     if (hasJoined (p)) {
-        QString nickname = p->privateData (this, "nickname").toString ();
+        QString nickname = p->privateDataJson (this, "nickname").toString ();
 
         QJsonArray message (args);
         message.prepend (nickname);
@@ -58,14 +58,14 @@ QJsonArray chatObj::changeNickname(BGMRProcedure* p, const QJsonArray& args)
     QString nickname = args [0].toString ();
 
     if (hasJoined (p)) {
-        QString oldNickname = p->privateData (this, "nickname").toString ();
+        QString oldNickname = p->privateDataJson (this, "nickname").toString ();
         ret.append (true);
         if (!nickname.isEmpty ()) {
             QJsonArray sigArgs;
             sigArgs.append (oldNickname);
             sigArgs.append (nickname);
             ret.append (nickname);
-            p->privateData (this, "nickname") = nickname;
+            p->setPrivateDataJson (this, "nickname", nickname);
             RelProc.emitSignal (this, "nicknameChanged", sigArgs);
         } else
             ret.append (oldNickname);
@@ -84,7 +84,7 @@ QJsonArray chatObj::whoList(BGMRProcedure* p, const QJsonArray&)
         QMap < qulonglong, BGMRProcedure* > procs = RelProc.procs ();
         QMap < qulonglong, BGMRProcedure* >::const_iterator it;
         for (it = procs.constBegin (); it != procs.constEnd (); ++it)
-            list.append (it.value ()->privateData (this, "nickname"));
+            list.append (it.value ()->privateDataJson (this, "nickname"));
 
         if (!list.isEmpty ())
             ret.append (list);
@@ -108,7 +108,7 @@ void chatObj::leaved(BGMRProcedure* proc)
 {
     if (proc) {
         QJsonArray sigArgs;
-        sigArgs.append (proc->privateData (this, "nickname"));
+        sigArgs.append (proc->privateDataJson (this, "nickname"));
         RelProc.emitSignal (this, "leaved", sigArgs);
     }
 }
@@ -123,7 +123,7 @@ QString chatObj::join(BGMRProcedure* p, const QString& nick)
         else
             nickname = QString ("noname%1").arg (p->pID ());
 
-        p->privateData (this, "nickname") = nickname;
+        p->setPrivateDataJson (this, "nickname", nickname);
 
         QJsonArray sigArgs;
         sigArgs.append (nickname);

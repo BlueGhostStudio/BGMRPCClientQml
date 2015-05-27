@@ -217,10 +217,4 @@ void registerMetaType(QScriptEngine* jsEngine)
     qScriptRegisterMetaType < rpcObjPtr > (jsEngine, jsCustomDataToScrObj < jsRPCObjectProto >,
                                            scrObjToBGMRObj);
     qScriptRegisterMetaType < RPCObjList > (jsEngine, jsRPCObjListToScrObj, scrObjToJsRPCObjList);
-
-    qScriptRegisterMetaType < QSqlQuery > (jsEngine, jsCustomDataToScrObj < jsSqlQueryProto >,
-                                           scrObjToCustomData < jsSqlQueryProto >);
-
-    qScriptRegisterMetaType < filePtr > (jsEngine, jsCustomDataToScrObj < jsFileProto >,
-                                           scrObjToCustomData < jsFileProto >);
 }

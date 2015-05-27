@@ -13,9 +13,16 @@ using namespace BGMircroRPCServer;
 //    initial ();
 //}
 
-jsObj::jsObj() : JsDB (this), AutoLoad (false), GlobalMutexLock (true)
+jsObj::jsObj() : AutoLoad (false), GlobalMutexLock (true)
 {
     initial ();
+}
+
+jsObj::~jsObj()
+{
+    delete JsProcClass;
+    delete JsJsObjClass;
+    delete JsRPCObjectClass;
 }
 
 QString jsObj::objectType() const
@@ -152,6 +159,22 @@ bool jsObj::globalMutexLock() const
     return GlobalMutexLock;
 }
 
+void jsObj::loadModule(const QString& module)
+{
+    QString moduleDir = BGMRPC::Settings->value ("rootDir", "~/.BGMR/").toString () + "/modules/JS/";
+
+    QLibrary theModuleLib;
+    theModuleLib.setFileName (moduleDir + module);
+
+    if (!LoadedModules.contains (module))
+        LoadedModules.append (module);
+    if (!theModuleLib.isLoaded ())
+        theModuleLib.load ();
+
+    void (*initialModule)(QScriptEngine*, BGMRObjectInterface*) = (void (*)(QScriptEngine*, BGMRObjectInterface*))theModuleLib.resolve ("initialModule");
+    initialModule (&JsEngine, this);
+}
+
 void jsObj::setAutoLoad()
 {
     AutoLoad = true;
@@ -166,7 +189,7 @@ void jsObj::setRPC(BGMRPC* rpc)
 {
     JSRPC.setRPC (rpc);
     JsEngine.globalObject ().setProperty ("RPC", JsEngine.newQObject (&JSRPC));
-    v.setProperty ("RPC", JsEngine.newQObject (&JSRPC));
+    DefaultGlobalProperty.setProperty ("RPC", JsEngine.newQObject (&JSRPC));
 }
 
 void jsObj::initial()
@@ -182,42 +205,43 @@ void jsObj::initial()
     JsRPCObjectClass = new jsRPCObjectClass (&JsEngine);
     globalObject.setProperty (JsRPCObjectClass->name (), JsRPCObjectClass->construct ());
 
-    JsSqlClass = new jsSqlQueryClass (&JsEngine);
-    globalObject.setProperty (JsSqlClass->name (), JsSqlClass->construct ());
+//    JsSqlClass = new jsSqlQueryClass (&JsEngine);
+//    globalObject.setProperty (JsSqlClass->name (), JsSqlClass->construct ());
 
-    QScriptValue fileFlag = JsEngine.newObject ();
-    fileFlag.setProperty ("READONLY", QIODevice::ReadOnly);
-    fileFlag.setProperty ("WRITEONLY", QIODevice::WriteOnly);
-    fileFlag.setProperty ("READWRITE", QIODevice::ReadWrite);
-    fileFlag.setProperty ("APPEND", QIODevice::Append);
-    fileFlag.setProperty ("TRUNCATE", QIODevice::Truncate);
-    fileFlag.setProperty ("TEXT", QIODevice::Text);
-    fileFlag.setProperty ("UNBUFFERED", QIODevice::Unbuffered);
-    globalObject.setProperty ("fileFlag", fileFlag);
-    JsFileClass = new jsFileClass (&JsEngine);
-    globalObject.setProperty (JsFileClass->name (), JsFileClass->construct ());
-
-    globalObject.setProperty ("DB", JsEngine.newQObject (&JsDB));
+//    globalObject.setProperty ("DB", JsEngine.newQObject (&JsDB));
 
     registerMetaType (&JsEngine);
 
-    v = JsEngine.newObject ();
+    DefaultGlobalProperty = JsEngine.newObject ();
     QScriptValueIterator it (globalObject);
     while (it.hasNext ()) {
         it.next ();
-        v.setProperty (it.name (), it.value ());
+        DefaultGlobalProperty.setProperty (it.name (), it.value ());
     }
 }
 
 bool jsObj::loadJsScriptContent(const QString& jsContent, QString& error,
                                 const QString& jsFileName)
 {
+    QString moduleDir = BGMRPC::Settings->value ("rootDir", "~/.BGMR/").toString () + "/modules/JS/";
+
+    QLibrary theModuleLib ;
+    foreach (QString theModule, LoadedModules) {
+        theModuleLib.setFileName (moduleDir + theModule);
+        if (theModuleLib.isLoaded ()) {
+            void (*unload)() = (void (*)())theModuleLib.resolve ("unload");
+            unload ();
+            theModuleLib.unload ();
+        }
+    }
+    LoadedModules.clear ();
+
     QScriptValue globalObject = JsEngine.globalObject ();
     QScriptValueIterator it (globalObject);
     while (it.hasNext ()) {
         it.next ();
         QString proName = it.name ();
-        if (!v.property (proName).isValid ())
+        if (!DefaultGlobalProperty.property (proName).isValid ())
             globalObject.setProperty (proName, QScriptValue ());
     }
 

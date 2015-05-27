@@ -4,6 +4,7 @@
 #include "mathplus_global.h"
 #include <bgmrobject.h>
 #include <bgmradaptor.h>
+#include <bgmrobjectstorage.h>
 
 using namespace BGMircroRPCServer;
 class mathObj;
@@ -39,6 +40,7 @@ public:
 extern "C" {
 BGMRObjectInterface* objCreator ();
 QString objType ();
+bool initial(BGMRObjectStorage* storage, BGMRPC* rpc); // NOTE 测试
 }
- 
+
 #endif // MATHPLUS_H

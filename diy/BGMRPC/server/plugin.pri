@@ -8,3 +8,6 @@ TEMPLATE = lib
     }
 #}
 include (server.pri)
+
+DISTFILES += \
+    $$PWD/aboutServer.md

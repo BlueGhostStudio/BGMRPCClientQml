@@ -20,6 +20,7 @@ class jsObj : public BGMRObject < jsAdaptor >
 public:
 //    jsObj (BGMRPC* rpc);
     jsObj ();
+    ~jsObj ();
 
     QString objectType () const;
 
@@ -30,6 +31,7 @@ public:
     QJsonArray lock (BGMRProcedure*, const QJsonArray& args);
     void setGlobalMutexLock (bool lock);
     bool globalMutexLock () const;
+    void loadModule (const QString& module);
 
     void setAutoLoad ();
 
@@ -38,16 +40,15 @@ public:
 
 private:
     QScriptEngine JsEngine;
-    QScriptValue v;
+    QScriptValue DefaultGlobalProperty;
     relatedProcs RelProcs;
     jsRPC JSRPC;
     jsProcClass* JsProcClass;
     jsJsObjClass* JsJsObjClass;
     jsRPCObjectClass* JsRPCObjectClass;
-    jsSqlQueryClass* JsSqlClass;
-    jsFileClass* JsFileClass;
-    jsDB JsDB;
     QString Password;
+
+    QStringList LoadedModules;
     bool AutoLoad;
     bool GlobalMutexLock;
 
