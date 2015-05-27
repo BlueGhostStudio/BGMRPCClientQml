@@ -34,8 +34,28 @@ void initialPlugin (/*QString& pluginDir*/)
     }
 }
 
+void serverLog (QtMsgType type, const QMessageLogContext& /*context*/, const QString &msg)
+{
+    QByteArray localMsg = msg.toLocal8Bit();
+    switch (type) {
+    case QtDebugMsg:
+        fprintf(stderr, "%s\n", localMsg.data ());
+        break;
+    case QtWarningMsg:
+        fprintf(stderr, "Warning: %s\n", localMsg.data());
+        break;
+    case QtCriticalMsg:
+        fprintf(stderr, "Critical: %s\n", localMsg.data());
+        break;
+    case QtFatalMsg:
+        fprintf(stderr, "Fatal: %s\n", localMsg.data());
+        abort();
+    }
+}
+
 int main(int argc, char *argv[])
 {
+    qInstallMessageHandler (serverLog);
     int opt;
     bool startServer = true;
     quint16 port = 8000;
@@ -99,8 +119,10 @@ int main(int argc, char *argv[])
         server->setPort (port);
         if (server->activeServer (address))
             qDebug () << QObject::tr ("server has started.");
-        else
+        else {
             qCritical () << QObject::tr ("server no start.");
+            a.quit ();
+        }
 
         return a.exec();
     } else

@@ -252,6 +252,9 @@ bool jsObj::loadJsScriptContent(const QString& jsContent, QString& error,
                                          .arg (result.property ("lineNumber").toInt32 ())
                                          .arg (result.toString ());
     } else {
+        QScriptValue consoleObj = JsEngine.newObject ();
+        consoleObj.setProperty ("log", JsEngine.newFunction (jsDebug));
+        JsEngine.globalObject ().setProperty ("console", consoleObj);
         JsEngine.globalObject ().setProperty ("jsDebug",
                                               JsEngine.newFunction (jsDebug));
 
@@ -269,10 +272,17 @@ QScriptValue jsObj::jsDebug(QScriptContext* context, QScriptEngine*)
 {
     int argCount = context->argumentCount ();
     if (argCount > 0) {
+        QString log;
         for (int i = 0; i < argCount; i++) {
+            if (i > 0)
+                log += ' ';
             QScriptValue argV = context->argument (i);
-            if (argV.isNumber ())
-                qDebug () << argV.toNumber ();
+            if (argV.isQObject ())
+                log += "[QObject]";
+            else
+                log += argV.toString ();
+            /*if (argV.isNumber ())
+                log += argV.toNumber ();
             else if (argV.isBool ())
                 qDebug () << argV.toBool ();
             else if (argV.isVariant ())
@@ -280,8 +290,9 @@ QScriptValue jsObj::jsDebug(QScriptContext* context, QScriptEngine*)
             else if (argV.isQObject ())
                 qDebug () << "[QObject]";
             else
-                qDebug () << argV.toString ();
+                qDebug () << argV.toString ();*/
         }
+        qDebug ("JS log: %s", log.toLocal8Bit ().constData ());
     }
 
     return QScriptValue ();

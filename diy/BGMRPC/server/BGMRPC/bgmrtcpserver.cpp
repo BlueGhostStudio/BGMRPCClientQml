@@ -4,7 +4,7 @@
 namespace BGMircroRPCServer {
 
 BGMRTcpServer::BGMRTcpServer(BGMRPC*r, QObject *parent)
-    : __server(parent), RPC (r),Port (8000)
+    : __server(QString (), QWebSocketServer::NonSecureMode, parent), RPC (r),Port (8000)
 {
 }
 

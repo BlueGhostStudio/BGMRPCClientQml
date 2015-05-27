@@ -9,4 +9,5 @@ SUBDIRS += \
     chatPlugin \
     jsPlugin \
     jsPlugin/jsFile \
-    jsPlugin/jsDB
+    jsPlugin/jsDB \
+    jsPlugin/jsHttp

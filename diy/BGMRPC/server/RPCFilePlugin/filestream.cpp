@@ -102,7 +102,11 @@ void fileStream::writenData(qint64 size)
 //            OwnProc->switchProcedure ();
 //            deleteLater ();
         } else
+#ifdef WEBSOCKET
+            DataStream->sendBinaryMessage (File.read (MaxLen));
+#else
             DataStream->write (File.read (MaxLen));
+#endif
     }
 }
 

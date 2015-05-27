@@ -127,10 +127,14 @@ void BGMRProcedure::close ()
     //if (ProcSocket && ProcSocket->state () == QAbstractSocket::ConnectedState) {
     if (!DirectSock && ProcSocket->state () == QAbstractSocket::ConnectedState) {
         qDebug () << tr ("Close socket when procedure (#%1) end.").arg (PID);
+#ifdef WEBSOCKET
+        ProcSocket->close ();
+#else
         ProcSocket->disconnect ();
         ProcSocket->disconnectFromHost ();
         if (ProcSocket->waitForDisconnected ())
             ProcSocket->deleteLater ();
+#endif
     }
 
     emit procExited (PID);
@@ -214,7 +218,8 @@ void BGMRProcedure::onReturnValues (const QJsonArray& values,
 
         mutex.lock ();
 #ifdef WEBSOCKET
-        ProcSocket->write (QString::fromUtf8 (QJsonDocument (jsonValues).toJson ()));
+        ProcSocket->sendTextMessage (QString::fromUtf8 (QJsonDocument (jsonValues).toJson ()));
+        //ProcSocket->write (QString::fromUtf8 (QJsonDocument (jsonValues).toJson ()));
 #else
         ProcSocket->write (QJsonDocument (jsonValues).toBinaryData ());
 #endif
@@ -236,7 +241,8 @@ void BGMRProcedure::onEmitSignal(const BGMRObjectInterface* obj,
 
         mutex.lock ();
 #ifdef WEBSOCKET
-        ProcSocket->write (QString::fromUtf8 (QJsonDocument (jsonValues).toJson ()));
+        ProcSocket->sendTextMessage (QString::fromUtf8 (QJsonDocument (jsonValues).toJson ()));
+        //ProcSocket->write (QString::fromUtf8 (QJsonDocument (jsonValues).toJson ()));
 #else
         ProcSocket->write (QJsonDocument (jsonValues).toBinaryData ());
 #endif

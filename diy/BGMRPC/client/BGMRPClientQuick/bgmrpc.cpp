@@ -48,11 +48,12 @@ void BGMRPC::connectToHost(const QString& host, quint16 port)
 void BGMRPC::connectToHost()
 {
 #ifdef WEBSOCKET
+    QUrl serUrl;
+    serUrl.setHost (Host);
+    serUrl.setPort (Port);
+    CliSocket->open (serUrl);
     CliSocket->setHost (Host);
-#endif
-//    if (Proxy.type () != QNetworkProxy::NoProxy)
-//        CliSocket->setProxy (Proxy);
-
+#else
     QHostAddress serverAddress;
     if (Host.contains (QRegExp ("\\d\\.\\d.\\d.\\d")))
         serverAddress.setAddress (Host);
@@ -60,6 +61,9 @@ void BGMRPC::connectToHost()
         serverAddress = QHostInfo::fromName (Host).addresses ().first ();
 
     CliSocket->connectToHost (serverAddress, Port);
+#endif
+//    if (Proxy.type () != QNetworkProxy::NoProxy)
+//        CliSocket->setProxy (Proxy);
 }
 
 void BGMRPC::close()
@@ -112,7 +116,8 @@ void BGMRPC::call(_RStep* aStep, const QString& object,
         callJsonObj ["args"] = toJson (args);
 
 #ifdef WEBSOCKET
-        CliSocket->write (QJsonDocument (callJsonObj).toJson ());
+        CliSocket->sendBinaryMessage (QJsonDocument (callJsonObj).toJson ());
+        //CliSocket->write (QJsonDocument (callJsonObj).toJson ());
 #else
         CliSocket->write (QJsonDocument (callJsonObj).toBinaryData ());
 #endif

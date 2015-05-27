@@ -17,8 +17,8 @@ signals:
 public slots:
 private slots:
 #ifdef WEBSOCKET
-    void onReceivedData (const QString& frame);
-    void onReceivedData (const QByteArray& frame);
+    void onReceivedData (const QString& message);
+    void onReceivedData (const QByteArray& message);
 #endif
 
 private:

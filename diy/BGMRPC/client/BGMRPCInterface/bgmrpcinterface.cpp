@@ -117,7 +117,7 @@ __socket* cliDataTrans::socket(bool detach)
         theSocket->disconnect ();
         CliSocket = NULL;
     }
-    
+
     return theSocket;
 }
 
@@ -190,7 +190,8 @@ BGMRPCInterface::callMethod(const QString& obj, const QString& method,
     BGMircroRPC::returnedValue_t returnedValues;
     if (connectToHost (theCliSocket)) {
 #ifdef WEBSOCKET
-        theCliSocket->write (QJsonDocument(callJson).toJson ());
+//        theCliSocket->write (QJsonDocument(callJson).toJson ());
+        theCliSocket->sendBinaryMessage (QJsonDocument (callJson).toJson ());
 #else
         theCliSocket->write (QJsonDocument(callJson).toBinaryData ());
 #endif
@@ -239,7 +240,8 @@ BGMRPCInterface::callMethod(qulonglong id, const QString& object,
             callJson ["object"] = object;
 
 #ifdef WEBSOCKET
-        theCliSocket->write (QJsonDocument (callJson).toJson ());
+        // theCliSocket->write (QJsonDocument (callJson).toJson ());
+        theCliSocket->sendBinaryMessage (QJsonDocument (callJson).toJson ());
 #else
         theCliSocket->write (QJsonDocument (callJson).toBinaryData ());
 #endif
@@ -268,11 +270,13 @@ BGMRPCInterface::callMethodRaw(const QString& obj,
 
     if (connectToHost (theCliSocket)) {
 #ifdef WEBSOCKET
-        theCliSocket->write (QJsonDocument(callJson).toJson ());
+        // theCliSocket->write (QJsonDocument(callJson).toJson ());
+        theCliSocket->sendBinaryMessage (QJsonDocument(callJson).toJson ());
+
 #else
         theCliSocket->write (QJsonDocument(callJson).toBinaryData ());
 #endif
-        theCliSocket->waitForBytesWritten ();
+        // theCliSocket->waitForBytesWritten ();
     } else
         qDebug () << "can't connect to host";
 
@@ -301,13 +305,14 @@ BGMRPCInterface::callMethodRaw(qulonglong id, const QString& object,
         if (!object.isEmpty ())
             callJson ["object"] = object;
 #ifdef WEBSOCKET
-        theCliSocket->write (QJsonDocument (callJson).toJson ());
+        //theCliSocket->write (QJsonDocument (callJson).toJson ());
+        theCliSocket->sendBinaryMessage (QJsonDocument (callJson).toJson ());
 #else
         theCliSocket->write (QJsonDocument (callJson).toBinaryData ());
 #endif
 
-        theCliSocket->waitForBytesWritten ();
-    }
+        //theCliSocket->waitForBytesWritten (); //BUG QWebsocket缺少此函数的实现
+     }
 
     return new cliRawDataTrans (theCliSocket);
 }
@@ -321,6 +326,7 @@ void BGMRPCInterface::removeCliSocket(qulonglong id)
 
 bool BGMRPCInterface::connectToHost(__socket* socket)
 {
+    // TODO 尚未实现-客户端连接服务端的处理
 #ifdef WEBSOCKET
     socket->setHost (Hosts);
 #endif
