@@ -8,30 +8,12 @@ using namespace BGMircroRPCServer;
 QScriptValue jsonToScr (QScriptEngine* jsEngine,
                         const QJsonValue& jsonValue)
 {
-    QScriptValue scrValue;
-    QScriptValue JSON = jsEngine->globalObject ().property ("JSON");
-    QScriptValue parse = JSON.property ("parse");
-
-    QJsonDocument jsonDoc;
-    if (jsonValue.type () == QJsonValue::Array)
-        jsonDoc.setArray (jsonValue.toArray ());
-    else
-        jsonDoc.setObject (jsonValue.toObject ());
-    QString jsContent (jsonDoc.toJson ());
-    scrValue = parse.call (JSON, QScriptValueList () << jsContent);
-
-    return scrValue;
+    return jsEngine->newVariant (jsonValue);
 }
 
 QJsonDocument scrToJson (const QScriptValue& scrValue)
 {
-    QScriptEngine* jsEngine = scrValue.engine ();
-    QScriptValue JSON = jsEngine->globalObject ().property ("JSON");
-    QScriptValue stringify = JSON.property ("stringify");
-    QString jsonContent
-            = stringify.call (JSON, QScriptValueList () << scrValue).toString ();
-
-    return QJsonDocument::fromJson (jsonContent.toUtf8 ());
+    return QJsonDocument::fromVariant (scrValue.toVariant ());
 }
 
 
