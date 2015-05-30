@@ -14,12 +14,14 @@ TEMPLATE = lib
 DEFINES += BGMRPCCOMMON_LIBRARY
 
 SOURCES += \
-    bgmrpcsocketbuffer.cpp
+    bgmrpcsocketbuffer.cpp \
+    parsejson.cpp
 
 HEADERS +=\
         bgmrpccommon_global.h \
     socket.h \
-    bgmrpcsocketbuffer.h
+    bgmrpcsocketbuffer.h \
+    parsejson.h
 
 unix {
     target.path = $${PREFIX}/lib

@@ -5,6 +5,7 @@
 #include <QJsonDocument>
 #include <QHostAddress>
 #include <socket.h>
+#include <parsejson.h>
 
 namespace BGMircroRPCServer {
 
@@ -265,8 +266,11 @@ void BGMRProcedure::callMethod ()
         QByteArray callJson = SocketBuffer.readAll ();
 
 #ifdef WEBSOCKET
+//        const QJsonObject callJsonObj
+//                = QJsonDocument::fromJson (callJson).object ();
         const QJsonObject callJsonObj
-                = QJsonDocument::fromJson (callJson).object ();
+                = parse (callJson).toObject ();
+        qDebug () << callJsonObj;
 #else
         QJsonObject callJsonObj
                 = QJsonDocument::fromBinaryData (callJson).object ();
