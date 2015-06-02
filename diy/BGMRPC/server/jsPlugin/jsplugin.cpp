@@ -180,8 +180,6 @@ void jsObj::destory()
     QScriptValue destoryFun = JsEngine.globalObject ().property ("destory");
     if (destoryFun.isFunction ())
         destoryFun.call (QScriptValue ());
-    else
-        BGMRObject::destory ();
 }
 
 void jsObj::setAutoLoad()
