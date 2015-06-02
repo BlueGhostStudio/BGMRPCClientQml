@@ -52,6 +52,12 @@ BGMRPC::object(const QString& objName) const
     return theObj;
 }
 
+void BGMRPC::destoryAllObject()
+{
+    foreach (BGMRObjectInterface* obj, objectStorage ()->objects ())
+        obj->destory ();
+}
+
 void BGMRPC::setSettings(const QString& fileName)
 {
     delete Settings;

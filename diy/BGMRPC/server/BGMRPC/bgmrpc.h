@@ -12,10 +12,10 @@ class BGMRObjectStorage;
 
 class BGMRPCSHARED_EXPORT BGMRPC
 {
-    
+
 public:
     BGMRPC();
-	~BGMRPC ();
+    ~BGMRPC ();
 
     void initial ();
 
@@ -23,6 +23,7 @@ public:
     BGMRTcpServer* RPCTcpServer () const;
     BGMRObjectStorage* objectStorage () const;
     BGMRObjectInterface* object (const QString& objName) const;
+    void destoryAllObject ();
 //    void setSettings (const QString& fileName);
 //    QSettings* settings () const;
     //bool installPlugin (const QString& pluginFileName);

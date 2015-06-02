@@ -175,6 +175,15 @@ void jsObj::loadModule(const QString& module)
     initialModule (&JsEngine, this);
 }
 
+void jsObj::destory()
+{
+    QScriptValue destoryFun = JsEngine.globalObject ().property ("destory");
+    if (destoryFun.isFunction ())
+        destoryFun.call (QScriptValue ());
+    else
+        BGMRObject::destory ();
+}
+
 void jsObj::setAutoLoad()
 {
     AutoLoad = true;

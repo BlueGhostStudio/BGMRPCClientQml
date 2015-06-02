@@ -121,6 +121,10 @@ QJsonValue parse (const QByteArray& src, int& pos, bool& error)
             return QJsonValue (true);
         else if (valStr == "false")
             return QJsonValue (false);
+        else if (valStr == "null")
+            return QJsonValue ();
+        else if (valStr == "undefined")
+            return QJsonValue (QJsonValue::Undefined);
         else {
             bool ok;
             double num = valStr.toDouble (&ok);

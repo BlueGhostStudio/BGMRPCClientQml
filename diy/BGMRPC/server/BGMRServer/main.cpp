@@ -6,6 +6,7 @@
 #include <QDir>
 #include <QtGlobal>
 #include <getopt.h>
+#include <signal.h>
 
 #define PLUGINPATH "BGMRPCPLUGIN"
 
@@ -51,6 +52,11 @@ void serverLog (QtMsgType type, const QMessageLogContext& /*context*/, const QSt
         fprintf(stderr, "Fatal: %s\n", localMsg.data());
         abort();
     }
+}
+
+void onStopServer (int) {
+    theRPCServer.destoryAllObject ();
+    QCoreApplication::exit ();
 }
 
 int main(int argc, char *argv[])
@@ -117,14 +123,16 @@ int main(int argc, char *argv[])
 //        QDir::setCurrent (rootDir);
         BGMRTcpServer* server = theRPCServer.RPCTcpServer ();
         server->setPort (port);
-        if (server->activeServer (address))
+        if (server->activeServer (address)) {
+            signal (SIGTERM, onStopServer);
             qDebug () << QObject::tr ("server has started.");
-        else {
+            return a.exec();
+        } else {
             qCritical () << QObject::tr ("server no start.");
             a.quit ();
         }
 
-        return a.exec();
+//        return a.exec();
     } else
         return 0;
 }

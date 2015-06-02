@@ -1,5 +1,8 @@
 #include "bgmrtcpserver.h"
 #include "bgmrprocedure.h"
+#include "bgmrpc.h"
+#include "bgmrobjectstorage.h"
+#include "bgmrobject.h"
 
 namespace BGMircroRPCServer {
 

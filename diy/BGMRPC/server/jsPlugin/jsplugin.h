@@ -32,6 +32,7 @@ public:
     void setGlobalMutexLock (bool lock);
     bool globalMutexLock () const;
     void loadModule (const QString& module);
+    void destory ();
 
     void setAutoLoad ();
 
