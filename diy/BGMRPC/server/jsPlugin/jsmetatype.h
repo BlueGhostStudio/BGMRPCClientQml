@@ -17,10 +17,6 @@ typedef QMap < QString, BGMRObjectInterface* > RPCObjList;
 Q_DECLARE_METATYPE (RPCObjList)
 Q_DECLARE_METATYPE (QJsonValue)
 
-QScriptValue jsonToScr (QScriptEngine* jsEngine,
-                        const QJsonValue& jsonValue);
-QJsonDocument scrToJson (const QScriptValue& scrValue);
-
 QScriptValue jsonValueToScrObj (QScriptEngine* jsEngine, const QJsonValue& jsonValue);
 void scrObjToJsonValue(const QScriptValue& scrValue, QJsonValue& jsonValue);
 

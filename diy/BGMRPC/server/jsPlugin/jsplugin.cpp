@@ -49,7 +49,7 @@ bool jsObj::procIdentify (BGMRProcedure* p, const QString& method, const QJsonAr
             QScriptValueList args;
             args << JsEngine.toScriptValue < BGMRProcedure* > (p)
                  << JsEngine.toScriptValue < QString > (method)
-                 << JsEngine.toScriptValue < QJsonArray > (as);
+                 << jsonValueToScrObj (&JsEngine, as);
 
             identify = jsIdentify.call (QScriptValue (), args).toBool ();
         }

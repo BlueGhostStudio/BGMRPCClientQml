@@ -5,18 +5,6 @@
 
 using namespace BGMircroRPCServer;
 
-QScriptValue jsonToScr (QScriptEngine* jsEngine,
-                        const QJsonValue& jsonValue)
-{
-    return jsEngine->newVariant (jsonValue);
-}
-
-QJsonDocument scrToJson (const QScriptValue& scrValue)
-{
-    return QJsonDocument::fromVariant (scrValue.toVariant ());
-}
-
-
 QScriptValue jsonValueToScrObj(QScriptEngine* jsEngine,
                                const QJsonValue& jsonValue)
 {
@@ -36,16 +24,22 @@ QScriptValue jsonValueToScrObj(QScriptEngine* jsEngine,
         scrValue = jsonValue.toString ();
         break;
     case QJsonValue::Array:
+    {
+        scrValue = jsEngine->newObject ();
+        QJsonArray theArray = jsonValue.toArray ();
+        for (int i = 0; i < theArray.size (); ++i) {
+            scrValue.setProperty (i, jsonValueToScrObj (jsEngine, theArray.at (i)));
+        }
+        break;
+    }
     case QJsonValue::Object:
     {
-//        QJsonDocument jsonDoc;
-//        if (jsonValue.type () == QJsonValue::Array)
-//            jsonDoc.setArray (jsonValue.toArray ());
-//        else
-//            jsonDoc.setObject (jsonValue.toObject ());
-//        QString jsContent (jsonDoc.toJson ());
-//        scrValue = parse.call (JSON, QScriptValueList () << jsContent);
-        scrValue = jsonToScr (jsEngine, jsonValue);
+        scrValue = jsEngine->newObject ();
+        QJsonObject theObj = jsonValue.toObject ();
+        QJsonObject::iterator it;
+        for (it = theObj.begin (); it != theObj.end (); ++it) {
+            scrValue.setProperty (it.key (), jsonValueToScrObj (jsEngine, it.value ()));
+        }
         break;
     }
     case QJsonValue::Undefined:
@@ -75,7 +69,7 @@ void scrObjToJsonValue(const QScriptValue& scrValue, QJsonValue& jsonValue)
 //        QString jsonContent
 //                = stringify.call (JSON, QScriptValueList () << scrValue).toString ();
 //        QJsonDocument jsonDoc = QJsonDocument::fromJson (jsonContent.toUtf8 ());
-        QJsonDocument jsonDoc = scrToJson (scrValue);
+        QJsonDocument jsonDoc = QJsonDocument::fromVariant (scrValue.toVariant ());
         if (jsonDoc.isObject ())
             jsonValue = jsonDoc.object ();
         else
@@ -86,23 +80,23 @@ void scrObjToJsonValue(const QScriptValue& scrValue, QJsonValue& jsonValue)
 
 QScriptValue jsonArrayToScrObj (QScriptEngine* jsEngine, const QJsonArray& jsonArray)
 {
-    return jsonToScr (jsEngine, jsonArray);
+    return jsonValueToScrObj (jsEngine, jsonArray);
 }
 
 void scrObjToJsonArray(const QScriptValue& scrValue, QJsonArray& jsonArray)
 {
-    jsonArray = scrToJson (scrValue).array ();
+    jsonArray = QJsonDocument::fromVariant (scrValue.toVariant ()).array ();
 }
 
 
 QScriptValue jsonObjToScrObj (QScriptEngine* jsEngine, const QJsonObject& jsonObj)
 {
-    return jsonToScr (jsEngine, jsonObj);
+    return jsonValueToScrObj (jsEngine, jsonObj);
 }
 
 void scrObjToJsonObj (const QScriptValue& scrValue, QJsonObject& jsonObj)
 {
-    jsonObj = scrToJson (scrValue).object ();
+    jsonObj = QJsonDocument::fromVariant (scrValue.toVariant ()).object ();
 }
 
 
