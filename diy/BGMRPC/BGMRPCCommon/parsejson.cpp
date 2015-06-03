@@ -22,11 +22,21 @@ QString takeQuoString (const QByteArray& src, int& pos, bool& error)
             pos++;
             break;
         } else {
-            tmp += ch;
             if (ch == '\\') {
+                QByteArray escp (src.mid (pos, 2));
                 pos++;
-                tmp += src[pos];
-            }
+                if (escp == "\\\"")
+                    tmp += '"';
+                else if (escp == "\\'")
+                    tmp += '\'';
+                else if (escp == "\\n")
+                    tmp += '\n';
+                else if (escp == "\\r")
+                    tmp += '\r';
+                else
+                    tmp += src[pos];
+            } else
+                tmp += ch;
         }
 
         pos++;
