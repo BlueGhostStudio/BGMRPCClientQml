@@ -33,6 +33,7 @@ QString jsObj::objectType() const
 bool jsObj::procIdentify (BGMRProcedure* p, const QString& method, const QJsonArray& as)
 {
     mutex.lock ();
+    qDebug () << "vvvv identify lock vvvv";
     bool identify = false;
     if (method == "loadJsScript" || method == "lock") {
         if (AutoLoad)
@@ -55,6 +56,7 @@ bool jsObj::procIdentify (BGMRProcedure* p, const QString& method, const QJsonAr
         }
     }
     mutex.unlock ();
+    qDebug () << "^^^^ identify unlock ^^^^";
 
     return identify;
 }
@@ -101,30 +103,40 @@ bool jsObj::loadJsScriptFile(const QString& jsFileName, QString& error)
 
 QJsonArray jsObj::js(BGMRProcedure* p, const QJsonArray& args)
 {
-    mutex.lock (); // 1 lock
     QJsonArray ret;
+
+    mutex.lock (); // 1 lock
+    qDebug () << "vvvv 1 lock vvvv";
 
     QScriptValue global = JsEngine.globalObject ();
     QScriptValue jsFun = global.property (args[0].toString ());
     mutex.unlock (); // 1 unlock
+    qDebug () << "^^^^ 1 unlock ^^^^";
 
     if (jsFun.isFunction ()) {
         mutex.lock (); // 2 lock
+        qDebug () << "vvvv 2 lock vvvv";
         QScriptValueList scrArgs;
         scrArgs << JsEngine.toScriptValue (p);
         for (int i = 1; i < args.count (); i++)
             scrArgs << jsonValueToScrObj (&JsEngine, args [i]);
         mutex.unlock (); // 2 unlock
+        qDebug () << "^^^^ 2 unlock ^^^^";
 
-        if (GlobalMutexLock)
+        if (GlobalMutexLock) {
             mutex.lock (); // call lock
+            qDebug () << "vvvv call lock vvvv";
+        }
         QScriptValue scrRet = jsFun.call (QScriptValue (),
                                           scrArgs);
         qDebug () << "\t" + args [0].toString ();
-        if (GlobalMutexLock)
+        if (GlobalMutexLock) {
             mutex.unlock (); // call unlock
+            qDebug () << "^^^^ call unlock ^^^^";
+        }
 
         mutex.lock (); // 3 lock
+        qDebug () << "vvvv 3 lock vvvv";
         QJsonValue jsonRet;
         scrObjToJsonValue (scrRet, jsonRet);
         if (jsonRet.isArray ())
@@ -132,6 +144,7 @@ QJsonArray jsObj::js(BGMRProcedure* p, const QJsonArray& args)
         else
             ret.append (jsonRet);
         mutex.unlock (); // 3 unlock
+        qDebug () << "^^^^ 3 unlock ^^^^";
     }
 
 //    mutex.unlock ();

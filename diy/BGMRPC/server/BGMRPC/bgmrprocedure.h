@@ -35,7 +35,8 @@ protected:
     void run ();
 
     QString MID;
-    BGMRProcedure* OwnProc;
+    // BGMRProcedure* OwnProc;
+    QPointer < BGMRProcedure > OwnProc;
     BGMRObjectInterface* Object;
     QString Method;
     QJsonArray Args;
