@@ -35,8 +35,7 @@ protected:
     void run ();
 
     QString MID;
-    // BGMRProcedure* OwnProc;
-    QPointer < BGMRProcedure > OwnProc;
+    BGMRProcedure* OwnProc;
     BGMRObjectInterface* Object;
     QString Method;
     QJsonArray Args;
@@ -110,6 +109,8 @@ private:
     bool DirectSock;
 
     qulonglong PID;
+    qulonglong RefThreadCount;
+    bool Exited;
 //    bool KeepConnected;
 };
 

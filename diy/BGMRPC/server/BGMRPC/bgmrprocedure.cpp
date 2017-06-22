@@ -23,8 +23,8 @@ callThread::callThread(const QString& mID, BGMircroRPCServer::BGMRProcedure* p,
 {
     connect (this, SIGNAL(finished()), this,
              SLOT(deleteLater()), Qt::DirectConnection);
-    connect (OwnProc, SIGNAL(destroyed()), this,
-             SLOT(terminate()), Qt::DirectConnection);
+//    connect (OwnProc, SIGNAL(destroyed()), this,
+//             SLOT(terminate()), Qt::DirectConnection);
 }
 
 void callThread::run()
@@ -44,7 +44,7 @@ BGMRProcedure::BGMRProcedure(BGMRPC* r, __socket* socket,
                              QObject *parent)
     : QObject(parent), RPC (r),
       ProcSocket (socket), SocketBuffer (socket, this),
-      DirectSock (false)//, KeepConnected (false)
+      DirectSock (false), RefThreadCount (0), Exited (false)//, KeepConnected (false)
 {
     PID = lastPID;
     lastPID++;
@@ -62,7 +62,8 @@ BGMRProcedure::BGMRProcedure(BGMRPC* r, __socket* socket,
 
 BGMRProcedure::~BGMRProcedure()
 {
-//    ProcSocket->deleteLater ();
+    qDebug () << QObject::tr ("Free the Procedure (#%1) memory.").arg (PID);
+    ProcSocket->deleteLater ();
 }
 
 /*QJsonValueRef BGMRProcedure::privateData(const BGMRObjectInterface* obj,
@@ -198,9 +199,14 @@ QJsonArray BGMRProcedure::callMethod(const QString& obj,
     if (!obj.isEmpty ())
         aObj = RPC->object (obj);
 
-    if (aObj)
-        return aObj->adaptor ()->callMetchod (aObj, this, method, args);
-    else
+    if (aObj) {
+        RefThreadCount++;
+        qDebug () << "Internal calls, RefCount: " << RefThreadCount;
+        QJsonArray ret = aObj->adaptor ()->callMetchod (aObj, this, method, args);
+        RefThreadCount--;
+        qDebug () << "Internal return, RefCount: " << RefThreadCount;
+        return ret;
+    } else
         return QJsonArray ();
 }
 
@@ -208,7 +214,11 @@ void BGMRProcedure::onReturnValues (const QJsonArray& values,
                                   bool directSocketReturn,
                                   const QString& mID)
 {
-    if (!DirectSock || directSocketReturn) {
+    RefThreadCount--;
+    qDebug () << "return, RefCount: " << RefThreadCount;
+    if (RefThreadCount <= 0 && Exited)
+        deleteLater ();
+    else if (!DirectSock || directSocketReturn) {
         QJsonObject jsonValues;
         jsonValues ["type"] = QString ("return");
         jsonValues ["values"] = values;
@@ -253,11 +263,14 @@ void BGMRProcedure::onEmitSignal(const BGMRObjectInterface* obj,
 
 void BGMRProcedure::onClientSocketDisconnected()
 {
+    Exited = true;
     qDebug () << tr ("On client disconnected");
-    ProcSocket->deleteLater ();
+    //ProcSocket->deleteLater ();
     emit procExited (PID);
-    qDebug () << QObject::tr ("Free the Procedure (#%1) memory.").arg (PID);
-    deleteLater ();
+
+    qDebug () << "client disconnected, RefCount: " << RefThreadCount;
+    if (RefThreadCount <= 0)
+        deleteLater ();
 }
 
 void BGMRProcedure::callMethod ()
@@ -289,6 +302,8 @@ void BGMRProcedure::callMethod ()
                          .arg (ProcSocket->peerAddress ().toString (),
                                QString::number(ProcSocket->peerPort ()), Object->objectName (), methodName);
             ProcSocket->setParent (this);
+            RefThreadCount++;
+            qDebug () << "call by client, RefCount: " << RefThreadCount;
             callThread* newCallThread = new callThread (mID, this, Object,
                                                         methodName, args);
 //            connect (newCallThread, SIGNAL(finished()), newCallThread,
