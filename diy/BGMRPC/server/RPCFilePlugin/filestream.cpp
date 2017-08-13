@@ -1,6 +1,6 @@
 #include "filestream.h"
 
-fileStream::fileStream(BGMRProcedure* proc, QObject *parent) :
+fileStream::fileStream(BGMRClient* proc, QObject *parent) :
     QObject(parent), OwnProc (proc),
     DataStream (OwnProc->switchDirectSocket ()),
     SocketBuffer (OwnProc->socketBuffer ()),

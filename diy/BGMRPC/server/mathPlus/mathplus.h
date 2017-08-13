@@ -22,8 +22,8 @@ class mathObj : public BGMRObject < mathAdaptor >
 {
 public:
     QString objectType () const;
-    QJsonArray plus (BGMRProcedure*, const QJsonArray& args);
-    QJsonArray minus (BGMRProcedure*, const QJsonArray& args);
+    QJsonArray plus (BGMRClient*, const QJsonArray& args);
+    QJsonArray minus (BGMRClient*, const QJsonArray& args);
 
 private:
     math Math;

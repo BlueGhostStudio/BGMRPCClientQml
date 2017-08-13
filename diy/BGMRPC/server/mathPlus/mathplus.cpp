@@ -17,7 +17,7 @@ QString mathObj::objectType() const
     return objType ();
 }
 
-QJsonArray mathObj::plus(BGMRProcedure*,
+QJsonArray mathObj::plus(BGMRClient*,
                         const QJsonArray& args)
 {
     qDebug () << "in plus";
@@ -28,7 +28,7 @@ QJsonArray mathObj::plus(BGMRProcedure*,
     return result;
 }
 
-QJsonArray mathObj::minus(BGMRProcedure*, const QJsonArray& args)
+QJsonArray mathObj::minus(BGMRClient*, const QJsonArray& args)
 {
     QJsonArray result;
     result.append (Math.minus (args [0].toDouble (), args [1].toDouble ()));

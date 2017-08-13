@@ -5,7 +5,7 @@
 #include <bgmrobject.h>
 #include <bgmradaptor.h>
 #include <QObject>
-#include <relatedproc.h>
+#include <relatedclient.h>
 #include <bgmrobjectstorage.h>
 
 using namespace BGMircroRPCServer;
@@ -19,23 +19,23 @@ public:
     RPCCtrlObj ();
 
     QString objectType () const;
-    QJsonArray objectMethods (BGMRProcedure*, const QJsonArray& args);
-    QJsonArray RPCObjects (BGMRProcedure*, const QJsonArray&);
-    QJsonArray RPCCreateObject (BGMRProcedure*, const QJsonArray& args);
-    QJsonArray loadPlugin (BGMRProcedure*, const QJsonArray& args);
-    QJsonArray RPCTypes (BGMRProcedure*, const QJsonArray&);
-    QJsonArray setPassword (BGMRProcedure*, const QJsonArray& args);
-    QJsonArray login (BGMRProcedure* p, const QJsonArray& args);
-    QJsonArray loginout (BGMRProcedure* p, const QJsonArray&);
-    QJsonArray useObject (BGMRProcedure* p, const QJsonArray& args);
-    QJsonArray setRootDir (BGMRProcedure*, const QJsonArray& args);
-    QJsonArray setPluginDir (BGMRProcedure*, const QJsonArray& args);
+    QJsonArray objectMethods (BGMRClient*, const QJsonArray& args);
+    QJsonArray RPCObjects (BGMRClient*, const QJsonArray&);
+    QJsonArray RPCCreateObject (BGMRClient*, const QJsonArray& args);
+    QJsonArray loadPlugin (BGMRClient*, const QJsonArray& args);
+    QJsonArray RPCTypes (BGMRClient*, const QJsonArray&);
+    QJsonArray setPassword (BGMRClient*, const QJsonArray& args);
+    QJsonArray login (BGMRClient* p, const QJsonArray& args);
+    QJsonArray loginout (BGMRClient* p, const QJsonArray&);
+    QJsonArray useObject (BGMRClient* p, const QJsonArray& args);
+    QJsonArray setRootDir (BGMRClient*, const QJsonArray& args);
+    QJsonArray setPluginDir (BGMRClient*, const QJsonArray& args);
 
     void setRPC (BGMRPC* rpc);
-    bool procIdentify (BGMRProcedure* p, const QString& method, const QJsonArray&);
+    bool clientIdentify (BGMRClient* p, const QString& method, const QJsonArray&);
 
 protected:
-    relatedProcs RelProcs;
+    relatedClients RelClients;
     BGMRPC* RPC;
     QStringList publicMethods;
 };

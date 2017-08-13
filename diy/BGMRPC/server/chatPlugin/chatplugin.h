@@ -19,21 +19,21 @@ class chatObj : public QObject, public BGMRObject < chatAdaptor >
 public:
     chatObj (QObject* parent = 0);
     QString objectType () const;
-    QJsonArray say (BGMRProcedure* p, const QJsonArray& args);
-    QJsonArray join (BGMRProcedure* p, const QJsonArray& args);
-    QJsonArray hasJoined (BGMRProcedure* p, const QJsonArray&);
-    QJsonArray changeNickname (BGMRProcedure* p, const QJsonArray& args);
-    QJsonArray whoList (BGMRProcedure*p, const QJsonArray&);
-    QJsonArray leave (BGMRProcedure* p, const QJsonArray&);
+    QJsonArray say (BGMRClient* p, const QJsonArray& args);
+    QJsonArray join (BGMRClient* p, const QJsonArray& args);
+    QJsonArray hasJoined (BGMRClient* p, const QJsonArray&);
+    QJsonArray changeNickname (BGMRClient* p, const QJsonArray& args);
+    QJsonArray whoList (BGMRClient*p, const QJsonArray&);
+    QJsonArray leave (BGMRClient* p, const QJsonArray&);
 
 public slots:
-    void leaved (BGMRProcedure* proc);
+    void leaved (BGMRClient* proc);
 
 private:
-    relatedProcs RelProc;
+    relatedClients RelProc;
 
-    QString join (BGMRProcedure* p, const QString& nick = QString ());
-    bool hasJoined (BGMRProcedure* p);
+    QString join (BGMRClient* p, const QString& nick = QString ());
+    bool hasJoined (BGMRClient* p);
 };
 
 class chatAdaptor : public BGMRAdaptor < chatObj >

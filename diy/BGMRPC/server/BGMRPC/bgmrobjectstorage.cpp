@@ -27,9 +27,9 @@ bool BGMRObjectStorage::installObject(const QString& objName,
     return ok;
 }
 
-bool BGMRObjectStorage::installObject(const QString& objName, const QString& creator)
+BGMRObjectInterface* BGMRObjectStorage::installObject(const QString& objName, const QString& creator)
 {
-    bool ok = false;
+    //bool ok = false;
     if (!ObjectStorage.contains (objName)
             && ObjCreators.contains (creator)) {
         BGMRObjectInterface* obj
@@ -38,11 +38,12 @@ bool BGMRObjectStorage::installObject(const QString& objName, const QString& cre
             obj->setObjectName (objName);
             ObjectStorage [objName] = obj;
 
-            ok = true;
+            return obj;
+            //ok = true;
         }
     }
 
-    return ok;
+    return NULL;
 }
 
 bool BGMRObjectStorage::installPlugin(const QString& pluginFileName)

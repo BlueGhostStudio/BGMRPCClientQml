@@ -18,24 +18,24 @@ class RPCFileObj : public BGMRObject < RPCFileAdaptor >
 {
 public:
     QString objectType () const;
-    QJsonArray connect (BGMRProcedure* p, const QJsonArray&);
-    QJsonArray download (BGMRProcedure* p, const QJsonArray& args);
-    QJsonArray upload (BGMRProcedure* p, const QJsonArray& args);
-    QJsonArray cp (BGMRProcedure*, const QJsonArray& args);
-    QJsonArray rm (BGMRProcedure*, const QJsonArray& args);
-    QJsonArray rename (BGMRProcedure*, const QJsonArray& args);
-    QJsonArray dir (BGMRProcedure*proc, const QJsonArray& args);
-    QJsonArray mkdir (BGMRProcedure*, const QJsonArray& args);
-    QJsonArray rmdir (BGMRProcedure*, const QJsonArray& args);
-    QJsonArray setPath (BGMRProcedure*, const QJsonArray& args);
-    QJsonArray paths (BGMRProcedure*, const QJsonArray&);
-    QJsonArray removePath (BGMRProcedure*, const QJsonArray& args);
-    QJsonArray rootPath (BGMRProcedure*, const QJsonArray&);
+    QJsonArray connect (BGMRClient* p, const QJsonArray&);
+    QJsonArray download (BGMRClient* p, const QJsonArray& args);
+    QJsonArray upload (BGMRClient* p, const QJsonArray& args);
+    QJsonArray cp (BGMRClient*, const QJsonArray& args);
+    QJsonArray rm (BGMRClient*, const QJsonArray& args);
+    QJsonArray rename (BGMRClient*, const QJsonArray& args);
+    QJsonArray dir (BGMRClient*proc, const QJsonArray& args);
+    QJsonArray mkdir (BGMRClient*, const QJsonArray& args);
+    QJsonArray rmdir (BGMRClient*, const QJsonArray& args);
+    QJsonArray setPath (BGMRClient*, const QJsonArray& args);
+    QJsonArray paths (BGMRClient*, const QJsonArray&);
+    QJsonArray removePath (BGMRClient*, const QJsonArray& args);
+    QJsonArray rootPath (BGMRClient*, const QJsonArray&);
 
-    BGMRProcedure* proc (quint16 id) const;
+    BGMRClient* proc (quint16 id) const;
 
 protected:
-    relatedProcs RelProcs;
+    relatedClients RelProcs;
 
 private:
 	QString rootPath ();

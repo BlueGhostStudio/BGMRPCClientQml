@@ -10,7 +10,7 @@ class fileStream : public QObject
 {
     Q_OBJECT
 public:
-    explicit fileStream(BGMRProcedure* proc, QObject *parent = 0);
+    explicit fileStream(BGMRClient* proc, QObject *parent = 0);
 
     void receiveFile (const QString& fileName);
     void sendFile (const QString& fileName);
@@ -24,7 +24,7 @@ private slots:
     void writenData (qint64 size);
 
 private:
-    BGMRProcedure* OwnProc;
+    BGMRClient* OwnProc;
     __socket* DataStream;
     BGMRPCSocketBuffer* SocketBuffer;
     QFile File;

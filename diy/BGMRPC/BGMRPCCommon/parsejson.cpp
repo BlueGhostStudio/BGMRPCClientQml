@@ -126,7 +126,7 @@ QJsonValue parse (const QByteArray& src, int& pos, bool& error)
             pos++;
             ch = src[pos];
         }
-        valStr.trimmed ();
+        valStr = valStr.trimmed ();
         if (valStr == "true")
             return QJsonValue (true);
         else if (valStr == "false")

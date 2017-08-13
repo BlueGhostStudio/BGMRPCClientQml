@@ -22,12 +22,12 @@ extern QMutex mutex;
 
 class BGMRPC;
 class BGMRObjectInterface;
-class BGMRProcedure;
+class BGMRClient;
 
 class callThread : public QThread {
     Q_OBJECT
 public:
-    explicit callThread (const QString& mID, BGMRProcedure* p, BGMRObjectInterface* o,
+    explicit callThread (const QString& mID, BGMRClient* cli, BGMRObjectInterface* o,
                          const QString& m, const QJsonArray& as,
                          QObject* parent = 0);
 
@@ -35,28 +35,28 @@ protected:
     void run ();
 
     QString MID;
-    BGMRProcedure* OwnProc;
+    BGMRClient* OwnCli;
     BGMRObjectInterface* Object;
     QString Method;
     QJsonArray Args;
 };
 
-class BGMRProcedure : public QObject
+class BGMRClient : public QObject
 {
     Q_OBJECT
 public:
-    explicit BGMRProcedure(BGMRPC* r,
-                           __socket* socket,
-                           QObject *parent = 0);
-    ~BGMRProcedure ();
+    explicit BGMRClient(BGMRPC* r,
+                        __socket* socket,
+                        QObject *parent = 0);
+    ~BGMRClient ();
 
-//    QJsonValueRef privateData (const QString& key);
-//    QJsonValue privateData (const QString& key) const;
+    //    QJsonValueRef privateData (const QString& key);
+    //    QJsonValue privateData (const QString& key) const;
 
-//    QJsonValueRef privateData (const BGMRObjectInterface* obj,
-//                               const QString& key);
-//    QJsonValue privateData (const BGMRObjectInterface* obj,
-//                            const QString& key) const;
+    //    QJsonValueRef privateData (const BGMRObjectInterface* obj,
+    //                               const QString& key);
+    //    QJsonValue privateData (const BGMRObjectInterface* obj,
+    //                            const QString& key) const;
     void setPrivateData (const BGMRObjectInterface* obj,
                          const QString& name,
                          void* data, void (*del)(void*));
@@ -65,20 +65,20 @@ public:
     QJsonValue privateDataJson (const BGMRObjectInterface* obj, const QString& name);
     void setPrivateDataJson (const BGMRObjectInterface* obj, const QString& name, const QJsonValue& value);
 
-    qulonglong pID () const;
+    qulonglong cliID () const;
     void close ();
     void setObject (BGMRObjectInterface* object);
-//    bool isKeepConnected () const;
-    __socket* procSocket() const;
+    //    bool isKeepConnected () const;
+    __socket* clientSocket() const;
     __socket* switchDirectSocket();
     bool isDirectSocket () const;
     BGMRPCSocketBuffer* socketBuffer (); //
-    void switchProcedure ();
-    QJsonArray callMethod (const QString& obj, const QString& method,
-                           const QJsonArray& args);
+    void switchClient ();
+    /*QJsonArray callMethod (BGMRObjectInterface* obj, const QString& method,
+                           const QJsonArray& args);*/
 
 signals:
-    void procExited (qulonglong id);
+    void clientExited (qulonglong id);
     void emitSignal (const BGMRObjectInterface* obj, const QString& signal,
                      const QJsonArray& args);
     void returnValues (const QJsonArray& values, bool directSocketReturn,
@@ -92,26 +92,26 @@ public slots:
                        const QJsonArray& args);
 
 private slots:
-    void callMethod ();
+    void handleCallRequest ();
 
 private:
     // private member method
 
-//    QMap < QString, QJsonObject > PrivateData;
+    //    QMap < QString, QJsonObject > PrivateData;
     typedef QPair < void*, void (*)(void*) > PriDataType;
     typedef QMap < QString, PriDataType > ObjPriDataType;
     QMap < QString, ObjPriDataType > PrivateData;
     // private data
     BGMRPC* RPC;
     BGMRObjectInterface* Object;
-    __socket* ProcSocket;
+    __socket* ClientSocket;
     BGMRPCSocketBuffer SocketBuffer;
     bool DirectSock;
 
-    qulonglong PID;
+    qulonglong CliID;
     qulonglong RefThreadCount;
     bool Exited;
-//    bool KeepConnected;
+    //    bool KeepConnected;
 };
 
 }

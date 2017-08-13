@@ -1,4 +1,4 @@
-QT       += network
+QT       += network websockets
 
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/$$SERLIBPATH/../../BGMRPCCommon/release/ -lBGMRPCCommon
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/$$SERLIBPATH/../../BGMRPCCommon/debug/ -lBGMRPCCommon

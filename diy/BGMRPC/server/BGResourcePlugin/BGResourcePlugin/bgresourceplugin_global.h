@@ -1,0 +1,12 @@
+#ifndef HTTPD_GLOBAL_H
+#define HTTPD_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+
+#if defined(BGRESOURCEPLUGIN_LIBRARY)
+#  define BGRESOURCEPLUGINSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define BGRESOURCEPLUGINSHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // HTTPD_GLOBAL_H

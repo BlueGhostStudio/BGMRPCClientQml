@@ -5,7 +5,7 @@
 
 RPCCtrlObj::RPCCtrlObj()
 {
-    publicMethods << "login" << "RPCCreateObject";
+    publicMethods << "login" << "RPCCreateObject" << "RPCTypes";
 }
 
 QString RPCCtrlObj::objectType() const
@@ -13,7 +13,7 @@ QString RPCCtrlObj::objectType() const
     return objType ();
 }
 
-QJsonArray RPCCtrlObj::objectMethods(BGMRProcedure*, const QJsonArray& args)
+QJsonArray RPCCtrlObj::objectMethods(BGMRClient*, const QJsonArray& args)
 {
     if (!RPC)
         return QJsonArray ();
@@ -28,7 +28,7 @@ QJsonArray RPCCtrlObj::objectMethods(BGMRProcedure*, const QJsonArray& args)
     return result;
 }
 
-QJsonArray RPCCtrlObj::RPCObjects(BGMRProcedure*, const QJsonArray&)
+QJsonArray RPCCtrlObj::RPCObjects(BGMRClient*, const QJsonArray&)
 {
     if (!RPC)
         return QJsonArray ();
@@ -49,7 +49,7 @@ QJsonArray RPCCtrlObj::RPCObjects(BGMRProcedure*, const QJsonArray&)
     return result;
 }
 
-QJsonArray RPCCtrlObj::RPCCreateObject(BGMRProcedure*, const QJsonArray& args)
+QJsonArray RPCCtrlObj::RPCCreateObject(BGMRClient*, const QJsonArray& args)
 {
     if (!RPC)
         return QJsonArray ();
@@ -57,15 +57,15 @@ QJsonArray RPCCtrlObj::RPCCreateObject(BGMRProcedure*, const QJsonArray& args)
     QString type = args[0].toString ();
     QString name = args[1].toString ();
 
-    bool ok = RPC->objectStorage ()->installObject (name, type);
+    BGMRObjectInterface* obj = RPC->objectStorage ()->installObject (name, type);
 
     QJsonArray result;
-    result.append (ok);
+    result.append (obj ? true : false);
 
     return result;
 }
 
-QJsonArray RPCCtrlObj::loadPlugin(BGMRProcedure*, const QJsonArray& args)
+QJsonArray RPCCtrlObj::loadPlugin(BGMRClient*, const QJsonArray& args)
 {
     if (!RPC)
         return QJsonArray ();
@@ -78,7 +78,7 @@ QJsonArray RPCCtrlObj::loadPlugin(BGMRProcedure*, const QJsonArray& args)
     return result;
 }
 
-QJsonArray RPCCtrlObj::RPCTypes(BGMRProcedure*, const QJsonArray&)
+QJsonArray RPCCtrlObj::RPCTypes(BGMRClient*, const QJsonArray&)
 {
     if (!RPC)
         return QJsonArray ();
@@ -90,14 +90,14 @@ QJsonArray RPCCtrlObj::RPCTypes(BGMRProcedure*, const QJsonArray&)
     return result;
 }
 
-QJsonArray RPCCtrlObj::setPassword(BGMRProcedure*, const QJsonArray& args)
+QJsonArray RPCCtrlObj::setPassword(BGMRClient*, const QJsonArray& args)
 {
     BGMRPC::Settings->setValue ("password", args [0]);
 
     return QJsonArray ();
 }
 
-QJsonArray RPCCtrlObj::login(BGMRProcedure* p, const QJsonArray& args)
+QJsonArray RPCCtrlObj::login(BGMRClient* p, const QJsonArray& args)
 {
     bool allow = false;
     if (BGMRPC::Settings->contains ("password")) {
@@ -115,14 +115,14 @@ QJsonArray RPCCtrlObj::login(BGMRProcedure* p, const QJsonArray& args)
     return ret;
 }
 
-QJsonArray RPCCtrlObj::loginout(BGMRProcedure* p, const QJsonArray&)
+QJsonArray RPCCtrlObj::loginout(BGMRClient* p, const QJsonArray&)
 {
     p->setPrivateDataJson (this, "allow", false);
 
     return QJsonArray ();
 }
 
-QJsonArray RPCCtrlObj::useObject(BGMRProcedure* p, const QJsonArray& args)
+QJsonArray RPCCtrlObj::useObject(BGMRClient* p, const QJsonArray& args)
 {
     if (!RPC)
         return QJsonArray ();
@@ -139,7 +139,7 @@ QJsonArray RPCCtrlObj::useObject(BGMRProcedure* p, const QJsonArray& args)
     return result;
 }
 
-QJsonArray RPCCtrlObj::setRootDir(BGMRProcedure*, const QJsonArray& args)
+QJsonArray RPCCtrlObj::setRootDir(BGMRClient*, const QJsonArray& args)
 {
     QString pluginDir = args [0].toString ("~/.BGMR");
     pluginDir.remove (QRegExp ("/\\s*$"));
@@ -149,7 +149,7 @@ QJsonArray RPCCtrlObj::setRootDir(BGMRProcedure*, const QJsonArray& args)
     return QJsonArray ();
 }
 
-QJsonArray RPCCtrlObj::setPluginDir(BGMRProcedure*, const QJsonArray& args)
+QJsonArray RPCCtrlObj::setPluginDir(BGMRClient*, const QJsonArray& args)
 {
     QString pluginDir = args [0].toString ("~/.BGMR/plugin");
     pluginDir.remove (QRegExp ("/\\s*$"));
@@ -164,7 +164,7 @@ void RPCCtrlObj::setRPC(BGMRPC* rpc)
     RPC = rpc;
 }
 
-bool RPCCtrlObj::procIdentify (BGMRProcedure* p, const QString& method, const QJsonArray&)
+bool RPCCtrlObj::clientIdentify (BGMRClient* p, const QString& method, const QJsonArray&)
 {
     if (publicMethods.contains (method))
         return true;

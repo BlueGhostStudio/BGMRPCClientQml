@@ -22,7 +22,7 @@ public:
 signals:
 
 public slots:
-    void newProc();
+    void newClient();
 
 protected:
     BGMRPC* RPC;

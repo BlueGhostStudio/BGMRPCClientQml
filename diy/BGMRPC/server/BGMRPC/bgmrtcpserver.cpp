@@ -1,5 +1,5 @@
 #include "bgmrtcpserver.h"
-#include "bgmrprocedure.h"
+#include "bgmrclient.h"
 #include "bgmrpc.h"
 #include "bgmrobjectstorage.h"
 #include "bgmrobject.h"
@@ -22,7 +22,7 @@ bool BGMRTcpServer::activeServer(const QHostAddress& address)
     bool ok = listen (address, Port);
     if (ok)
         connect (this, SIGNAL(newConnection()),
-                 this, SLOT(newProc()));
+                 this, SLOT(newClient()));
     else
         qDebug () << "error" << errorString ();
 
@@ -34,14 +34,12 @@ void BGMRTcpServer::setPort(quint16 port)
     Port = port;
 }
 
-void BGMRTcpServer::newProc()
+void BGMRTcpServer::newClient()
 {
-    __socket* procSocket = nextPendingConnection ();
-    //connect (procSocket, SIGNAL(disconnected()),
-    //         procSocket, SLOT(deleteLater()));
+    __socket* clientSocket = nextPendingConnection ();
 
     qDebug () << QObject::tr ("New client connected.");
-    new BGMRProcedure (RPC, procSocket);
+    new BGMRClient (RPC, clientSocket);
 }
 
 }

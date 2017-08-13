@@ -1,0 +1,25 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/icons8-Add File.png</file>
+        <file>icons/icons8-Add Folder.png</file>
+        <file>icons/icons8-Connected.png</file>
+        <file>icons/icons8-Delete File.png</file>
+        <file>icons/icons8-Delete Folder.png</file>
+        <file>icons/icons8-Disconnected.png</file>
+        <file>icons/icons8-Exit.png</file>
+        <file>icons/icons8-Hashtag.png</file>
+        <file>icons/icons8-Double Left-96.png</file>
+        <file>icons/icons8-Pen-96.png</file>
+        <file>icons/icons8-Save-96.png</file>
+        <file>icons/appIcon.png</file>
+        <file>icons/downArrow.png</file>
+        <file>icons/icons8-Filter-48.png</file>
+        <file>icons/icons8-Rename Folder.png</file>
+        <file>icons/icons8-Picture-48.png</file>
+        <file>markdown/default.md</file>
+        <file>markdown/index.html</file>
+        <file>markdown/markdown.css</file>
+        <file>markdown/marked.min.js</file>
+        <file>markdown/qwebchannel.js</file>
+    </qresource>
+</RCC>

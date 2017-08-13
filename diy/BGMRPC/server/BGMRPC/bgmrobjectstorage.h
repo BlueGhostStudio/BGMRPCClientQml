@@ -20,7 +20,7 @@ public:
 
     bool installObject (const QString& objName,
                         BGMRObjectInterface* obj);
-    bool installObject (const QString& objName, const QString& creator);
+    BGMRObjectInterface* installObject (const QString& objName, const QString& creator);
     bool installPlugin (const QString& pluginFileName);
     bool removeObject (const QString& objName);
     BGMRObjectInterface* object (const QString& obj) const;

@@ -9,13 +9,13 @@ QString RPCFileObj::objectType() const
     return objType ();
 }
 
-QJsonArray RPCFileObj::connect(BGMRProcedure* p, const QJsonArray&)
+QJsonArray RPCFileObj::connect(BGMRClient* p, const QJsonArray&)
 {
-    RelProcs.addProc (p);
+    RelProcs.addRelatedClient (p);
     return QJsonArray ();
 }
 
-QJsonArray RPCFileObj::download(BGMRProcedure* p, const QJsonArray& args)
+QJsonArray RPCFileObj::download(BGMRClient* p, const QJsonArray& args)
 {
     fileStream* newFileStream = new fileStream (p);
     newFileStream->sendFile (rootPath () + args [0].toString ());
@@ -23,7 +23,7 @@ QJsonArray RPCFileObj::download(BGMRProcedure* p, const QJsonArray& args)
     return QJsonArray ();
 }
 
-QJsonArray RPCFileObj::upload(BGMRProcedure* p, const QJsonArray& args)
+QJsonArray RPCFileObj::upload(BGMRClient* p, const QJsonArray& args)
 {
     fileStream* newFileStream = new fileStream (p);
     newFileStream->receiveFile (rootPath () + args [0].toString ());
@@ -31,7 +31,7 @@ QJsonArray RPCFileObj::upload(BGMRProcedure* p, const QJsonArray& args)
     return QJsonArray ();
 }
 
-QJsonArray RPCFileObj::cp(BGMRProcedure*, const QJsonArray& args)
+QJsonArray RPCFileObj::cp(BGMRClient*, const QJsonArray& args)
 {
     QJsonArray ret;
     QString oldName = getPath (args [2].toString ()) + args [0].toString ();
@@ -44,7 +44,7 @@ QJsonArray RPCFileObj::cp(BGMRProcedure*, const QJsonArray& args)
     return ret;
 }
 
-QJsonArray RPCFileObj::rm(BGMRProcedure*, const QJsonArray& args)
+QJsonArray RPCFileObj::rm(BGMRClient*, const QJsonArray& args)
 {
     QJsonArray ret;
     QString fileName = getPath (args [1].toString ()) + args [0].toString ();
@@ -53,7 +53,7 @@ QJsonArray RPCFileObj::rm(BGMRProcedure*, const QJsonArray& args)
     return ret;
 }
 
-QJsonArray RPCFileObj::rename(BGMRProcedure*, const QJsonArray& args)
+QJsonArray RPCFileObj::rename(BGMRClient*, const QJsonArray& args)
 {
     QJsonArray ret;
     QString oldName = getPath (args [2].toString ()) + args [0].toString ();
@@ -63,7 +63,7 @@ QJsonArray RPCFileObj::rename(BGMRProcedure*, const QJsonArray& args)
     return ret;
 }
 
-QJsonArray RPCFileObj::dir (BGMRProcedure*, const QJsonArray& args)
+QJsonArray RPCFileObj::dir (BGMRClient*, const QJsonArray& args)
 {
     QJsonArray ret;
 
@@ -100,7 +100,7 @@ QJsonArray RPCFileObj::dir (BGMRProcedure*, const QJsonArray& args)
     return ret;
 }
 
-QJsonArray RPCFileObj::mkdir(BGMRProcedure*, const QJsonArray& args)
+QJsonArray RPCFileObj::mkdir(BGMRClient*, const QJsonArray& args)
 {
     QJsonArray ret;
     QDir theDir (getPath (args[1].toString ()));
@@ -109,7 +109,7 @@ QJsonArray RPCFileObj::mkdir(BGMRProcedure*, const QJsonArray& args)
     return ret;
 }
 
-QJsonArray RPCFileObj::rmdir(BGMRProcedure*, const QJsonArray& args)
+QJsonArray RPCFileObj::rmdir(BGMRClient*, const QJsonArray& args)
 {
     QJsonArray ret;
     QDir theDir (getPath (args[1].toString ()));
@@ -118,7 +118,7 @@ QJsonArray RPCFileObj::rmdir(BGMRProcedure*, const QJsonArray& args)
     return ret;
 }
 
-QJsonArray RPCFileObj::setPath (BGMRProcedure*, const QJsonArray& args)
+QJsonArray RPCFileObj::setPath (BGMRClient*, const QJsonArray& args)
 {
     QJsonArray trueRet;
     QJsonArray falseRet;
@@ -149,7 +149,7 @@ QJsonArray RPCFileObj::setPath (BGMRProcedure*, const QJsonArray& args)
     return trueRet;
 }
 
-QJsonArray RPCFileObj::paths(BGMRProcedure*, const QJsonArray&)
+QJsonArray RPCFileObj::paths(BGMRClient*, const QJsonArray&)
 {
     QJsonArray ret;
 
@@ -165,7 +165,7 @@ QJsonArray RPCFileObj::paths(BGMRProcedure*, const QJsonArray&)
     return ret;
 }
 
-QJsonArray RPCFileObj::removePath(BGMRProcedure*, const QJsonArray& args)
+QJsonArray RPCFileObj::removePath(BGMRClient*, const QJsonArray& args)
 {
     QString pathID = args [0].toString ();
     if (!pathID.isEmpty ()) {
@@ -177,7 +177,7 @@ QJsonArray RPCFileObj::removePath(BGMRProcedure*, const QJsonArray& args)
     return QJsonArray ();
 }
 
-QJsonArray RPCFileObj::rootPath(BGMRProcedure*, const QJsonArray&)
+QJsonArray RPCFileObj::rootPath(BGMRClient*, const QJsonArray&)
 {
     QString theRootPath = BGMRPC::Settings->value ("rootDir", "~/.BGMR").toString ();
     QJsonArray ret;
@@ -186,9 +186,9 @@ QJsonArray RPCFileObj::rootPath(BGMRProcedure*, const QJsonArray&)
     return ret;
 }
 
-BGMRProcedure* RPCFileObj::proc(quint16 id) const
+BGMRClient* RPCFileObj::proc(quint16 id) const
 {
-    return RelProcs.procs () [id];
+    return RelProcs.relatedClients () [id];
 }
 
 QString RPCFileObj::rootPath ()

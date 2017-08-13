@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += network core
+QT       += network core websockets
 
 QT       -= gui
 
@@ -17,8 +17,9 @@ SOURCES += \
     bgmrtcpserver.cpp \
     bgmrpc.cpp \
     bgmrobjectstorage.cpp \
-    bgmrprocedure.cpp \
-    relatedproc.cpp
+    bgmrclient.cpp \
+    relatedclient.cpp \
+    bgmrobject.cpp
 
 HEADERS +=\
     bgmrobject.h \
@@ -27,8 +28,8 @@ HEADERS +=\
     bgmrpc_global.h \
     bgmrtcpserver.h \
     bgmrobjectstorage.h \
-    bgmrprocedure.h \
-    relatedproc.h
+    bgmrclient.h \
+    relatedclient.h
 
 unix {
     target.path = $${PREFIX}/lib

@@ -7,7 +7,8 @@
 
 //typedef QtWebsocket::QWsServer __server;
 //typedef QtWebsocket::QWsSocket __socket;
-#include <QtWebSockets>
+#include <QWebSocket>
+#include <QWebSocketServer>
 
 typedef QWebSocket __socket;
 typedef QWebSocketServer __server;

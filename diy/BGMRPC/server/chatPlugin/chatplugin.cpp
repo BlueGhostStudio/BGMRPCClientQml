@@ -7,8 +7,8 @@ using namespace BGMircroRPCServer;
 chatObj::chatObj(QObject* parent)
     : QObject (parent)
 {
-    connect (&RelProc, SIGNAL(removedProc(BGMRProcedure*)),
-             SLOT(leaved(BGMRProcedure*)));
+    connect (&RelProc, SIGNAL(removedProc(BGMRClient*)),
+             SLOT(leaved(BGMRClient*)));
 }
 
 QString chatObj::objectType() const
@@ -16,7 +16,7 @@ QString chatObj::objectType() const
     return objType ();
 }
 
-QJsonArray chatObj::say(BGMRProcedure* p, const QJsonArray& args)
+QJsonArray chatObj::say(BGMRClient* p, const QJsonArray& args)
 {
     QJsonArray ret;
     if (hasJoined (p)) {
@@ -33,7 +33,7 @@ QJsonArray chatObj::say(BGMRProcedure* p, const QJsonArray& args)
     return ret;
 }
 
-QJsonArray chatObj::join(BGMRProcedure* p, const QJsonArray& args)
+QJsonArray chatObj::join(BGMRClient* p, const QJsonArray& args)
 {
     QJsonArray ret;
     if (!hasJoined (p)) {
@@ -45,14 +45,14 @@ QJsonArray chatObj::join(BGMRProcedure* p, const QJsonArray& args)
     return ret;
 }
 
-QJsonArray chatObj::hasJoined(BGMRProcedure* p, const QJsonArray&)
+QJsonArray chatObj::hasJoined(BGMRClient* p, const QJsonArray&)
 {
     QJsonArray ret;
     ret.append (hasJoined (p));
     return ret;
 }
 
-QJsonArray chatObj::changeNickname(BGMRProcedure* p, const QJsonArray& args)
+QJsonArray chatObj::changeNickname(BGMRClient* p, const QJsonArray& args)
 {
     QJsonArray ret;
     QString nickname = args [0].toString ();
@@ -75,14 +75,14 @@ QJsonArray chatObj::changeNickname(BGMRProcedure* p, const QJsonArray& args)
     return ret;
 }
 
-QJsonArray chatObj::whoList(BGMRProcedure* p, const QJsonArray&)
+QJsonArray chatObj::whoList(BGMRClient* p, const QJsonArray&)
 {
     QJsonArray ret;
     if (hasJoined (p)) {
         ret.append (true);
         QJsonArray list;
-        QMap < qulonglong, BGMRProcedure* > procs = RelProc.procs ();
-        QMap < qulonglong, BGMRProcedure* >::const_iterator it;
+        QMap < qulonglong, BGMRClient* > procs = RelProc.relatedClients ();
+        QMap < qulonglong, BGMRClient* >::const_iterator it;
         for (it = procs.constBegin (); it != procs.constEnd (); ++it)
             list.append (it.value ()->privateDataJson (this, "nickname"));
 
@@ -93,18 +93,18 @@ QJsonArray chatObj::whoList(BGMRProcedure* p, const QJsonArray&)
     return ret;
 }
 
-QJsonArray chatObj::leave(BGMRProcedure* p, const QJsonArray&)
+QJsonArray chatObj::leave(BGMRClient* p, const QJsonArray&)
 {
     QJsonArray ret;
     if (hasJoined (p)) {
-        ret.append (RelProc.removeProc (p->pID ()));
+        ret.append (RelProc.removeClient (p->cliID ()));
     } else
         ret.append (false);
 
     return ret;
 }
 
-void chatObj::leaved(BGMRProcedure* proc)
+void chatObj::leaved(BGMRClient* proc)
 {
     if (proc) {
         QJsonArray sigArgs;
@@ -113,15 +113,15 @@ void chatObj::leaved(BGMRProcedure* proc)
     }
 }
 
-QString chatObj::join(BGMRProcedure* p, const QString& nick)
+QString chatObj::join(BGMRClient* p, const QString& nick)
 {
     QString nickname;
 
-    if (RelProc.addProc (p))  {
+    if (RelProc.addRelatedClient (p))  {
         if (!nick.isEmpty ())
             nickname = nick;
         else
-            nickname = QString ("noname%1").arg (p->pID ());
+            nickname = QString ("noname%1").arg (p->cliID ());
 
         p->setPrivateDataJson (this, "nickname", nickname);
 
@@ -134,9 +134,9 @@ QString chatObj::join(BGMRProcedure* p, const QString& nick)
     return nickname;
 }
 
-bool chatObj::hasJoined(BGMRProcedure* p)
+bool chatObj::hasJoined(BGMRClient* p)
 {
-    return RelProc.procs ().contains (p->pID ());
+    return RelProc.relatedClients ().contains (p->cliID ());
 }
 
 // ==============
