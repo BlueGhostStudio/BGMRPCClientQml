@@ -26,15 +26,28 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    contentdialog.cpp
+    contentdialog.cpp \
+    resbrowerdialog.cpp \
+    resthumb.cpp \
+    logindialog.cpp \
+    propertydialog.cpp \
+    cmssettings.cpp
 
 HEADERS += \
         mainwindow.h \
-    contentdialog.h
+    contentdialog.h \
+    resbrowerdialog.h \
+    resthumb.h \
+    logindialog.h \
+    propertydialog.h \
+    cmssettings.h
 
 FORMS += \
         mainwindow.ui \
-    contentdialog.ui
+    contentdialog.ui \
+    resbrowerdialog.ui \
+    logindialog.ui \
+    propertydialog.ui
 
 unix:!macx: LIBS += -L$$OUT_PWD/../BGMRPCClient/ -lBGMRPCClient
 

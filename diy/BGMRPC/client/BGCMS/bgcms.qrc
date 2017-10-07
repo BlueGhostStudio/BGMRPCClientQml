@@ -21,5 +21,7 @@
         <file>markdown/markdown.css</file>
         <file>markdown/marked.min.js</file>
         <file>markdown/qwebchannel.js</file>
+        <file>icons/icons8-Login-48.png</file>
+        <file>icons/icons8-Settings-48.png</file>
     </qresource>
 </RCC>

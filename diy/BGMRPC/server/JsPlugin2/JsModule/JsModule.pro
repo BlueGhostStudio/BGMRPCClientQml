@@ -2,4 +2,5 @@ TEMPLATE = subdirs
 
 SUBDIRS += JsModuleCommon \
     FirstModule \
-    jsDB
+    jsDB \
+    jsTimer

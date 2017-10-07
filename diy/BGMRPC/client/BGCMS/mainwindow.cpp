@@ -6,9 +6,13 @@
 #include <QDebug>
 #include <QMainWindow>
 #include <QMessageBox>
+#include <resbrowerdialog.h>
+#include <logindialog.h>
+#include <propertydialog.h>
+#include "cmssettings.h"
 
 MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent)//, dlgContent (this)
+    QMainWindow(parent)
 {
     setupUi(this);
 
@@ -28,10 +32,10 @@ MainWindow::MainWindow(QWidget *parent) :
     lvCollections->setModelColumn (1);
 
     initialRemoteSignal ();
+    socketStateSyn (RPC->state ());
     QObject::connect (this, &MainWindow::cmsObjChanged,
                       [=]() {
         actionAdd_Content->setEnabled (!CurrentCmsObj.isEmpty ());
-        actionAdd_Image->setEnabled (!CurrentCmsObj.isEmpty ());
     });
     QObject::connect (lvContents->selectionModel (),
                       &QItemSelectionModel::selectionChanged,
@@ -73,6 +77,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
         loadContents (CurrentCmsObj, tagsArg, false);
     });
+
+    UsrInfoLabel = new QLabel ("No login", this);
+    CMSStatusBar->addPermanentWidget (UsrInfoLabel);
 }
 
 void MainWindow::loadCollections()
@@ -132,6 +139,24 @@ void MainWindow::loadContents(const QString& cmsObj,
     ContentsModel.sort (5);
 }
 
+void MainWindow::on_actionConnect_Cms_Server_triggered()
+{
+    bool ok = false;
+    QString url = QInputDialog::getText (this, "Connect to CMS server",
+                                         "Url", QLineEdit::Normal,
+                                         CMSSettings::CMSUrl ().toString (),
+                                         &ok);
+    if (ok) {
+        RPC->setUrl (url);
+        RPC->connectToHost ();
+    }
+}
+
+void MainWindow::on_actionDisconnect_triggered()
+{
+    RPC->close ();
+}
+
 void MainWindow::on_lvContents_doubleClicked(const QModelIndex &index)
 {
     if (CurrentCmsObj.isEmpty ())
@@ -149,16 +174,6 @@ void MainWindow::on_actionAdd_Content_triggered()
 {
     QVariant ret = RPC->callMethod (CurrentCmsObj, "js",
     {"addContent", "No Name", "no Content"});
-}
-
-void MainWindow::on_actionAdd_Image_triggered()
-{
-    QFile imgFile ("/home/bgstudio/Pictures/logo.png");
-    imgFile.open (QIODevice::ReadOnly);
-    qDebug () << RPC->callMethod (CurrentCmsObj, "js", {
-                                      "addImage", "logo.png",
-                                      QString (imgFile.readAll ().toBase64 ())
-                     });
 }
 
 void MainWindow::setCurrentCmsObj(const QString& cmsObj)
@@ -195,8 +210,19 @@ void MainWindow::on_actionRearrange_triggered()
                  ->data (Qt::DisplayRole).toInt ();
     int cntID = ContentsModel.item (currentRow, 0)
                 ->data (Qt::DisplayRole).toInt ();
-    int maxSeq = ContentsModel.item (ContentsModel.rowCount () - 1, 1)
-                 ->data (Qt::DisplayRole).toInt ();
+
+    QString tag = ContentsModel.item (currentRow, 5)
+                  ->data (Qt::DisplayRole).toString ();
+    QList < QStandardItem* > tagContents
+            = ContentsModel.findItems (tag, Qt::MatchExactly, 5);
+    int maxSeq = 1;
+    foreach (QStandardItem* cItem, tagContents) {
+        int ciSeq = ContentsModel.item (cItem->row (), 1)
+                    ->data (Qt::DisplayRole).toInt ();
+        if (ciSeq > maxSeq)
+            maxSeq = ciSeq;
+    }
+
     int seq = QInputDialog::getInt(this, tr("Rearrange"),
                                tr("Sequence:"), orgSeq, 1, maxSeq);
     if (seq != orgSeq) {
@@ -244,13 +270,47 @@ void MainWindow::on_actionRename_Collection_triggered()
     }
 }
 
+void MainWindow::on_actionLogin_triggered()
+{
+    LoginDialog loginDialog (this);
+    if (loginDialog.exec () == QDialog::Accepted) {
+        CMSSettings::setUser (loginDialog.user ());
+        CMSSettings::setPassword (loginDialog.password ());
+        RPC->callMethod ("CMS", "js", {
+                             "login", loginDialog.user (),
+                             loginDialog.password ()
+                         });
+    }
+}
+
+void MainWindow::on_actionSetting_triggered()
+{
+    PropertyDialog propertyDialog (this);
+    propertyDialog.exec ();
+}
+
+void MainWindow::socketStateSyn(QAbstractSocket::SocketState state)
+{
+    actionDisconnect->setEnabled (
+                state == QAbstractSocket::ConnectedState);
+    actionConnect_Cms_Server->setEnabled (
+                state == QAbstractSocket::UnconnectedState);
+}
+
 void MainWindow::initialRemoteSignal()
 {
-
+    QObject::connect (RPC, &BGMRPCClient::stateChanged,
+                      this, &MainWindow::socketStateSyn);
     QObject::connect (RPC, &BGMRPCClient::remoteSignal,
                       [=] (const QString& obj,const QString& sig,
                       const QJsonArray& args) {
-        if (obj == CurrentCmsObj) {
+        CMSStatusBar->showMessage (QString ("signal: %1.%2")
+                                   .arg (obj).arg (sig));
+        if (sig == "ERROR_ACCESS")
+            QMessageBox::warning (this, tr("ERROR_ACCESS"),
+                                  tr("Do not have permission to perform the "
+                                     "current operation"));
+        else if (obj == CurrentCmsObj) {
             if (sig == "added")
                 //appendContentRow (args.toVariantList ()[0].toMap ());
                 ContentsModel.appendRow (
@@ -300,23 +360,24 @@ void MainWindow::initialRemoteSignal()
                 ContentsModel.sort (1);
             }
         } else if (obj == "CMS") {
-            if (sig == "created")
+            if (sig == "logined")
+                UsrInfoLabel->setText (args[0].toString ());
+            else if (sig == "created")
                 CollectionsModel.appendRow (
                             collectionRow (args.toVariantList ()[0].toMap ())
                         );
             else if (sig == "removed") {
-                qDebug () << CollectionsModel.rowCount ();
                 QList < QStandardItem* > removedItem
                         = CollectionsModel.findItems (
                               QString::number (args[0].toInt ()));
                 if (removedItem.count () > 0) {
                     int rmRow = removedItem[0]->row ();
-                    int currentRow = lvCollections->currentIndex ().row ();
+                    //int currentRow = lvCollections->currentIndex ().row ();
                     CollectionsModel.removeRow (rmRow);
-                    if (rmRow == currentRow) {
+                    /*if (rmRow == currentRow) {
                         CurrentCmsObj = "";
                         lvCollections->clearSelection ();
-                    }
+                    }*/
                 }
             } else if (sig == "renamed") {
                 QList < QStandardItem* > renamedItem
@@ -370,4 +431,3 @@ QList<QStandardItem*> MainWindow::contentRow(const QVariantMap& rowData) const
 
     return {idItem, seqItem, titleItem, dateItem, authorItem, tagItem};
 }
-

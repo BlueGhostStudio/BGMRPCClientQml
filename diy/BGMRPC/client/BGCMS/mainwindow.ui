@@ -132,6 +132,11 @@
     <property name="title">
      <string>File</string>
     </property>
+    <addaction name="actionConnect_Cms_Server"/>
+    <addaction name="actionDisconnect"/>
+    <addaction name="separator"/>
+    <addaction name="actionSetting"/>
+    <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
    <widget class="QMenu" name="menuCMS">
@@ -151,19 +156,20 @@
       <string>Content</string>
      </property>
      <addaction name="actionAdd_Content"/>
-     <addaction name="actionAdd_Image"/>
      <addaction name="actionRemove_Content"/>
      <addaction name="actionRearrange"/>
      <addaction name="separator"/>
      <addaction name="actionTag_Filter"/>
     </widget>
+    <addaction name="actionLogin"/>
+    <addaction name="separator"/>
     <addaction name="menuCollection"/>
     <addaction name="menuContent"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuCMS"/>
   </widget>
-  <widget class="QToolBar" name="tlbFile">
+  <widget class="QToolBar" name="File">
    <property name="windowTitle">
     <string>toolBar</string>
    </property>
@@ -187,9 +193,10 @@
    </attribute>
    <addaction name="actionConnect_Cms_Server"/>
    <addaction name="actionDisconnect"/>
+   <addaction name="actionSetting"/>
    <addaction name="actionExit"/>
   </widget>
-  <widget class="QToolBar" name="tlbCMS">
+  <widget class="QToolBar" name="CMS">
    <property name="windowTitle">
     <string>toolBar</string>
    </property>
@@ -211,16 +218,22 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionLogin"/>
+   <addaction name="separator"/>
    <addaction name="actionAdd_Collection"/>
    <addaction name="actionRename_Collection"/>
    <addaction name="actionRemove_Collection"/>
    <addaction name="separator"/>
    <addaction name="actionAdd_Content"/>
-   <addaction name="actionAdd_Image"/>
    <addaction name="actionRemove_Content"/>
    <addaction name="actionRearrange"/>
    <addaction name="separator"/>
    <addaction name="actionTag_Filter"/>
+  </widget>
+  <widget class="QStatusBar" name="CMSStatusBar">
+   <property name="sizeGripEnabled">
+    <bool>true</bool>
+   </property>
   </widget>
   <action name="actionExit">
    <property name="icon">
@@ -277,6 +290,9 @@
    </property>
   </action>
   <action name="actionConnect_Cms_Server">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="bgcms.qrc">
      <normaloff>:/icons/icons8-Connected.png</normaloff>:/icons/icons8-Connected.png</iconset>
@@ -286,6 +302,9 @@
    </property>
   </action>
   <action name="actionDisconnect">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="bgcms.qrc">
      <normaloff>:/icons/icons8-Disconnected.png</normaloff>:/icons/icons8-Disconnected.png</iconset>
@@ -336,16 +355,22 @@
     <string>Rename Collection</string>
    </property>
   </action>
-  <action name="actionAdd_Image">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
+  <action name="actionLogin">
    <property name="icon">
     <iconset resource="bgcms.qrc">
-     <normaloff>:/icons/icons8-Picture-48.png</normaloff>:/icons/icons8-Picture-48.png</iconset>
+     <normaloff>:/icons/icons8-Login-48.png</normaloff>:/icons/icons8-Login-48.png</iconset>
    </property>
    <property name="text">
-    <string>Add Image</string>
+    <string>Login</string>
+   </property>
+  </action>
+  <action name="actionSetting">
+   <property name="icon">
+    <iconset resource="bgcms.qrc">
+     <normaloff>:/icons/icons8-Settings-48.png</normaloff>:/icons/icons8-Settings-48.png</iconset>
+   </property>
+   <property name="text">
+    <string>Setting</string>
    </property>
   </action>
  </widget>

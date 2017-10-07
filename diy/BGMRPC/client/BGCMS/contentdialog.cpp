@@ -3,6 +3,8 @@
 #include <QLabel>
 #include <QComboBox>
 #include <QLineEdit>
+#include <resbrowerdialog.h>
+#include <QWebEngineSettings>
 #include "contentdialog.h"
 
 void Document::setText(const QString& text)
@@ -39,6 +41,8 @@ strike,del {
 }
 )css");*/
 
+    wevPreview->setContextMenuPolicy(Qt::NoContextMenu);
+
     wevPreview->setPage (&PreviewPage);
     PreviewChannel.registerObject ("content", &PreviewDocument);
     PreviewPage.setWebChannel (&PreviewChannel);
@@ -48,18 +52,13 @@ strike,del {
     QObject::connect (pbEditContent, &QPushButton::clicked,
                       [=]() {
         stwContent->setCurrentIndex (1);
-        /*QVariantMap ret
-                = RPC->callMethod (CMSObj, "js",{
-                                       "content", ContentID
-                                   }).toMap ()["content"].toMap ();
-
-        setEdit (ret);*/
     });
     QObject::connect (pbBackToPreview, &QPushButton::clicked,
                       [=]() {
         stwContent->setCurrentIndex (0);
     });
-    QObject::connect (RPC, &BGMRPCClient::remoteSignal,
+    RemoteSignalConnection
+            = QObject::connect (RPC, &BGMRPCClient::remoteSignal,
                       [=](const QString& obj,const QString& sig,
                       const QJsonArray& args) {
         if (sig == "updated") {
@@ -81,6 +80,7 @@ strike,del {
             }
         }
     });
+
     QObject::connect (cbTag,
                       qOverload < const QString& >(&QComboBox::activated),
                       [=](const QString& text) {
@@ -93,6 +93,11 @@ strike,del {
                       [=] () {
         cbTag->activated (cbTag->currentText ());
     });
+}
+
+ContentDialog::~ContentDialog()
+{
+    QObject::disconnect (RemoteSignalConnection);
 }
 
 void ContentDialog::openContent(const QString& cmsObj, int cID)
@@ -135,6 +140,13 @@ void ContentDialog::on_pbSave_clicked()
                      });
 }
 
+void ContentDialog::on_pbResBrowser_clicked()
+{
+    ResBrowerDialog rbdlg (this);
+    if (rbdlg.exec () == QDialog::Accepted)
+        pteContentEdit->insertPlainText (rbdlg.resource ());
+}
+
 void ContentDialog::setPreview(const QVariantMap& data)
 {
     PreviewDocument.setText ("");
@@ -146,9 +158,6 @@ void ContentDialog::setPreview(const QVariantMap& data)
                     .arg (data["title"].toString ())
                     .arg (data["date"].toString ())
                     .arg (data["author"].toString ()));
-    /*labPreviewDate->setText (data["date"].toString ());
-    labPreviewAuthor->setText (data["author"].toString ());*/
-    //tbContent->setHtml (html);
     PreviewDocument.setText (html);
 }
 
@@ -159,4 +168,3 @@ void ContentDialog::setEdit(const QVariantMap& contentData)
     cbTag->setCurrentIndex (cbTag->findText (contentData["tag"].toString ()));
     pteContentEdit->setPlainText (contentData["content"].toString ());
 }
-

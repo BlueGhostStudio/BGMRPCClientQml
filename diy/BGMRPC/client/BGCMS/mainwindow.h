@@ -4,6 +4,8 @@
 #include <QStandardItemModel>
 #include <bgmrpcclient.h>
 #include <QMenu>
+#include <QWidget>
+
 #include "ui_mainwindow.h"
 #include "contentdialog.h"
 
@@ -22,11 +24,13 @@ public:
                        bool resetTagsList = true);
 
 private slots:
+    void on_actionConnect_Cms_Server_triggered();
+
+    void on_actionDisconnect_triggered();
+
     void on_lvContents_doubleClicked(const QModelIndex &index);
 
     void on_actionAdd_Content_triggered();
-
-    void on_actionAdd_Image_triggered();
 
     void on_actionRemove_Content_triggered();
 
@@ -37,6 +41,12 @@ private slots:
     void on_actionRemove_Collection_triggered();
 
     void on_actionRename_Collection_triggered();
+
+    void on_actionLogin_triggered();
+
+    void on_actionSetting_triggered();
+
+    void socketStateSyn (QAbstractSocket::SocketState state);
 
 signals:
     void cmsObjChanged ();
@@ -56,6 +66,8 @@ private:
     QItemSelection TagFilterSelection;
 
     QStringListModel CollTagsModel;
+
+    QLabel* UsrInfoLabel;
 };
 
 #endif // MAINWINDOW_H

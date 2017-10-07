@@ -50,7 +50,6 @@ QJsonArray bgresObj::addRes(BGMRClient*, const QJsonArray& args)
 {
     QString name = args[0].toString ();
     QString data = args[1].toString ();
-    qDebug () << "in bgresObj::addRes" << name << data;
 
     QSqlQuery checkQuery (ResDatabase);
     checkQuery.prepare ("SELECT count(id) AS exist FROM res WHERE name=:N");
@@ -65,6 +64,8 @@ QJsonArray bgresObj::addRes(BGMRClient*, const QJsonArray& args)
         instQuery.bindValue (":D", data);
         qDebug () << instQuery.exec ();
 
+        RelClients.emitSignal (this, "added", { name });
+
         return QJsonArray ({ true,
                              QString ("http://127.0.0.1:8080/%1")
                                 .arg (name) });
@@ -78,11 +79,54 @@ QJsonArray bgresObj::addRes(BGMRClient*, const QJsonArray& args)
     }
 }
 
+QJsonArray bgresObj::removeRes(BGMRClient*, const QJsonArray& args)
+{
+    QString name = args[0].toString ();
+
+    QSqlQuery rmQuery (ResDatabase);
+    rmQuery.prepare ("DELETE FROM res WHERE name:N");
+    rmQuery.bindValue (":N", name);
+    rmQuery.exec ();
+
+    return QJsonArray ({ name });
+}
+
+QJsonArray bgresObj::renameRes(BGMRClient*, const QJsonArray& args)
+{
+    QString name = args[0].toString ();
+    QString newName = args[1].toString ();
+
+    QSqlQuery rnQuery (ResDatabase);
+    rnQuery.prepare ("UPDATE res SET name=:NN WHERE name=:N");
+    rnQuery.bindValue (":NN", newName);
+    rnQuery.bindValue (":N", name);
+    rnQuery.exec ();
+
+    return QJsonArray ({ name, newName });
+}
+
+QJsonArray bgresObj::listRes(BGMRClient* cli, const QJsonArray&)
+{
+    RelClients.addClient (cli);
+
+    QSqlQuery listQuery (ResDatabase);
+    listQuery.exec ("SELECT * FROM res");
+
+    QJsonArray ress;
+    while (listQuery.next ())
+        ress.append (QJsonValue (listQuery.value ("name").toString ()));
+
+    return QJsonArray { ress };
+}
+
 // ==========
 
 void bgresAdptor::registerMethods()
 {
     Methods["addRes"] = &bgresObj::addRes;
+    Methods["removeRes"] = &bgresObj::removeRes;
+    Methods["renameRes"] = &bgresObj::renameRes;
+    Methods["listRes"] = &bgresObj::listRes;
 }
 
 // ==========

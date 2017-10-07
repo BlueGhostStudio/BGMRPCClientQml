@@ -25,10 +25,14 @@ public:
     void start();
 
     QJsonArray addRes (BGMRClient*, const QJsonArray& args);
+    QJsonArray removeRes (BGMRClient*, const QJsonArray& args);
+    QJsonArray renameRes (BGMRClient*, const QJsonArray& args);
+    QJsonArray listRes (BGMRClient*cli, const QJsonArray&);
 
 private:
     QHttpServer ResHttpServer;
     QSqlDatabase ResDatabase;
+    relatedClients RelClients;
 };
 
 class bgresAdptor : public BGMRAdaptor < bgresObj > {

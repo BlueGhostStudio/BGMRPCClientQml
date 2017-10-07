@@ -252,7 +252,7 @@ void BGMRClient::handleCallRequest ()
                 = QJsonDocument::fromJson (callJson).object ();
         //const QJsonObject callJsonObj
         //        = parse (callJson).toObject ();
-        qDebug () << callJsonObj;
+        //qDebug () << callJsonObj;
 #else
         QJsonObject callJsonObj
                 = QJsonDocument::fromBinaryData (callJson).object ();

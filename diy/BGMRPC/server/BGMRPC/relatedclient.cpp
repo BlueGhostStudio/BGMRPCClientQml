@@ -13,9 +13,11 @@ bool relatedClients::addClient(BGMircroRPCServer::BGMRClient* cli)
 {
     bool ok = false;
     if (cli) {
-        Clients [cli->cliID ()] = cli;
-        connect (cli, SIGNAL(clientExited(qulonglong)),
-                 this, SLOT(removeClient(qulonglong)), Qt::DirectConnection);
+        if (!Clients.contains (cli->cliID ())) {
+            Clients [cli->cliID ()] = cli;
+            connect (cli, SIGNAL(clientExited(qulonglong)),
+                     this, SLOT(removeClient(qulonglong)), Qt::DirectConnection);
+        }
         ok = true;
     }
 

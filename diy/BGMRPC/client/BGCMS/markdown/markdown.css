@@ -1,10 +1,13 @@
 body{
     margin: 0 auto;
-    font-family: Georgia, Palatino, serif;
+/*    font-family: Georgia, Palatino, serif;*/
     color: #444444;
     line-height: 1;
     max-width: 960px;
-    padding: 30px;
+    padding: 5em;
+}
+img {
+    max-width: 100%;
 }
 h1, h2, h3, h4 {
     color: #111111;
@@ -58,15 +61,15 @@ li ul, li ul {
 p, ul, ol {
     font-size: 16px;
     line-height: 24px;
-    max-width: 540px;
+/*    max-width: 540px;*/
 }
 pre {
     padding: 0px 24px;
-    max-width: 800px;
+/*    max-width: 800px;*/
     white-space: pre-wrap;
 }
 code {
-    font-family: Consolas, Monaco, Andale Mono, monospace;
+/*    font-family: Consolas, Monaco, Andale Mono, monospace;*/
     line-height: 1.5;
     font-size: 13px;
 }
@@ -79,7 +82,7 @@ blockquote {
     border-left:.5em solid #eee;
     padding: 0 2em;
     margin-left:0;
-    max-width: 476px;
+/*    max-width: 476px;*/
 }
 blockquote  cite {
     font-size:14px;
@@ -92,7 +95,7 @@ blockquote cite:before {
 
 blockquote p {
     color: #666;
-    max-width: 460px;
+/*    max-width: 460px;*/
 }
 hr {
     width: 540px;
@@ -150,7 +153,7 @@ label,
 input,
 select,
 textarea {
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+/*  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;*/
   font-size: 13px;
   font-weight: normal;
   line-height: normal;
@@ -216,7 +219,7 @@ input[type=text]:focus, input[type=password]:focus, textarea:focus {
 button {
   display: inline-block;
   padding: 4px 14px;
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+/*  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;*/
   font-size: 13px;
   line-height: 18px;
   -webkit-border-radius: 4px;
