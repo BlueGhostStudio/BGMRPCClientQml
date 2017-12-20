@@ -227,6 +227,7 @@
    <addaction name="actionAdd_Content"/>
    <addaction name="actionRemove_Content"/>
    <addaction name="actionRearrange"/>
+   <addaction name="actionCopy_Link"/>
    <addaction name="separator"/>
    <addaction name="actionTag_Filter"/>
   </widget>
@@ -371,6 +372,15 @@
    </property>
    <property name="text">
     <string>Setting</string>
+   </property>
+  </action>
+  <action name="actionCopy_Link">
+   <property name="icon">
+    <iconset resource="bgcms.qrc">
+     <normaloff>:/icons/icons8-Copy Link-48.png</normaloff>:/icons/icons8-Copy Link-48.png</iconset>
+   </property>
+   <property name="text">
+    <string>Copy Link</string>
    </property>
   </action>
  </widget>

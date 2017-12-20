@@ -23,5 +23,6 @@
         <file>markdown/qwebchannel.js</file>
         <file>icons/icons8-Login-48.png</file>
         <file>icons/icons8-Settings-48.png</file>
+        <file>icons/icons8-Copy Link-48.png</file>
     </qresource>
 </RCC>

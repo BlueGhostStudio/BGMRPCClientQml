@@ -32,7 +32,9 @@ public:
     QJsonArray setPluginDir (BGMRClient*, const QJsonArray& args);
 
     void setRPC (BGMRPC* rpc);
-    bool clientIdentify (BGMRClient* p, const QString& method, const QJsonArray&);
+    bool clientIdentify (BGMRClient* p,
+                         const QString& method,
+                         const QJsonArray&, bool /*lc*/);
 
 protected:
     relatedClients RelClients;

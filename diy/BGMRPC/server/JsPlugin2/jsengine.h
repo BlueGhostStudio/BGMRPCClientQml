@@ -22,7 +22,9 @@ public:
     ~JsEngine ();
 
     bool clientIdentify (BGMRClient* cli,
-                       const QString& method, const QJsonArray& as);
+                         const QString& method,
+                         const QJsonArray& as,
+                         bool lc = false);
 
     QString objectType() const;
 
@@ -36,12 +38,14 @@ public:
     void loadModule (const QString& module);
 
     QJsonArray js (BGMRClient* p, const QJsonArray& args);
+    QJsonArray ljs (BGMRClient* p, const QJsonArray& args);
     void setGlobalMutexLock (bool lock);
     bool globalMutexLock () const;
 
     relatedClients* relClients ();
 
 private:
+    QJsonArray js (BGMRClient *p, const QJsonArray &args, bool lc);
     QJSEngine* Engine;
     BGMRPC* RPC;
     bool GlobalMutexLock;

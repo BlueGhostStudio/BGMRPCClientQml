@@ -36,6 +36,8 @@ private slots:
 
     void on_actionRearrange_triggered();
 
+    void on_actionCopy_Link_triggered();
+
     void on_actionAdd_Collection_triggered();
 
     void on_actionRemove_Collection_triggered();

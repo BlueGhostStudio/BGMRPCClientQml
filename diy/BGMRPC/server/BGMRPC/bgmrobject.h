@@ -18,10 +18,10 @@ public:
     virtual QString objectName () const = 0;
     virtual QString objectType () const = 0;
     virtual bool clientIdentify (BGMRClient*, const QString&,
-                               const QJsonArray&) = 0;
+                               const QJsonArray&, bool lc) = 0;
     virtual void destory () = 0;
     QJsonArray callMethod (BGMRClient* cli, const QString& method,
-                           const QJsonArray& args);
+                           const QJsonArray& args, bool lc = false);
 };
 
 template < typename T >
@@ -31,7 +31,7 @@ public:
     QString objectName () const { return ObjectName; }
     void setObjectName (const QString& objName) { ObjectName = objName; }
     void destory () { qDebug () << "Destoring " << objectName (); }
-    bool clientIdentify (BGMRClient*, const QString&, const QJsonArray&)
+    bool clientIdentify (BGMRClient*, const QString&, const QJsonArray&, bool lc)
     {
         return true;
     }

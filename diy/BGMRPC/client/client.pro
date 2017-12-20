@@ -7,5 +7,5 @@ SUBDIRS = \
     #clientDemo \
     #BGMRPClientQuick \
     BGMRPCClient \
-    testBGClient \
-    BGCMS
+    testBGClient# \
+    #BGCMS

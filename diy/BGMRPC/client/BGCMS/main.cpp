@@ -31,7 +31,6 @@ int main(int argc, char *argv[])
                              wevFontFamily);
 
     QIcon winIcon ("://icons/appIcon.png");
-    qDebug () << winIcon.actualSize (QSize(512,512));
     QApplication::setWindowIcon (winIcon);
 
     QFile styleSheetFile ("/home/bgstudio/Mis/stylesheet");

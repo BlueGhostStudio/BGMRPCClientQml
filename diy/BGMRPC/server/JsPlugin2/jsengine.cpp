@@ -13,11 +13,18 @@ JsEngine::~JsEngine ()
 }
 
 bool JsEngine::clientIdentify(BGMRClient* cli, const QString& method,
-                            const QJsonArray& as)
+                            const QJsonArray& as, bool lc)
 {
+    qDebug () << "local call is" << lc;
+    if (lc && method != "ljs")
+        return false;
+
     bool identify = false;
-    mutex.lock ();
-    qDebug () << "vvv identify lock vvv";
+
+    if (!lc) {
+        mutex.lock ();
+        qDebug () << "vvv identify lock vvv";
+    }
 
     QJSValue jsIdentify = Engine->globalObject ().property ("clientIdentify");
     if (jsIdentify.isCallable ()) {
@@ -26,12 +33,15 @@ bool JsEngine::clientIdentify(BGMRClient* cli, const QString& method,
         _jsClientObj->deleteLater();
         identify = jsIdentify.call (QJSValueList () << jsClientObj
                                     << method
-                                    << Engine->toScriptValue (as)).toBool ();
+                                    << Engine->toScriptValue (as)
+                                    << lc).toBool ();
     } else
         identify = true;
 
-    qDebug () << "^^^ identify unlock ^^^";
-    mutex.unlock ();
+    if (!lc) {
+        qDebug () << "^^^ identify unlock ^^^";
+        mutex.unlock ();
+    }
 
     return identify;
 }
@@ -124,6 +134,17 @@ void JsEngine::loadModule(const QString& module)
 
 QJsonArray JsEngine::js(BGMRClient* p, const QJsonArray& args)
 {
+    return js (p, args, false);
+}
+
+QJsonArray JsEngine::ljs(BGMRClient* p, const QJsonArray& args)
+{
+    return js (p, args, true);
+}
+/*
+QJsonArray JsEngine::js(BGMRClient* p, const QJsonArray& args)
+{
+    qDebug () << "\t" + args [0].toString ();
     QJsonArray ret;
 
     if (!Engine)
@@ -149,7 +170,7 @@ QJsonArray JsEngine::js(BGMRClient* p, const QJsonArray& args)
         //jsArgs << Engine->toScriptValue (p);
         for (int i = 1; i < args.count(); i++)
             jsArgs << Engine->toScriptValue (args.at(i));
-        qDebug () << "^^^ lock 2 ^^^";
+        qDebug () << "^^^ unlock 2 ^^^";
         mutex.unlock();
 
         if (GlobalMutexLock) {
@@ -157,7 +178,6 @@ QJsonArray JsEngine::js(BGMRClient* p, const QJsonArray& args)
             qDebug () << "vvv call lock vvv";
         }
         QJSValue jsRet = jsFun.call(jsArgs);
-        qDebug () << "\t" + args [0].toString ();
         if (GlobalMutexLock) {
             qDebug () << "^^^ call unlock ^^^";
             mutex.unlock();
@@ -176,7 +196,7 @@ QJsonArray JsEngine::js(BGMRClient* p, const QJsonArray& args)
 
     return ret;
 }
-
+*/
 void JsEngine::setGlobalMutexLock(bool lock)
 {
     GlobalMutexLock = lock;
@@ -192,10 +212,79 @@ relatedClients* JsEngine::relClients ()
     return &RelClients;
 }
 
+QJsonArray JsEngine::js(BGMRClient* p, const QJsonArray& args, bool lc)
+{
+    qDebug () << "\t" + args [0].toString ();
+    QJsonArray ret;
+
+    if (!Engine)
+        return ret;
+
+    if (!lc) {
+        mutex.lock();
+        qDebug () << "vvv lock 1 vvv";
+    }
+    QJSValue global = Engine->globalObject();
+    QJSValue jsFun = global.property(args[0].toString());
+    if (!lc) {
+        qDebug () << "^^^ unlock 1 ^^^";
+        mutex.unlock ();
+    }
+
+    if (jsFun.isCallable ()) {
+        if (!lc) {
+            mutex.lock ();
+            qDebug () << "vvv lock 2 vvv";
+        }
+        QJSValueList jsArgs;
+
+        JsClient* _jsClientObj = new JsClient (p);
+        QJSValue jsClientObj = Engine->newQObject(_jsClientObj);
+        _jsClientObj->deleteLater();
+
+        jsArgs << jsClientObj;
+        //jsArgs << Engine->toScriptValue (p);
+        for (int i = 1; i < args.count(); i++)
+            jsArgs << Engine->toScriptValue (args.at(i));
+        if (!lc) {
+            qDebug () << "^^^ unlock 2 ^^^";
+            mutex.unlock();
+        }
+
+        if (GlobalMutexLock && !lc) {
+            mutex.lock();
+            qDebug () << "vvv call lock vvv";
+        }
+        QJSValue jsRet = jsFun.call(jsArgs);
+        if (GlobalMutexLock && !lc) {
+            qDebug () << "^^^ call unlock ^^^";
+            mutex.unlock();
+        }
+
+        if (!lc) {
+            mutex.lock();
+            qDebug () << "vvv lock 3 vvv";
+        }
+        QJsonValue ret_jsv = QJsonValue::fromVariant(jsRet.toVariant());
+        if (jsRet.isArray())
+            ret = ret_jsv.toArray();
+        else
+            ret.append(ret_jsv);
+
+        if (!lc) {
+            qDebug () << "^^^ unlock 3 ^^^";
+            mutex.unlock();
+        }
+    }
+
+    return ret;
+}
+
 
 void JsEngineAdaptor::registerMethods()
 {
     Methods ["js"] = &JsEngine::js;
+    Methods ["ljs"] = &JsEngine::ljs;
     //Methods ["lock"] = &jsObj::lock;
 }
 

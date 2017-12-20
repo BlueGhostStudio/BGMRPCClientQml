@@ -231,6 +231,16 @@ void MainWindow::on_actionRearrange_triggered()
     }
 }
 
+void MainWindow::on_actionCopy_Link_triggered()
+{
+    int contentID = ContentsModel.item (
+                        lvContents->currentIndex ().row (), 0
+                        )->data (Qt::DisplayRole).toInt ();
+    QString colTitle = lvCollections->currentIndex ().data ().toString ();
+    QGuiApplication::clipboard ()->setText (
+                QString ("[](?c=%1&i=%2)").arg (colTitle).arg(contentID));
+}
+
 void MainWindow::on_actionAdd_Collection_triggered()
 {
     QString collTitle = QInputDialog::getText (this, tr("New Collection"),
@@ -265,7 +275,7 @@ void MainWindow::on_actionRename_Collection_triggered()
         int collID = CollectionsModel.item (
                          lvCollections->currentIndex ().row ()
                          )->data (Qt::DisplayRole).toInt ();
-        qDebug () << RPC->callMethod ("CMS", "js",
+        RPC->callMethod ("CMS", "js",
             { "renameCollection", collID, collTitle });
     }
 }

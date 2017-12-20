@@ -164,7 +164,9 @@ void RPCCtrlObj::setRPC(BGMRPC* rpc)
     RPC = rpc;
 }
 
-bool RPCCtrlObj::clientIdentify (BGMRClient* p, const QString& method, const QJsonArray&)
+bool RPCCtrlObj::clientIdentify (BGMRClient* p,
+                                 const QString& method, const QJsonArray&,
+                                 bool /*lc*/)
 {
     if (publicMethods.contains (method))
         return true;

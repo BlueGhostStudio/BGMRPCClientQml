@@ -5,9 +5,9 @@ namespace BGMircroRPCServer {
 
 QJsonArray BGMRObjectInterface::callMethod(BGMRClient* cli,
                                            const QString& method,
-                                           const QJsonArray& args)
+                                           const QJsonArray& args, bool lc)
 {
-    QJsonArray ret = adaptor()->callMetchod(this, cli, method, args);
+    QJsonArray ret = adaptor()->callMetchod(this, cli, method, args, lc);
 
     return ret;
 }

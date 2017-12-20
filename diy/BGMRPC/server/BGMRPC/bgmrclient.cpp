@@ -29,7 +29,7 @@ void callThread::run()
 {
     QJsonArray returnedValues;
     returnedValues
-            = Object->adaptor ()->callMetchod (Object, OwnCli, Method, Args);
+            = Object->adaptor ()->callMetchod (Object, OwnCli, Method, Args, false);
 
     OwnCli->returnValues (returnedValues, false, MID);
 }

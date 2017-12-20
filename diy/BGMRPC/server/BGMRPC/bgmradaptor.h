@@ -17,7 +17,8 @@ public:
     virtual QJsonArray callMetchod (BGMRObjectInterface* obj,
                                     BGMRClient* cli,
                                     const QString& method,
-                                    const QJsonArray& args) = 0;
+                                    const QJsonArray& args,
+                                    bool lc) = 0;
     virtual QStringList methods () const = 0;
 };
 
@@ -28,7 +29,8 @@ public:
     QJsonArray callMetchod (BGMRObjectInterface* obj,
                             BGMRClient* cli,
                             const QString& method,
-                            const QJsonArray& args);
+                            const QJsonArray& args,
+                            bool lc = false);
     QStringList methods () const;
 
 protected:
@@ -39,12 +41,13 @@ template < typename T >
 QJsonArray BGMRAdaptor<T>::callMetchod (BGMRObjectInterface* obj,
                                         BGMRClient* cli,
                                         const QString& method,
-                                        const QJsonArray& args)
+                                        const QJsonArray& args,
+                                        bool lc)
 {
     QJsonArray ret;
     T* theObj = static_cast < T* > (obj);
     if (theObj && Methods.contains (method)) {
-        if (theObj->clientIdentify (cli, method, args))
+        if (theObj->clientIdentify (cli, method, args, lc))
             ret = (theObj->*Methods [method])(cli, args);
         else {
             QJsonArray sigArgs;

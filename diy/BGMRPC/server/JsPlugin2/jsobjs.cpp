@@ -83,8 +83,9 @@ QStringList JsRpcObj::objectMethods() const
 QJsonArray JsRpcObj::callMethod(const QJSValue& cli, const QString& method,
                                 const QJsonArray& args)
 {
-    return RpcObj->callMethod (qobject_cast < BGMRClient* >(cli.toQObject ()),
-                               method, args);
+    return RpcObj->callMethod (
+                qobject_cast < JsClient* >(cli.toQObject ())->client (),
+                method, args, true);
 }
 
 JsJSObj::JsJSObj(BGMRObjectInterface* obj, QObject* parent)
