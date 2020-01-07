@@ -3,12 +3,13 @@
 #include <QDebug>
 #include <QFile>
 
-BGMRObjectInterface* toRpcObj (const QJSValue& obj) {
+BGMRObjectInterface* toRpcObj(const QJSValue& obj)
+{
     return qobject_cast < JsRpcObj* > (obj.toQObject())->rpcObj();
 }
 
 JsClient::JsClient(BGMRClient* cli, QObject *parent)
-    : QObject(parent), Cli (cli)
+    : QObject(parent), Cli(cli)
 {
 
 }
@@ -18,8 +19,18 @@ qulonglong JsClient::cliID() const
     return Cli->cliID();
 }
 
+bool JsClient::online() const
+{
+    return Cli->exited();
+}
+
+QJSValue JsClient::clone() const
+{
+    return qjsEngine(this)->newQObject(new JsClient(Cli));
+}
+
 void JsClient::setPrivateData(const QJSValue& obj, const QString& key,
-                            const QJsonValue& value)
+                              const QJsonValue& value)
 {
     Cli->setPrivateDataJson(toRpcObj(obj), key, value);
 }
@@ -39,7 +50,7 @@ QJsonValue JsClient::privateData(const QJSValue& obj, const QString& key) const
 }*/
 
 void JsClient::emitSignal(const QJSValue& obj, const QString& signal,
-                        const QJsonArray& args) const
+                          const QJsonArray& args) const
 {
     Cli->emitSignal(toRpcObj(obj), signal, args);
 }
@@ -55,7 +66,7 @@ BGMRClient*JsClient::client()
 }
 
 JsRpcObj::JsRpcObj(BGMRObjectInterface* obj, QObject* parent)
-    : QObject (parent), RpcObj (obj)
+    : QObject(parent), RpcObj(obj)
 {
 
 }
@@ -83,20 +94,19 @@ QStringList JsRpcObj::objectMethods() const
 QJsonArray JsRpcObj::callMethod(const QJSValue& cli, const QString& method,
                                 const QJsonArray& args)
 {
-    return RpcObj->callMethod (
-                qobject_cast < JsClient* >(cli.toQObject ())->client (),
-                method, args, true);
+    return RpcObj->callMethod(qobject_cast < JsClient* >(cli.toQObject())->client(),
+                              method, args, true);
 }
 
 JsJSObj::JsJSObj(BGMRObjectInterface* obj, QObject* parent)
-    : JsRpcObj (obj, parent)
+    : JsRpcObj(obj, parent)
 {
 
 }
 
-QString JsJSObj::objPath () const
+QString JsJSObj::objPath() const
 {
-    return toJsEngine ()->objPath ();
+    return toJsEngine()->objPath();
 }
 
 
@@ -112,44 +122,44 @@ bool JsJSObj::globalMutexLock() const
 
 void JsJSObj::mutexLock() const
 {
-    mutex.lock ();
-    qDebug () << "vvv mutexLock vvv";
+    mutex.lock();
+    qDebug() << "vvv mutexLock vvv";
 }
 
 void JsJSObj::mutexUnlock() const
 {
-    qDebug () << "^^^ mutexUnlock ^^^";
-    mutex.unlock ();
+    qDebug() << "^^^ mutexUnlock ^^^";
+    mutex.unlock();
 }
 
 void JsJSObj::addRelClient(const QJSValue& cli) const
 {
-    JsClient* _cli = qobject_cast < JsClient* > (cli.toQObject ());
-    toJsEngine ()->relClients ()->addClient (_cli->client ());
+    JsClient* _cli = qobject_cast < JsClient* > (cli.toQObject());
+    toJsEngine()->relClients()->addClient(_cli->client());
 }
 
 bool JsJSObj::removeClient(const QJSValue& cli) const
 {
-    JsClient* _cli = qobject_cast < JsClient* > (cli.toQObject ());
-    return toJsEngine ()->relClients ()
-            ->removeClient (_cli->client ()->cliID ());
+    JsClient* _cli = qobject_cast < JsClient* > (cli.toQObject());
+    return toJsEngine()->relClients()
+           ->removeClient(_cli->client()->cliID());
 }
 
 QJSValue JsJSObj::relClients(bool autoDel) const
 {
-    QJSEngine* engine = qjsEngine (this);
-    QJSValue ret = engine->newArray ();
+    QJSEngine* engine = qjsEngine(this);
+    QJSValue ret = engine->newArray();
 
     QMap < qulonglong, BGMRClient* > _clients
-            = toJsEngine ()->relClients ()->clients ();
+        = toJsEngine()->relClients()->clients();
     QMap < qulonglong, BGMRClient* >::const_iterator it;
     int i = 0;
-    for (it = _clients.constBegin ();
-         it != _clients.constEnd (); ++it) {
-        JsClient* retItem = new JsClient (it.value ());
+    for (it = _clients.constBegin();
+         it != _clients.constEnd(); ++it) {
+        JsClient* retItem = new JsClient(it.value());
         if (autoDel)
-            retItem->deleteLater ();
-        ret.setProperty (i, engine->newQObject (retItem));
+            retItem->deleteLater();
+        ret.setProperty(i, engine->newQObject(retItem));
         i++;
     }
 
@@ -159,62 +169,83 @@ QJSValue JsJSObj::relClients(bool autoDel) const
 QJSValue JsJSObj::relClient(int cliID, bool autoDel) const
 {
     JsClient* _client
-            = new JsClient (toJsEngine ()->relClients ()->client (cliID));
+        = new JsClient(toJsEngine()->relClients()->client(cliID));
     if (autoDel)
-        _client->deleteLater ();
-    return qjsEngine (this)->newQObject (_client);
+        _client->deleteLater();
+    return qjsEngine(this)->newQObject(_client);
 }
 
 void JsJSObj::onRelClientRemoved(const QJSValue& handle)
 {
     RelClientRemovedHandle = handle;
-    relatedClients* rcs = toJsEngine ()->relClients ();
-    QObject::connect (rcs, &relatedClients::removedClient, [=](BGMRClient* cli) {
-        if (RelClientRemovedHandle.isCallable ()) {
-            JsClient* _client = new JsClient (cli);
-            _client->deleteLater ();
-            RelClientRemovedHandle.call (QJSValueList ()
-                         << qjsEngine (this)->newQObject (_client));
+    relatedClients* rcs = toJsEngine()->relClients();
+    QObject::connect(rcs, &relatedClients::removedClient, [ = ](BGMRClient * cli) {
+        if (RelClientRemovedHandle.isCallable()) {
+            JsClient* _client = new JsClient(cli);
+            _client->deleteLater();
+            RelClientRemovedHandle.call(QJSValueList()
+                                        << qjsEngine(this)->newQObject(_client));
         }
     });
 }
 
 bool JsJSObj::containsRelClient(const QJSValue& cli) const
 {
-    JsClient* _cli = qobject_cast < JsClient* > (cli.toQObject ());
-    return toJsEngine ()->relClients ()->clients ().contains (_cli->cliID ());
+    JsClient* _cli = qobject_cast < JsClient* > (cli.toQObject());
+    return toJsEngine()->relClients()->clients().contains(_cli->cliID());
+}
+
+QJSValue JsJSObj::findRelClient(QJSValue callback, bool autoDel) const
+{
+    if (!callback.isCallable())
+        return QJSValue();
+
+    QMap < qulonglong, BGMRClient* > _clients
+        = toJsEngine()->relClients()->clients();
+    foreach (BGMRClient* _client, _clients) {
+        JsClient* jscClient = new JsClient(_client);
+        QJSValue qjsClient = qjsEngine(this)->newQObject(jscClient);
+        if (callback.call(QJSValueList() << qjsClient).toBool()) {
+            if (autoDel)
+                jscClient->deleteLater();
+            return qjsClient;
+        } else
+            jscClient->deleteLater();
+    }
+
+    return QJSValue();
 }
 
 void JsJSObj::emitSignal(const QString& signal, const QJsonArray& args) const
 {
-    toJsEngine ()->relClients ()->emitSignal (rpcObj (), signal, args);
+    toJsEngine()->relClients()->emitSignal(rpcObj(), signal, args);
 }
 
 bool JsJSObj::include(const QString& scrFileName) const
 {
-    QString _objPath = objPath ();
+    QString _objPath = objPath();
 
     QString error;
     bool ok = false;
 
-    QFile scrFile (_objPath + scrFileName);
-    if (!scrFile.open (QIODevice::ReadOnly))
-        error = QString ("%1 can't open").arg (scrFileName);
+    QFile scrFile(_objPath + scrFileName);
+    if (!scrFile.open(QIODevice::ReadOnly))
+        error = QString("%1 can't open").arg(scrFileName);
     else {
-        QString scrContent = scrFile.readAll ();
-        scrFile.close ();
+        QString scrContent = scrFile.readAll();
+        scrFile.close();
 
-        QJSValue result = qjsEngine (this)->evaluate (scrContent, scrFileName);
-        if (result.isError ()) {
-            error = QString ("%0,%1: %2").arg (scrFileName)
-                    .arg (result.property ("lineNumber").toInt ())
-                    .arg (result.toString ());
+        QJSValue result = qjsEngine(this)->evaluate(scrContent, scrFileName);
+        if (result.isError()) {
+            error = QString("%0,%1: %2").arg(scrFileName)
+                    .arg(result.property("lineNumber").toInt())
+                    .arg(result.toString());
         } else
             ok = true;
     }
 
     if (!ok)
-        qDebug () << "loadScript Error: " << error;
+        qDebug() << "loadScript Error: " << error;
 
     return ok;
 }
@@ -231,86 +262,86 @@ bool JsJSObj::loadScript(const QString& scrFileName,
                          const QJSValue& arg8,
                          const QJSValue& arg9) const
 {
-    auto toJsValue = [=](const QJSValue& arg) {
-        if (arg.isNumber ())
-            return QJSValue (arg.toNumber ());
-        else if (arg.isBool ())
-            return QJSValue (arg.toBool ());
-        else if (arg.isString ())
-            return QJSValue (arg.toString ());
+    auto toJsValue = [ = ](const QJSValue & arg) {
+        if (arg.isNumber())
+            return QJSValue(arg.toNumber());
+        else if (arg.isBool())
+            return QJSValue(arg.toBool());
+        else if (arg.isString())
+            return QJSValue(arg.toString());
 
-        return QJSValue ();
+        return QJSValue();
     };
 
     QString error;
     QJSValueList args;
-    args << toJsValue (arg0) << toJsValue (arg1) << toJsValue (arg2)
-         << toJsValue (arg3) << toJsValue (arg4) << toJsValue (arg5)
-         << toJsValue (arg6) << toJsValue (arg7) << toJsValue (arg8)
-         << toJsValue (arg9);
-    bool ok = toJsEngine ()->loadJSFile (objPath () + scrFileName,
-                                         error, args);
+    args << toJsValue(arg0) << toJsValue(arg1) << toJsValue(arg2)
+         << toJsValue(arg3) << toJsValue(arg4) << toJsValue(arg5)
+         << toJsValue(arg6) << toJsValue(arg7) << toJsValue(arg8)
+         << toJsValue(arg9);
+    bool ok = toJsEngine()->loadJSFile(objPath() + scrFileName,
+                                       error, args);
 
     if (!ok)
-        qDebug () << "Error: " << error;
+        qDebug() << "Error: " << error;
 
     return ok;
 }
 
 void JsJSObj::loadModule(const QString& module) const
 {
-    toJsEngine ()->loadModule (module);
+    toJsEngine()->loadModule(module);
 }
 
 QJSValue JsJSObj::toJS(const QJSValue& obj, bool autoDel) const
 {
-    if (obj.property ("__TYPE__").toString () == "JSEngine") {
+    if (obj.property("__TYPE__").toString() == "JSEngine") {
         BGMRObjectInterface* _obj
-                = qobject_cast < JsRpcObj* > (obj.toQObject ())->rpcObj ();
-        JsEngine* jsObj = dynamic_cast < JsEngine* > (_obj);
-        JsJSObj* _jsObj = new JsJSObj (jsObj);
+            = qobject_cast < JsRpcObj* > (obj.toQObject())->rpcObj();
+        JsEngine* jsObj = dynamic_cast < JsEngine* >(_obj);
+        JsJSObj* _jsObj = new JsJSObj(jsObj);
         if (autoDel)
-            _jsObj->deleteLater ();
-        return qjsEngine (this)->newQObject (_jsObj);
+            _jsObj->deleteLater();
+        return qjsEngine(this)->newQObject(_jsObj);
     } else
-        return QJSValue ();
+        return QJSValue();
 }
 
 JsEngine* JsJSObj::toJsEngine() const
 {
-    return dynamic_cast < JsEngine* > (RpcObj);
+    return dynamic_cast < JsEngine* >(RpcObj);
 }
 
 JsRPC::JsRPC(BGMRPC* rpc, QObject* parent)
-    : QObject (parent), RPC (rpc)
+    : QObject(parent), RPC(rpc)
 {
 
 }
 
 QJSValue JsRPC::object(const QString& objName, bool autoDel) const
 {
-    BGMRObjectInterface* _obj = RPC->object (objName);
+    BGMRObjectInterface* _obj = RPC->object(objName);
     if (_obj) {
-        JsRpcObj* obj = new JsRpcObj (RPC->object (objName));
+        JsRpcObj* obj = new JsRpcObj(RPC->object(objName));
         if (autoDel)
-            obj->deleteLater ();
+            obj->deleteLater();
 
-        return qjsEngine (this)->newQObject (obj);
+        return qjsEngine(this)->newQObject(obj);
     } else
-        return QJSValue ();
+        return QJSValue();
 }
 
 QJSValue JsRPC::objects(bool autoDel) const
 {
-    QJSEngine* engine = qjsEngine (this);
-    QJSValue ret = engine->newArray ();
+    QJSEngine* engine = qjsEngine(this);
+    QJSValue ret = engine->newArray();
 
     int i = 0;
-    foreach (BGMRObjectInterface* obj, RPC->objectStorage ()->objects ()) {
-        JsRpcObj* _obj = new JsRpcObj (obj);
+    foreach (BGMRObjectInterface* obj, RPC->objectStorage()->objects()) {
+        JsRpcObj* _obj = new JsRpcObj(obj);
         if (autoDel)
-            _obj->deleteLater ();
-        ret.setProperty (i, engine->newQObject (_obj));
+            _obj->deleteLater();
+        ret.setProperty(i, engine->newQObject(_obj));
         i++;
     }
 
@@ -319,35 +350,35 @@ QJSValue JsRPC::objects(bool autoDel) const
 
 QStringList JsRPC::types() const
 {
-    return RPC->objectStorage ()->types ();
+    return RPC->objectStorage()->types();
 }
 
 QJSValue JsRPC::createObject(const QString& objType,
                              const QString& objName,
                              bool autoDel) const
 {
-    QJSEngine* engine = qjsEngine (this);
+    QJSEngine* engine = qjsEngine(this);
     BGMRObjectInterface* obj
-            = RPC->objectStorage ()->installObject (objName, objType);
+        = RPC->objectStorage()->installObject(objName, objType);
     if (objType == "JSEngine") {
-        JsEngine* theJsEngine = dynamic_cast < JsEngine* > (obj);
-        theJsEngine->setRpc (RPC);
-        theJsEngine->setObjPath (
-                    engine->evaluate ("JS.objPath ()").toString ());
+        JsEngine* theJsEngine = dynamic_cast < JsEngine* >(obj);
+        theJsEngine->setRpc(RPC);
+        theJsEngine->setObjPath(
+            engine->evaluate("JS.objPath ()").toString());
     }
-    JsRpcObj* _obj = new JsRpcObj (obj);
+    JsRpcObj* _obj = new JsRpcObj(obj);
     if (autoDel)
-        _obj->deleteLater ();
-    return engine->newQObject (_obj);
+        _obj->deleteLater();
+    return engine->newQObject(_obj);
 }
 
 bool JsRPC::removeObject(const QJSValue& obj) const
 {
-    return RPC->objectStorage ()->removeObject (
-                qobject_cast < JsRpcObj* > (obj.toQObject ())->objectName ());
+    return RPC->objectStorage()->removeObject(
+               qobject_cast < JsRpcObj* > (obj.toQObject())->objectName());
 }
 
 bool JsRPC::installPlugin(const QString& pluginFileName) const
 {
-    return RPC->objectStorage ()->installPlugin (pluginFileName);
+    return RPC->objectStorage()->installPlugin(pluginFileName);
 }

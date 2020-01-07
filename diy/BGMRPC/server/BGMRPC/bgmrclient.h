@@ -66,6 +66,7 @@ public:
     void setPrivateDataJson (const BGMRObjectInterface* obj, const QString& name, const QJsonValue& value);
 
     qulonglong cliID () const;
+    bool exited () const;
     void close ();
     void setObject (BGMRObjectInterface* object);
     //    bool isKeepConnected () const;

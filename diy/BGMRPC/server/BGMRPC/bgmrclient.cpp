@@ -108,6 +108,11 @@ qulonglong BGMRClient::cliID() const
     return CliID;
 }
 
+bool BGMRClient::exited() const
+{
+    return Exited;
+}
+
 void BGMRClient::close ()
 {
     qDebug () << QObject::tr ("End the Client (#%1) call.").arg(CliID);
