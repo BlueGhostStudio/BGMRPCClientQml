@@ -16,28 +16,41 @@ JsClient::JsClient(BGMRClient* cli, QObject *parent)
 
 qulonglong JsClient::cliID() const
 {
-    return Cli->cliID();
+    if (Cli.isNull())
+        return -1;
+    else
+        return Cli->cliID();
 }
 
 bool JsClient::online() const
 {
-    return Cli->exited();
+    if (Cli.isNull())
+        return false;
+    else
+        return !Cli->exited();
 }
 
 QJSValue JsClient::clone() const
 {
-    return qjsEngine(this)->newQObject(new JsClient(Cli));
+    if (Cli.isNull())
+        return QJSValue();
+    else
+        return qjsEngine(this)->newQObject(new JsClient(Cli));
 }
 
 void JsClient::setPrivateData(const QJSValue& obj, const QString& key,
                               const QJsonValue& value)
 {
-    Cli->setPrivateDataJson(toRpcObj(obj), key, value);
+    if (!Cli.isNull())
+        Cli->setPrivateDataJson(toRpcObj(obj), key, value);
 }
 
 QJsonValue JsClient::privateData(const QJSValue& obj, const QString& key) const
 {
-    return Cli->privateDataJson(toRpcObj(obj), key);
+    if (Cli.isNull())
+        return QJsonValue();
+    else
+        return Cli->privateDataJson(toRpcObj(obj), key);
 }
 
 /*QJsonValue JsClient::callMethod(const QJSValue& obj,
@@ -52,15 +65,18 @@ QJsonValue JsClient::privateData(const QJSValue& obj, const QString& key) const
 void JsClient::emitSignal(const QJSValue& obj, const QString& signal,
                           const QJsonArray& args) const
 {
-    Cli->emitSignal(toRpcObj(obj), signal, args);
+    if (!Cli.isNull())
+        Cli->emitSignal(toRpcObj(obj), signal, args);
 }
 
 void JsClient::close()
 {
-    Cli->close();
+    if (!Cli.isNull())
+        Cli->requestClose();
+//        Cli->close();
 }
 
-BGMRClient*JsClient::client()
+BGMRClient* JsClient::client()
 {
     return Cli;
 }

@@ -6,6 +6,7 @@
 #include <bgmrclient.h>
 #include <QJSEngine>
 #include <bgmrpc.h>
+#include <QPointer>
 
 #include "jsengine.h"
 
@@ -46,7 +47,8 @@ signals:
 public slots:
 
 protected:
-    BGMRClient* Cli;
+//    BGMRClient* Cli;
+    QPointer< BGMRClient > Cli;
 };
 
 class JsRpcObj : public QObject
