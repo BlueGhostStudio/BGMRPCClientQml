@@ -1,0 +1,32 @@
+#ifndef MATH_H
+#define MATH_H
+
+#include <QObject>
+#include <threadobjectinterface.h>
+
+namespace NS_BGMRPCObjectInterface
+{
+
+class Math : public ThreadObjectInterface
+{
+    Q_OBJECT
+
+public:
+    Math(QObject* parent = nullptr);
+
+    QVariant plus(QPointer<Caller> cli, const QVariantList& args);
+    QVariant join(QPointer<Caller> cli, const QVariantList& args);
+    QVariant foreachRelatedCaller(QPointer<Caller>, const QVariantList&);
+    QVariant broadcastSignal(QPointer<Caller>, const QVariantList&);
+
+protected:
+    bool permit(QPointer<Caller> caller, const QString& method,
+                const QVariantList& args) override;
+    void registerMethods() override;
+};
+} // namespace NS_BGMRPCObjectInterface
+
+extern "C" {
+NS_BGMRPCObjectInterface::ObjectInterface* create();
+}
+#endif // MATH_H
