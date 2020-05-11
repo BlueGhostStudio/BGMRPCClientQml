@@ -35,11 +35,6 @@ unix:!macx: LIBS += -L$$OUT_PWD/../../BGMRPCObjectInterface/ -lBGMRPCObjectInter
 INCLUDEPATH += $$PWD/../../BGMRPCObjectInterface
 DEPENDPATH += $$PWD/../../BGMRPCObjectInterface
 
-unix:!macx: LIBS += -L$$OUT_PWD/../../BGMRPCThreadObjectInterface/ -lBGMRPCThreadObjectInterface
-
-INCLUDEPATH += $$PWD/../../BGMRPCThreadObjectInterface
-DEPENDPATH += $$PWD/../../BGMRPCThreadObjectInterface
-
 
 unix:!macx: LIBS += -L$$OUT_PWD/../../BGMRPCCommon/ -lBGMRPCCommon
 

@@ -27,6 +27,7 @@ private slots:
     void cleanupTestCase();
     void test_client();
     void test_relatedCaller();
+    void test_thread();
 
 private:
     //    NS_BGMRPC::BGMRPC* RPC;
@@ -157,11 +158,63 @@ void ClientCall::test_relatedCaller()
                                        "broadcastSignal", {});
             },
             nullptr)
-        ->then([&](CallChain* cc, const QVariant&) { cc->final(nullptr); },
-               nullptr)
+        ->then(
+            [&](CallChain* cc, const QVariant& data) {
+                qDebug() << data.toList()[0];
+                cc->final(nullptr);
+            },
+            nullptr)
         ->exec();
 
     QTest::qWait(500);
+}
+
+void ClientCall::test_thread()
+{
+    NS_BGMRPCClient::BGMRPCClient testClient1;
+    NS_BGMRPCClient::BGMRPCClient testClient2;
+    testClient1.connectToHost(QUrl("ws://127.0.0.1:8000"));
+    testClient2.connectToHost(QUrl("ws://127.0.0.1:8000"));
+    bool testClient1Connected = false;
+    bool testClient2Connected = false;
+
+    QObject::connect(&testClient1, &NS_BGMRPCClient::BGMRPCClient::connected,
+                     [&]() { testClient1Connected = true; });
+    QObject::connect(&testClient2, &NS_BGMRPCClient::BGMRPCClient::connected,
+                     [&]() { testClient2Connected = true; });
+
+    QTest::qWaitFor(
+        [&]() -> bool { return testClient1Connected && testClient2Connected; },
+        500);
+    QVERIFY2(testClient1Connected && testClient2Connected,
+             "一个或全部客户端未连接");
+    qDebug() << testClient1Connected << testClient2Connected;
+
+    (new CallChain([&](CallChain* cc) {
+        testClient1.callMethod(cc, "testRemoteObject", "testThread",
+                               {"testClient1"});
+    }))
+        ->then(
+            [&](CallChain* cc, const QVariant& data) {
+                qDebug() << data;
+                cc->final(nullptr);
+            },
+            nullptr)
+        ->exec();
+
+    (new CallChain([&](CallChain* cc) {
+        testClient2.callMethod(cc, "testRemoteObject", "testThread",
+                               {"testClient2"});
+    }))
+        ->then(
+            [&](CallChain* cc, const QVariant& data) {
+                qDebug() << data;
+                cc->final(nullptr);
+            },
+            nullptr)
+        ->exec();
+
+    QTest::qWait(5000);
 }
 
 QTEST_MAIN(ClientCall)

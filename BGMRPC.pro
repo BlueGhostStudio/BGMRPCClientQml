@@ -6,6 +6,5 @@ SUBDIRS += \
     BGMRPCObjectInterface \
     BGMRPCObjectLoader \
     BGMRPCCommon \
-    BGMRPCThreadObjectInterface \
     TestBGMRPC \
     interfaces/math

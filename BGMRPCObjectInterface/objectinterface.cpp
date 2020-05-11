@@ -75,7 +75,7 @@ void ObjectInterface::addRelatedCaller(QPointer<Caller> caller)
 void ObjectInterface::emitSignal(const QString& signal, const QVariant& args)
 {
     foreach (QPointer<Caller> caller, m_relatedCaller)
-        caller->emitSignal(signal, args);
+        caller->emitSignalReady(signal, args);
 }
 
 QPointer<Caller> ObjectInterface::findRelatedCaller(
@@ -219,21 +219,10 @@ void ObjectInterface::newCaller()
         QString mID = callJsonDoc["mID"].toString("#");
 
         if (!m_methods[methodName])
-            caller->returnError(NS_BGMRPC::ERR_NOMETHOD,
+            caller->returnErrorReady(NS_BGMRPC::ERR_NOMETHOD,
                                 m_name + '.' + methodName);
         else
             callMethod(mID, caller, methodName, args);
-        /*else {
-            if (permit(caller, methodName, args))
-                callMethod(mID, caller, methodName, args);
-            else {
-                caller->emitSignal("ERROR_ACCESS", {methodName});
-                caller->returnData(mID, QVariant());
-            }
-        }*/ /* else {
-              QVariant ret = m_methods[methodName](this, caller, args);
-              caller->returnData(mID, ret);
-          }*/
     });
 
     QObject::connect(caller.data(), &Caller::clientExited, [=]() {
@@ -254,17 +243,33 @@ void ObjectInterface::callMethod(const QString& mID, QPointer<Caller> caller,
                                  const QVariantList& args)
 {
     if (!permit(caller, methodName, args)) {
-        caller->emitSignal("ERROR_ACCESS", {methodName});
-        caller->returnData(mID, QVariant());
+        caller->emitSignalReady("ERROR_ACCESS", {methodName});
+        caller->returnDataReady(mID, QVariant());
+        qWarning() << "Not allow call " + methodName;
         return;
     }
-    qInfo() << m_name + '.' + methodName << " has been called";
-    QVariantList _args_(args);
+
+    QThread* callThread = QThread::create([=]() {
+        QVariantList _args_(args);
+        for (int i = args.length(); i < 10; i++)
+            _args_ << QVariant();
+
+        QVariant ret = m_methods[methodName](this, caller, _args_);
+        qInfo() << m_name + '.' + methodName << " has been called";
+
+        caller->returnDataReady(mID, ret);
+    });
+
+    QObject::connect(callThread, &QThread::finished, callThread,
+                     &QThread::deleteLater);
+
+    callThread->start();
+    /*QVariantList _args_(args);
     for (int i = args.length(); i < 10; i++)
         _args_ << QVariant();
 
     QVariant ret = m_methods[methodName](this, caller, _args_);
-    qWarning() << "Not allow call " + methodName;
+    qInfo() << m_name + '.' + methodName << " has been called";
 
-    caller->returnData(mID, ret);
+    caller->returnDataReady(mID, ret);*/
 }

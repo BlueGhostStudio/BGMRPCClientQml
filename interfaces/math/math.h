@@ -2,12 +2,12 @@
 #define MATH_H
 
 #include <QObject>
-#include <threadobjectinterface.h>
+#include <objectinterface.h>
 
 namespace NS_BGMRPCObjectInterface
 {
 
-class Math : public ThreadObjectInterface
+class Math : public ObjectInterface
 {
     Q_OBJECT
 
@@ -18,6 +18,7 @@ public:
     QVariant join(QPointer<Caller> cli, const QVariantList& args);
     QVariant foreachRelatedCaller(QPointer<Caller>, const QVariantList&);
     QVariant broadcastSignal(QPointer<Caller>, const QVariantList&);
+    QVariant testThread(QPointer<Caller>, const QVariantList&);
 
 protected:
     bool permit(QPointer<Caller> caller, const QString& method,

@@ -4,7 +4,7 @@
 
 using namespace NS_BGMRPCObjectInterface;
 
-Math::Math(QObject* parent) : ThreadObjectInterface(parent)
+Math::Math(QObject* parent) : ObjectInterface(parent)
 {
     registerMethods();
     QObject::connect(this, &Math::callerExisted, [](QPointer<Caller> caller) {
@@ -20,7 +20,7 @@ Math::Math(QObject* parent) : ThreadObjectInterface(parent)
 QVariant Math::plus(QPointer<Caller> cli, const QVariantList& args)
 {
     QVariantMap t = {{"t", 123}, {"b", 234}};
-    cli->emitSignal("test_signal", t);
+    cli->emitSignalReady("test_signal", t);
     return args[0].toInt() + args[1].toInt();
 }
 
@@ -52,18 +52,33 @@ QVariant Math::broadcastSignal(QPointer<Caller>, const QVariantList&)
 {
     emitSignal("testBroadcastSignal", QVariantList({"test1", "test2"}));
 
-    return QVariant();
+    return true;
 }
 
-bool Math::permit(QPointer<Caller> caller, const QString& method,
-                  const QVariantList& args)
+QVariant Math::testThread(QPointer<Caller>, const QVariantList& args)
 {
-    if (method == "join")
+    QEventLoop loop;
+    qDebug() << "111111" << args[0].toString();
+    QTimer::singleShot(500, [&]() {
+        qDebug() << "222222" << args[0].toString();
+        loop.quit();
+    });
+
+    loop.exec();
+
+    return args[0].toString();
+}
+
+bool Math::permit(QPointer<Caller> /*caller*/, const QString& /*method*/,
+                  const QVariantList& /*args*/)
+{
+    /*if (method == "join")
         return true;
     else if (privateData(caller, "name").toString() == "usr1")
         return true;
     else
-        return false;
+        return false;*/
+    return true;
 }
 
 void Math::registerMethods()
@@ -72,6 +87,7 @@ void Math::registerMethods()
     m_methods["join"] = REG_METHOD(Math, join);
     m_methods["foreachRelatedCaller"] = REG_METHOD(Math, foreachRelatedCaller);
     m_methods["broadcastSignal"] = REG_METHOD(Math, broadcastSignal);
+    m_methods["testThread"] = REG_METHOD(Math, testThread);
 }
 
 ObjectInterface* create()

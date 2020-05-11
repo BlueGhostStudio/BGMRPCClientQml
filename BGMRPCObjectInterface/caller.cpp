@@ -17,6 +17,11 @@ Caller::Caller(ObjectInterface* callee, QLocalSocket* socket, QObject* parent)
                      &QLocalSocket::deleteLater);
     QObject::connect(m_dataSocket, &QLocalSocket::disconnected,
                      [=]() { clientExited(); });
+
+    QObject::connect(this, &Caller::emitSignalReady, this, &Caller::emitSignal);
+    QObject::connect(this, &Caller::returnDataReady, this, &Caller::returnData);
+    QObject::connect(this, &Caller::returnErrorReady, this,
+                     &Caller::returnError);
     //    m_ID = m_totalID;
     //    m_totalID++;
 }
