@@ -28,6 +28,6 @@ protected:
 } // namespace NS_BGMRPCObjectInterface
 
 extern "C" {
-NS_BGMRPCObjectInterface::ObjectInterface* create();
+NS_BGMRPCObjectInterface::ObjectInterface* create(int, char**);
 }
 #endif // MATH_H

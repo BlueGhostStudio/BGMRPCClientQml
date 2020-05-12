@@ -90,7 +90,7 @@ void Math::registerMethods()
     m_methods["testThread"] = REG_METHOD(Math, testThread);
 }
 
-ObjectInterface* create()
+ObjectInterface* create(int, char **)
 {
     return new Math;
 }

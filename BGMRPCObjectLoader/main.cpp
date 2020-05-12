@@ -25,8 +25,10 @@ int main(int argc, char* argv[]) {
         [&]() { a.quit(); });*/
 
     QString remoteObjectName;
+    QString libName;
     int opt = 0;
-    while ((opt = getopt(argc, argv, "kn:")) != -1) {
+    opterr = 0;
+    while ((opt = getopt(argc, argv, "kn:l:")) != -1) {
         switch (opt) {
         case 'k':
             qDebug() << "kill";
@@ -34,9 +36,15 @@ int main(int argc, char* argv[]) {
         case 'n':
             remoteObjectName = optarg;
             break;
+        case 'l':
+            libName = optarg;
+            break;
+        case '?':
+            qDebug() << "some other args";
+            break;
         }
     }
-    QString libName = argv[optind];
+//    QString libName = argv[optind];
 
     qInfo() << "Starting Remote object. The name is" << remoteObjectName
             << ". By" << libName;
@@ -45,9 +53,9 @@ int main(int argc, char* argv[]) {
     if (IFLib.load())
         qInfo() << "Load interface library - OK";
 
-    typedef NS_BGMRPCObjectInterface::ObjectInterface* (*T_CREATE)();
+    typedef NS_BGMRPCObjectInterface::ObjectInterface* (*T_CREATE)(int, char**);
     T_CREATE create = (T_CREATE)IFLib.resolve("create");
-    NS_BGMRPCObjectInterface::ObjectInterface* objIF = create();
+    NS_BGMRPCObjectInterface::ObjectInterface* objIF = create(argc, argv);
     objIF->registerObject(remoteObjectName.toLatin1());
     QObject::connect(
         objIF, &NS_BGMRPCObjectInterface::ObjectInterface::objectDisconnected,
