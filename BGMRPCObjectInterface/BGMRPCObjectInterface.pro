@@ -3,6 +3,7 @@ QT += network
 
 TEMPLATE = lib
 DEFINES += OBJECTINTERFACE_LIBRARY
+VERSION = 2.0.0
 
 CONFIG += c++11
 

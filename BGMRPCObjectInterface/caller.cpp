@@ -8,11 +8,15 @@ using namespace NS_BGMRPCObjectInterface;
 // quint64 Caller::m_totalID = 0;
 
 Caller::Caller(ObjectInterface* callee, QLocalSocket* socket, QObject* parent)
-    : QObject(parent), m_dataSocket(socket), m_callee(callee) {
+    : QObject(parent), m_dataSocket(socket), m_callee(callee)
+{
     m_localCall = false;
     m_ID = -1;
-    QObject::connect(m_dataSocket, &QLocalSocket::disconnected, this,
-                     &Caller::deleteLater);
+    m_exited = false;
+    QObject::connect(m_dataSocket, &QLocalSocket::disconnected, [=]() {
+        m_exited = true;
+        deleteLater();
+    });
     QObject::connect(m_dataSocket, &QLocalSocket::disconnected, m_dataSocket,
                      &QLocalSocket::deleteLater);
     QObject::connect(m_dataSocket, &QLocalSocket::disconnected,
@@ -26,11 +30,24 @@ Caller::Caller(ObjectInterface* callee, QLocalSocket* socket, QObject* parent)
     //    m_totalID++;
 }
 
-qint64 Caller::ID() const { return m_ID; }
+Caller::~Caller()
+{
+}
+
+qint64 Caller::ID() const
+{
+    return m_ID;
+}
+
+bool Caller::exited() const
+{
+    return m_exited;
+}
 
 // void Caller::setID(quint64 id) { m_ID = id; }
 
-void Caller::returnData(const QString& mID, const QVariant& data) {
+void Caller::returnData(const QString& mID, const QVariant& data)
+{
     QJsonObject retJsonObj;
     retJsonObj["type"] = "return";
     retJsonObj["mID"] = mID;
@@ -46,7 +63,8 @@ void Caller::returnData(const QString& mID, const QVariant& data) {
     m_dataSocket->flush();
 }
 
-void Caller::emitSignal(const QString& signal, const QVariant& args) {
+void Caller::emitSignal(const QString& signal, const QVariant& args)
+{
     if (m_localCall)
         return;
 
@@ -66,11 +84,33 @@ void Caller::emitSignal(const QString& signal, const QVariant& args) {
     m_dataSocket->flush();
 }
 
-void Caller::returnError(quint8 errNO, const QString& errStr) {
-    QByteArray errData(2, '\x0');
-    errData[0] = (quint8)NS_BGMRPC::DATA_ERROR;
-    errData[1] = errNO;
-    errData.append(errStr);
+void Caller::returnError(const QString& mID, quint8 errNO,
+                         const QString& errStr)
+{
+    //    QByteArray errData(2, '\x0');
+    //    errData[0] = (quint8) NS_BGMRPC::DATA_ERROR;
+    //    errData[1] = errNO;
+    QJsonObject errJsonObj;
+    errJsonObj["type"] = "error";
+    errJsonObj["errNo"] = errNO;
+    errJsonObj["mID"] = mID;
+    errJsonObj["error"] = errStr;
+
+    switch (errNO) {
+    case NS_BGMRPC::ERR_NOMETHOD:
+        errJsonObj["error"] = QString("No exist %1 method").arg(errStr);
+        break;
+    case NS_BGMRPC::ERR_ACCESS:
+        errJsonObj["error"] =
+            QString("This client is not allowed to call the %1 method")
+                .arg(errStr);
+        break;
+    }
+
+    QByteArray errData =
+        QJsonDocument(errJsonObj).toJson(QJsonDocument::Compact);
+
+    //    errData.append(errStr);
     m_dataSocket->write(int2bytes<quint64>(errData.length()) + errData);
     m_dataSocket->flush();
 }

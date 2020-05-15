@@ -34,36 +34,101 @@ class OBJECTINTERFACE_EXPORT ObjectInterface : public QObject
 public:
     ObjectInterface(QObject* parent = nullptr);
 
+    //! \name 初始化和对象属性
+    //! @{
+    /*!
+     * \brief 注册对象
+     * \param 对象明
+     * \return 返回成功与否
+     */
     bool registerObject(const QByteArray& name);
-
+    /*!
+     * \brief 获取当前对象名
+     * \return 当前对象名
+     */
     QString objectName() const;
+    //! @}
 
+    //! \name 关联调用者(客户端)
+    //! @{
+    /*!
+     * \brief 增加关联调用者
+     * \param 调用者
+     */
     void addRelatedCaller(QPointer<Caller> caller);
-    void emitSignal(const QString& signal, const QVariant& args);
+    /*!
+     * \brief 删除关联调用者
+     * \param 调用者
+     * \return
+     */
+    bool removeRelatedCaller(QPointer<Caller> caller);
+    /*!
+     * \brief 查找当前调用者
+     * \param 回调函数，若查找成功此回调函数返回 true
+     * \return 返回查找到的关联调用者，若无调用者则返回空
+     */
     QPointer<Caller>
     findRelatedCaller(std::function<bool(QPointer<Caller>)> callback);
+    //! @}
 
+    //! \name 向关联调用者广播信号
+    //! @{
+    /*!
+     * \brief emitSignal
+     * \param signal
+     * \param args
+     */
+    void emitSignal(const QString& signal, const QVariant& args);
+    //! @}
+
+    //! \name 调用远端内部其他对象方法
+    //! @{
+    /*!
+     * \brief callLocalMethod
+     * \param caller
+     * \param object
+     * \param method
+     * \param args
+     * \return
+     */
     QVariant callLocalMethod(QPointer<Caller> caller, const QString& object,
                              const QString& method, const QVariantList& args);
+    /*! \overload */
     QVariant callLocalMethod(const QString& object, const QString& method,
                              const QVariantList& args);
+    //! @}
 
+    //! \name 调用者的私有对象数据
+    //! @{
+    /*!
+     * \brief setPrivateData
+     * \param caller
+     * \param name
+     * \param data
+     */
     void setPrivateData(QPointer<Caller> caller, const QString& name,
                         const QVariant& data);
+    /*!
+     * \brief privateData
+     * \param caller
+     * \param name
+     * \return
+     */
     QVariant privateData(QPointer<Caller> caller, const QString& name) const;
+    //! @}
 
 signals:
     void objectDisconnected();
     void callerExisted(QPointer<Caller>);
-    void relatedCallerExisted(QPointer<Caller>);
+    void relatedCallerExited(QPointer<Caller>);
 
 private slots:
     //    void callMethod();
     void newCaller();
 
 protected:
-    virtual bool permit(QPointer<Caller> caller, const QString& method,
-                        const QVariantList& args);
+    virtual bool verification(QPointer<Caller> caller, const QString& method,
+                              const QVariantList& args);
     virtual void callMethod(const QString& mID, QPointer<Caller> caller,
                             const QString& methodName,
                             const QVariantList& args);

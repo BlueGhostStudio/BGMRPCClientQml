@@ -1,5 +1,6 @@
 QT -= gui
 QT += network websockets
+VERSION = 2.0.0
 
 CONFIG += c++11 console
 CONFIG -= app_bundle

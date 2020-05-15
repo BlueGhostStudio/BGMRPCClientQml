@@ -1,28 +1,55 @@
 #include <QCoreApplication>
 #include <QDebug>
+#include <QElapsedTimer>
 #include <QLibrary>
 #include <getopt.h>
 #include <objectinterface.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-int main(int argc, char* argv[]) {
+QElapsedTimer timer;
+quint8 messageFlag = 0x1f;
+void OIFMessage(QtMsgType type, const QMessageLogContext& context,
+                const QString& msg)
+{
+    const char* logMsg = msg.toLocal8Bit().constData();
+    const char* function = context.function ? context.function : "";
+    switch (type) {
+    case QtMsgType::QtDebugMsg:
+        if (messageFlag & 0x01)
+            fprintf(stdout, "%lld \033[0m[DEBUG] %s:%u - %s\033[0m\n",
+                    timer.elapsed(), function, context.line, logMsg);
+        break;
+    case QtMsgType::QtInfoMsg:
+        if (messageFlag & 0x02)
+            fprintf(stdout, "%lld \033[34m[INFO]\033[0m %s\n", timer.elapsed(),
+                    logMsg);
+        break;
+    case QtMsgType::QtWarningMsg:
+        if (messageFlag & 0x04)
+            fprintf(stderr, "%lld \033[31m[WARNING] %s:%u - %s\033[0m\n",
+                    timer.elapsed(), function, context.line, logMsg);
+        break;
+    case QtMsgType::QtCriticalMsg:
+        if (messageFlag & 0x08)
+            fprintf(stderr, "%lld \033[31m[CRITICAL] %s:%u - %s\033[0m\n",
+                    timer.elapsed(), function, context.line, logMsg);
+        break;
+    case QtMsgType::QtFatalMsg:
+        if (messageFlag & 0x10)
+            fprintf(stderr, "%lld \033[31m[FATAL] %s:%u - %s\033[0m\n",
+                    timer.elapsed(), function, context.line, logMsg);
+        break;
+    }
+}
+
+int main(int argc, char* argv[])
+{
+    timer.start();
+
     QCoreApplication a(argc, argv);
-    qSetMessagePattern("%{time process} %{if-debug}[D]%{function}:%{line} - "
-                       "%{endif}%{if-warning}[W]%{function}:%{line} - "
-                       "%{endif}%{if-critical}[C]%{function}:%{line} - "
-                       "%{endif}%{if-fatal}[F]%{function}:%{line} - "
-                       "%{endif}%{if-info}[INFO]%{endif}%{message}");
-    /*NS_BGMRPCObjectInterface::ObjectInterface objIF;
-    objIF.registerObject("test1");
-    QObject::connect(&objIF,
-                     &NS_BGMRPCObjectInterface::ObjectInterface::objectDisconnected,
-    [&] {
-        a.quit();
-    });*/
-    /*NS_BGMRPCObjectInterface::ObjectImplement objImp;
-    objImp.registerObject("testLocalCall");
-    QObject::connect(
-        &objImp, &NS_BGMRPCObjectInterface::ObjectInterface::objectDisconnected,
-        [&]() { a.quit(); });*/
+    //    messageFlag = 0x1c;
+    qInstallMessageHandler(OIFMessage);
 
     QString remoteObjectName;
     QString libName;
@@ -44,22 +71,18 @@ int main(int argc, char* argv[]) {
             break;
         }
     }
-//    QString libName = argv[optind];
 
-    qInfo() << "Starting Remote object. The name is" << remoteObjectName
-            << ". By" << libName;
+    qInfo().noquote() << "Starting Remote object. The name is"
+                      << remoteObjectName << ". By" << libName;
 
     QLibrary IFLib(libName);
     if (IFLib.load())
-        qInfo() << "Load interface library - OK";
+        qInfo().noquote() << "Load interface library - OK";
 
     typedef NS_BGMRPCObjectInterface::ObjectInterface* (*T_CREATE)(int, char**);
     T_CREATE create = (T_CREATE)IFLib.resolve("create");
     NS_BGMRPCObjectInterface::ObjectInterface* objIF = create(argc, argv);
     objIF->registerObject(remoteObjectName.toLatin1());
-    QObject::connect(
-        objIF, &NS_BGMRPCObjectInterface::ObjectInterface::objectDisconnected,
-        [&] { a.quit(); });
 
     return a.exec();
 }

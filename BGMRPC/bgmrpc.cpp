@@ -22,9 +22,9 @@ BGMRPC::~BGMRPC()
 
 bool BGMRPC::start()
 {
-    if (m_ctrlServer->listen(NS_BGMRPC::BGMRPCCtrlSocket) &&
+    if (m_ctrlServer->listen(/*NS_BGMRPC::*/ BGMRPCCtrlSocket) &&
         m_BGMRPCServer->listen(m_address, m_port)) {
-        qInfo() << "BGMRPC Started";
+        qInfo().noquote() << "BGMRPC Started";
         QObject::connect(m_ctrlServer, &QLocalServer::newConnection, [=]() {
             ObjectCtrl* objCtrl = new ObjectCtrl(
                 this, m_ctrlServer->nextPendingConnection(), this);
@@ -34,8 +34,9 @@ bool BGMRPC::start()
 
             QObject::connect(
                 objCtrl, &ObjectCtrl::removeObject, [&](const QString& name) {
-                    qInfo() << "Object[" + name + "] has ben disconnected";
-                    QLocalServer::removeServer(objCtrl->dataSocketName());
+                    qInfo().noquote()
+                        << "Object[" + name + "] has ben disconnected";
+                    //                    QLocalServer::removeServer(objCtrl->dataSocketName());
                     m_objects.remove(name);
                 });
         });
@@ -60,14 +61,14 @@ ObjectCtrl* BGMRPC::objectCtrl(const QString& name)
 
 void BGMRPC::newObject(const QString& name)
 {
-    qInfo() << "Register new Object, Name: " << name;
+    qInfo().noquote() << "Register new Object, Name: " << name;
     m_objects[name] = qobject_cast<ObjectCtrl*>(sender());
     test_addedObject(name);
 }
 
 void BGMRPC::newClient()
 {
-    qInfo() << "New client connect to Server";
+    qInfo().noquote() << "New client connect to Server";
 
     new Client(this, m_BGMRPCServer->nextPendingConnection());
 }

@@ -4,9 +4,12 @@
 using namespace NS_BGMRPCClient;
 
 Calling::Calling(const QString& mID, QObject* parent)
-    : QObject(parent), m_mID(mID) {}
+    : QObject(parent), m_mID(mID)
+{
+}
 
-void Calling::waitForReturn(CallChain* callChain, const BGMRPCClient* client) {
+void Calling::waitForReturn(CallChain* callChain, const BGMRPCClient* client)
+{
     QObject::connect(
         client, &BGMRPCClient::onReturn, [=](const QJsonDocument& jsonDoc) {
             if (jsonDoc["mID"].toString() == m_mID) {
@@ -29,7 +32,8 @@ void Calling::waitForReturn(CallChain* callChain, const BGMRPCClient* client) {
 // ===============
 
 quint64 BGMRPCClient::m_totalMID = 0;
-BGMRPCClient::BGMRPCClient(QObject* parent) : QObject(parent) {
+BGMRPCClient::BGMRPCClient(QObject* parent) : QObject(parent)
+{
     QObject::connect(&m_socket, &QWebSocket::connected, this,
                      &BGMRPCClient::connected);
     QObject::connect(&m_socket, &QWebSocket::disconnected, this,
@@ -49,10 +53,14 @@ BGMRPCClient::BGMRPCClient(QObject* parent) : QObject(parent) {
                      });
 }
 
-void BGMRPCClient::connectToHost(const QUrl& url) { m_socket.open(url); }
+void BGMRPCClient::connectToHost(const QUrl& url)
+{
+    m_socket.open(url);
+}
 
 void BGMRPCClient::callMethod(CallChain* callChain, const QString& object,
-                              const QString& method, const QVariantList& args) {
+                              const QString& method, const QVariantList& args)
+{
     m_mID = QString("#%1").arg(m_totalMID);
     m_totalMID++;
     QVariantMap callVariant;

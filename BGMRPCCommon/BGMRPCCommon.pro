@@ -3,6 +3,8 @@ QT -= gui
 TEMPLATE = lib
 DEFINES += COMMON_LIBRARY
 
+VERSION = 2.0.0
+
 CONFIG += c++11
 
 # The following define makes your compiler emit warnings if you use

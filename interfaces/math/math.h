@@ -21,8 +21,8 @@ public:
     QVariant testThread(QPointer<Caller>, const QVariantList&);
 
 protected:
-    bool permit(QPointer<Caller> caller, const QString& method,
-                const QVariantList& args) override;
+    bool verification(QPointer<Caller> caller, const QString& method,
+                      const QVariantList& args) override;
     void registerMethods() override;
 };
 } // namespace NS_BGMRPCObjectInterface

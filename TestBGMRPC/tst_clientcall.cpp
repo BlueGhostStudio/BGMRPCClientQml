@@ -28,6 +28,8 @@ private slots:
     void test_client();
     void test_relatedCaller();
     void test_thread();
+    void test_pyCall1();
+    void test_pyCall2();
 
 private:
     //    NS_BGMRPC::BGMRPC* RPC;
@@ -100,7 +102,7 @@ void ClientCall::test_client()
 
 void ClientCall::test_relatedCaller()
 {
-    //    QSKIP("skip test_relatedCaller");
+    QSKIP("skip test_relatedCaller");
     NS_BGMRPCClient::BGMRPCClient testClient1;
     NS_BGMRPCClient::BGMRPCClient testClient2;
     testClient1.connectToHost(QUrl("ws://127.0.0.1:8000"));
@@ -146,6 +148,15 @@ void ClientCall::test_relatedCaller()
         ->then(
             [&](CallChain* cc, const QVariant& data) {
                 qDebug() << "client2 join - " << data.toList()[0].toBool();
+                testClient1.callMethod(cc, "testRemoteObject", "plus",
+                                       {123, 234});
+                /*testClient2.callMethod(cc, "testRemoteObject",
+                                       "foreachRelatedCaller", {});*/
+            },
+            nullptr)
+        ->then(
+            [&](CallChain* cc, const QVariant& data) {
+                qDebug() << "client1 plus" << data.toList()[0].toInt();
                 testClient2.callMethod(cc, "testRemoteObject",
                                        "foreachRelatedCaller", {});
             },
@@ -171,6 +182,7 @@ void ClientCall::test_relatedCaller()
 
 void ClientCall::test_thread()
 {
+    QSKIP("skip test_thread");
     NS_BGMRPCClient::BGMRPCClient testClient1;
     NS_BGMRPCClient::BGMRPCClient testClient2;
     testClient1.connectToHost(QUrl("ws://127.0.0.1:8000"));
@@ -215,6 +227,234 @@ void ClientCall::test_thread()
         ->exec();
 
     QTest::qWait(5000);
+}
+
+void ClientCall::test_pyCall1()
+{
+    QSKIP("skip test_pyCall1");
+
+    NS_BGMRPCClient::BGMRPCClient testClient1;
+    NS_BGMRPCClient::BGMRPCClient testClient2;
+    testClient1.connectToHost(QUrl("ws://127.0.0.1:8000"));
+    testClient2.connectToHost(QUrl("ws://127.0.0.1:8000"));
+    bool testClient1Connected = false;
+    bool testClient2Connected = false;
+
+    QObject::connect(&testClient1, &NS_BGMRPCClient::BGMRPCClient::connected,
+                     [&]() { testClient1Connected = true; });
+    QObject::connect(&testClient2, &NS_BGMRPCClient::BGMRPCClient::connected,
+                     [&]() { testClient2Connected = true; });
+
+    QTest::qWaitFor(
+        [&]() -> bool { return testClient1Connected && testClient2Connected; },
+        500);
+    QVERIFY2(testClient1Connected && testClient2Connected,
+             "一个或全部客户端未连接");
+    qDebug() << testClient1Connected << testClient2Connected;
+
+    QBENCHMARK
+    {
+        (new CallChain([&](CallChain* cc) {
+            testClient1.callMethod(cc, "testPy", "join", {"blue"});
+        }))
+            ->then(
+                [&](CallChain* cc, const QVariant& data) {
+                    qDebug() << data.toList()[0].toString();
+                    testClient1.callMethod(cc, "testPy", "plus", {123, 234});
+                },
+                nullptr)
+            ->then(
+                [&](CallChain* cc, const QVariant& data) {
+                    qDebug() << data.toList()[0].toInt();
+                    /*testClient1.callMethod(cc, "testJsPlugin2",
+                       "testAddRelClient",
+                                           {});*/
+                    cc->final(nullptr);
+                },
+                nullptr)
+            /*->then(
+                [&](CallChain* cc, const QVariant& data) {
+                    qDebug() << data.toList()[0];
+                    cc->final(nullptr);
+                },
+                nullptr)*/
+            ->exec();
+
+        (new CallChain([&](CallChain* cc) {
+            testClient2.callMethod(cc, "testPy", "join", {"ghost"});
+        }))
+            ->then(
+                [&](CallChain* cc, const QVariant& data) {
+                    qDebug() << data.toList()[0].toString();
+                    testClient2.callMethod(cc, "testPy", "plus", {234, 345});
+                },
+                nullptr)
+            ->then(
+                [&](CallChain* cc, const QVariant& data) {
+                    qDebug() << data.toList()[0].toInt();
+                    /*testClient2.callMethod(cc, "testJsPlugin2",
+                       "testAddRelClient",
+                                           {});*/
+                    cc->final(nullptr);
+                },
+                nullptr)
+            /*->then(
+                [&](CallChain* cc, const QVariant& data) {
+                    qDebug() << data.toList()[0];
+                    cc->final(nullptr);
+                },
+                nullptr)*/
+            ->exec();
+        QTest::qWait(50);
+    }
+    qDebug() << "--------";
+    QTest::qWait(500);
+}
+
+void ClientCall::test_pyCall2()
+{
+    //    QSKIP("skip test_pyCall2");
+    NS_BGMRPCClient::BGMRPCClient* testClient1 =
+        new NS_BGMRPCClient::BGMRPCClient;
+    NS_BGMRPCClient::BGMRPCClient* testClient2 =
+        new NS_BGMRPCClient::BGMRPCClient;
+    testClient1->connectToHost(QUrl("ws://127.0.0.1:8000"));
+    testClient2->connectToHost(QUrl("ws://127.0.0.1:8000"));
+    bool testClient1Connected = false;
+    bool testClient2Connected = false;
+
+    QObject::connect(
+        testClient1, &NS_BGMRPCClient::BGMRPCClient::onRemoteSignal,
+        [](const QString& obj, const QString& signal, const QJsonArray& args) {
+            qDebug() << "客户端1收到信号" << obj << signal
+                     << args.toVariantList();
+        });
+    QObject::connect(
+        testClient2, &NS_BGMRPCClient::BGMRPCClient::onRemoteSignal,
+        [](const QString& obj, const QString& signal, const QJsonArray& args) {
+            qDebug() << "客户端2收到信号" << obj << signal
+                     << args.toVariantList();
+        });
+    QObject::connect(testClient1, &NS_BGMRPCClient::BGMRPCClient::connected,
+                     [&]() { testClient1Connected = true; });
+    QObject::connect(testClient2, &NS_BGMRPCClient::BGMRPCClient::connected,
+                     [&]() { testClient2Connected = true; });
+
+    QTest::qWaitFor(
+        [&]() -> bool { return testClient1Connected && testClient2Connected; },
+        500);
+    QVERIFY2(testClient1Connected && testClient2Connected,
+             "一个或全部客户端未连接");
+    qDebug() << testClient1Connected << testClient2Connected;
+
+    (new CallChain([](CallChain* cc) {
+        qDebug() << "--- 客戶端1 ---";
+        cc->resolve(QVariant());
+    }))
+        ->then(
+            [=](CallChain* cc, const QVariant&) {
+                qDebug() << "cli1加入對象";
+                testClient1->callMethod(cc, "testPy", "join", {"blue"});
+            },
+            nullptr)
+        ->then(
+            [=](CallChain* cc, const QVariant&) {
+                qDebug() << "cli1已加入";
+                qDebug() << "cli1讀取私有數據";
+                testClient1->callMethod(cc, "testPy", "testGetPrivateData", {});
+            },
+            nullptr)
+        ->then(
+            [=](CallChain* cc, const QVariant& data) {
+                qDebug() << "cli1私有數據" << data;
+                cc->final(nullptr);
+            },
+            nullptr)
+        ->exec();
+
+    (new CallChain([](CallChain* cc) {
+        qDebug() << "--- 客戶端2 ---";
+        cc->resolve(QVariant());
+    }))
+        ->then(
+            [=](CallChain* cc, const QVariant&) {
+                qDebug() << "cli2加入對象";
+                testClient2->callMethod(cc, "testPy", "join", {"ghost"});
+            },
+            nullptr)
+        ->then(
+            [=](CallChain* cc, const QVariant&) {
+                qDebug() << "cli2已加入";
+                qDebug() << "cli2测试广播信号";
+                testClient2->callMethod(cc, "testPy", "testBroadcastSignal",
+                                        {});
+            },
+            nullptr)
+        ->then([=](CallChain* cc, const QVariant&) { cc->final(nullptr); },
+               nullptr)
+        ->exec();
+
+    QTest::qWait(500);
+
+    (new CallChain([](CallChain* cc) {
+        qDebug() << "--- 客戶端2 ---";
+        cc->resolve(QVariant());
+    }))
+        ->then(
+            [=](CallChain* cc, const QVariant&) {
+                qDebug() << "cli2查找blue";
+                testClient2->callMethod(cc, "testPy", "testFindRelClient",
+                                        {"ghost"});
+            },
+            nullptr)
+        ->then(
+            [=](CallChain* cc, const QVariant&) {
+                qDebug() << "cli2遍歷關聯客戶端";
+                testClient2->callMethod(cc, "testPy", "testRelClients", {});
+            },
+            nullptr)
+        ->then(
+            [=](CallChain* cc, const QVariant&) {
+                qDebug() << "cli2測試relClient";
+                testClient2->callMethod(cc, "testPy", "testRelClient", {});
+            },
+            nullptr)
+        ->then(
+            [=](CallChain* cc, const QVariant&) {
+                qDebug() << "cli2測試是否存在客戶端";
+                testClient2->callMethod(cc, "testPy", "testContainsRelClient",
+                                        {});
+            },
+            nullptr)
+        ->then(
+            [=](CallChain* cc, const QVariant&) {
+                qDebug() << "cli2測試刪除關聯客戶端";
+                testClient2->callMethod(cc, "testPy", "testRemoveRelClient",
+                                        {});
+            },
+            nullptr)
+        ->then(
+            [=](CallChain* cc, const QVariant&) {
+                qDebug() << "cli2測試數組參數";
+                testClient2->callMethod(
+                    cc, "testPy", "testListArgs",
+                    QVariantList({QVariantList({123, 234})}));
+                //                                        {QVariantList({123,
+                //                                        234})});
+            },
+            nullptr)
+        ->then(
+            [=](CallChain* cc, const QVariant&) {
+                qDebug() << "end";
+                cc->final(nullptr);
+            },
+            nullptr)
+        ->exec();
+
+    QTest::qWait(5000);
+
+    //    delete testClient1;
+    //    delete testClient2;
 }
 
 QTEST_MAIN(ClientCall)

@@ -8,13 +8,14 @@
 using namespace NS_BGMRPC;
 
 ObjectCtrl::ObjectCtrl(BGMRPC* bgmrpc, QLocalSocket* socket, QObject* parent)
-    : QObject(parent), m_BGMRPC(bgmrpc), m_ctrlStroke(socket) {
+    : QObject(parent), m_BGMRPC(bgmrpc), m_ctrlStroke(socket)
+{
     QObject::connect(m_ctrlStroke, &QLocalSocket::readyRead, [&]() {
         QByteArray data = m_ctrlStroke->readAll();
         switch (data[0]) {
         case NS_BGMRPC::CTRL_REGISTER:
             m_objectName = data.mid(1);
-            m_dataSocketName = NS_BGMRPC::BGMRPCObjPrefix + m_objectName;
+            m_dataSocketName = /*NS_BGMRPC::*/ BGMRPCObjPrefix + m_objectName;
             registerObject(m_objectName);
             break;
         case NS_BGMRPC::CTRL_CHECKOBJECT:
@@ -31,4 +32,7 @@ ObjectCtrl::ObjectCtrl(BGMRPC* bgmrpc, QLocalSocket* socket, QObject* parent)
     });
 }
 
-QString ObjectCtrl::dataSocketName() const { return m_dataSocketName; }
+QString ObjectCtrl::dataSocketName() const
+{
+    return m_dataSocketName;
+}

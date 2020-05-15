@@ -5,11 +5,13 @@
 #include <QObject>
 #include <QWebSocket>
 
-namespace NS_BGMRPC {
+namespace NS_BGMRPC
+{
 
 class BGMRPC;
 
-class Client : public QObject {
+class Client : public QObject
+{
     Q_OBJECT
 public:
     explicit Client(BGMRPC* bgmrpc, QWebSocket* socket,
@@ -24,12 +26,12 @@ public:
 signals:
 
 private: ///< private methods
-    QLocalSocket* connectObject(const QString& objName);
+    QLocalSocket* connectObject(const QString& mID, const QString& objName);
     QLocalSocket* relatedObjectSocket(const QString& objName) const;
 
     bool requestCall(const QByteArray& data);
     void returnData(const QByteArray& data);
-    void returnError(quint8 errNO, const QString& errStr);
+    //    void returnError(quint8 errNO, const QString& errStr);
 
 private:
     BGMRPC* m_BGMRPC;

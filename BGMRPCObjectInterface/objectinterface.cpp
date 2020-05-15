@@ -11,14 +11,14 @@ ObjectInterface::ObjectInterface(QObject* parent)
       m_dataServer(new QLocalServer(this))
 {
 
-    m_ctrlSocket->connectToServer(NS_BGMRPC::BGMRPCCtrlSocket);
+    m_ctrlSocket->connectToServer(/*NS_BGMRPC::*/ BGMRPCCtrlSocket);
     if (m_ctrlSocket->waitForConnected(-1))
-        qInfo() << "Connect to BGMRPC ok";
+        qInfo().noquote() << "Connect to BGMRPC ok";
     else
         qWarning() << "Connect to BGMRPC Fail";
 
     QObject::connect(m_ctrlSocket, &QLocalSocket::disconnected, [&]() {
-        qInfo() << "Object disconnect";
+        qInfo().noquote() << "Object disconnect";
         objectDisconnected();
         m_dataServer->close();
     });
@@ -38,10 +38,11 @@ bool ObjectInterface::registerObject(const QByteArray& name)
         ctrl.append(name);
         m_ctrlSocket->write(ctrl);
 
-        QString socketServerName = NS_BGMRPC::BGMRPCObjPrefix + name;
+        QString socketServerName = /*NS_BGMRPC::*/ BGMRPCObjPrefix + name;
         if (m_dataServer->listen(socketServerName)) {
             m_name = name;
-            qInfo() << "Object ready";
+            qInfo().noquote() << "Object ready";
+            qInfo();
             return true;
         } else {
             qWarning() << "Object Not ready. Object Name:" << name
@@ -65,17 +66,33 @@ QString ObjectInterface::objectName() const
  */
 void ObjectInterface::addRelatedCaller(QPointer<Caller> caller)
 {
+    if (caller.isNull() || caller->exited())
+        return;
+
     m_relatedCaller[caller->m_ID] = caller;
     QObject::connect(caller.data(), &Caller::clientExited, [=]() {
-        relatedCallerExisted(caller);
-        m_relatedCaller.remove(caller->m_ID);
+        if (m_relatedCaller.contains(caller->m_ID)) {
+            relatedCallerExited(caller);
+            m_relatedCaller.remove(caller->m_ID);
+            QObject::disconnect(caller.data(), &Caller::clientExited, nullptr,
+                                nullptr);
+        }
     });
 }
 
-void ObjectInterface::emitSignal(const QString& signal, const QVariant& args)
+bool ObjectInterface::removeRelatedCaller(QPointer<Caller> caller)
 {
-    foreach (QPointer<Caller> caller, m_relatedCaller)
-        caller->emitSignalReady(signal, args);
+    if (caller.isNull() || caller->exited())
+        return false;
+
+    if (m_relatedCaller.contains(caller->m_ID)) {
+        relatedCallerExited(caller);
+        m_relatedCaller.remove(caller->m_ID);
+        QObject::disconnect(caller.data(), &Caller::clientExited, nullptr,
+                            nullptr);
+        return true;
+    } else
+        return false;
 }
 
 QPointer<Caller> ObjectInterface::findRelatedCaller(
@@ -87,6 +104,12 @@ QPointer<Caller> ObjectInterface::findRelatedCaller(
     }
 
     return QPointer<Caller>();
+}
+
+void ObjectInterface::emitSignal(const QString& signal, const QVariant& args)
+{
+    foreach (QPointer<Caller> caller, m_relatedCaller)
+        caller->emitSignalReady(signal, args);
 }
 
 /*!
@@ -122,7 +145,7 @@ QVariant ObjectInterface::callLocalMethod(QPointer<Caller> caller,
     callVariant["method"] = method;
     callVariant["args"] = args;
     QLocalSocket* localCallSocket = new QLocalSocket();
-    localCallSocket->connectToServer(NS_BGMRPC::BGMRPCObjPrefix + object);
+    localCallSocket->connectToServer(/*NS_BGMRPC::*/ BGMRPCObjPrefix + object);
     if (!localCallSocket->waitForConnected()) {
         localCallSocket->deleteLater();
         return QVariant();
@@ -145,7 +168,7 @@ QVariant ObjectInterface::callLocalMethod(QPointer<Caller> caller,
     QVariant retVariant;
     bool capturedReturn = false;
     while (localCallSocket->waitForReadyRead()) {
-        NS_BGMRPC::splitReturnData(
+        /*NS_BGMRPC::*/ splitReturnData(
             localCallSocket->readAll(), [&](const QByteArray& baRetData) {
                 QJsonDocument jsonDoc = QJsonDocument::fromJson(baRetData);
                 if (jsonDoc["type"].toString() == "return") {
@@ -195,7 +218,6 @@ QVariant ObjectInterface::privateData(QPointer<Caller> caller,
 
 void ObjectInterface::newCaller()
 {
-    qInfo() << "New call this object[" << m_name << "]";
     QLocalSocket* cliDataSocket = m_dataServer->nextPendingConnection();
     QPointer<Caller> caller = new Caller(this, cliDataSocket);
 
@@ -209,9 +231,16 @@ void ObjectInterface::newCaller()
                 caller->m_localCall = true;
             caller->m_ID = id;
             data = data.mid(sizeof(quint64) + 1);
+
+            qInfo().noquote() << "\033[34mNew caller[\033[4m#" +
+                                     QString::number(caller->m_ID) +
+                                     "\033[24m] call this object[" + m_name +
+                                     "].\033[0m";
+
             if (data.length() == 0)
                 return;
         }
+
         QJsonDocument callJsonDoc = QJsonDocument::fromJson(data);
 
         QString methodName = callJsonDoc["method"].toString();
@@ -219,8 +248,8 @@ void ObjectInterface::newCaller()
         QString mID = callJsonDoc["mID"].toString("#");
 
         if (!m_methods[methodName])
-            caller->returnErrorReady(NS_BGMRPC::ERR_NOMETHOD,
-                                m_name + '.' + methodName);
+            caller->returnErrorReady(mID, NS_BGMRPC::ERR_NOMETHOD,
+                                     m_name + '.' + methodName);
         else
             callMethod(mID, caller, methodName, args);
     });
@@ -231,9 +260,9 @@ void ObjectInterface::newCaller()
     });
 }
 
-bool ObjectInterface::permit(QPointer<Caller> /*caller*/,
-                             const QString& /*method*/,
-                             const QVariantList& /*args*/)
+bool ObjectInterface::verification(QPointer<Caller> /*caller*/,
+                                   const QString& /*method*/,
+                                   const QVariantList& /*args*/)
 {
     return true;
 }
@@ -242,34 +271,33 @@ void ObjectInterface::callMethod(const QString& mID, QPointer<Caller> caller,
                                  const QString& methodName,
                                  const QVariantList& args)
 {
-    if (!permit(caller, methodName, args)) {
-        caller->emitSignalReady("ERROR_ACCESS", {methodName});
-        caller->returnDataReady(mID, QVariant());
-        qWarning() << "Not allow call " + methodName;
-        return;
-    }
-
     QThread* callThread = QThread::create([=]() {
-        QVariantList _args_(args);
-        for (int i = args.length(); i < 10; i++)
-            _args_ << QVariant();
+        if (!caller.isNull() && verification(caller, methodName, args)) {
+            qInfo().noquote()
+                << "\033[32m\033[4m#" + QString::number(caller->m_ID) +
+                       "\033[24m calling " + m_name + '.' + methodName
+                << "\033[0m";
+            QVariant ret = m_methods[methodName](this, caller, args);
 
-        QVariant ret = m_methods[methodName](this, caller, _args_);
-        qInfo() << m_name + '.' + methodName << " has been called";
-
-        caller->returnDataReady(mID, ret);
+            if (!caller.isNull()) {
+                qInfo().noquote()
+                    << "\033[33m\033[4m#" + QString::number(caller->m_ID) +
+                           "\033[24m " + m_name + '.' + methodName
+                    << " has been called.\033[0m";
+                caller->returnDataReady(mID, ret);
+            }
+        } else if (!caller.isNull()) {
+            caller->emitSignalReady("ERROR_ACCESS", {methodName});
+            caller->returnErrorReady(mID, NS_BGMRPC::ERR_ACCESS,
+                                     m_name + '.' + methodName);
+            caller->returnDataReady(mID, QVariant());
+            qWarning() << "Not allow call " + methodName;
+        } else
+            qWarning() << "Caller may have disconnected";
     });
 
     QObject::connect(callThread, &QThread::finished, callThread,
                      &QThread::deleteLater);
 
     callThread->start();
-    /*QVariantList _args_(args);
-    for (int i = args.length(); i < 10; i++)
-        _args_ << QVariant();
-
-    QVariant ret = m_methods[methodName](this, caller, _args_);
-    qInfo() << m_name + '.' + methodName << " has been called";
-
-    caller->returnDataReady(mID, ret);*/
 }

@@ -1,11 +1,12 @@
 #include "bgmrpccommon.h"
 
-namespace NS_BGMRPC {
+// namespace NS_BGMRPC {
 QString BGMRPCObjPrefix = "BGMRPC_OBJ_";
 QString BGMRPCCtrlSocket = "BGMRPC_CTRL";
 
 void splitReturnData(const QByteArray& data,
-                     std::function<void(const QByteArray&)> callback) {
+                     std::function<void(const QByteArray&)> callback)
+{
     if (!callback)
         return;
 
@@ -20,4 +21,4 @@ void splitReturnData(const QByteArray& data,
     }
 }
 
-} // namespace NS_BGMRPC
+//} // namespace NS_BGMRPC

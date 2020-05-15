@@ -2,7 +2,7 @@ QT -= gui
 QT += network
 
 TEMPLATE = lib
-DEFINES += MATH_LIBRARY
+DEFINES += PYTHONINTERFACE_LIBRARY
 VERSION = 2.0.0
 
 CONFIG += c++11
@@ -19,11 +19,13 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    math.cpp
+    pyobj.cpp \
+    pythoninterface.cpp
 
 HEADERS += \
-    math_global.h \
-    math.h
+    PythonInterface_global.h \
+    pyobj.h \
+    pythoninterface.h
 
 # Default rules for deployment.
 unix {
@@ -31,13 +33,24 @@ unix {
 }
 !isEmpty(target.path): INSTALLS += target
 
+unix:!macx: LIBS += -L$$OUT_PWD/../../BGMRPCCommon/ -lBGMRPCCommon
+
+INCLUDEPATH += $$PWD/../../BGMRPCCommon
+DEPENDPATH += $$PWD/../../BGMRPCCommon
+
 unix:!macx: LIBS += -L$$OUT_PWD/../../BGMRPCObjectInterface/ -lBGMRPCObjectInterface
 
 INCLUDEPATH += $$PWD/../../BGMRPCObjectInterface
 DEPENDPATH += $$PWD/../../BGMRPCObjectInterface
 
 
-unix:!macx: LIBS += -L$$OUT_PWD/../../BGMRPCCommon/ -lBGMRPCCommon
 
-INCLUDEPATH += $$PWD/../../BGMRPCCommon
-DEPENDPATH += $$PWD/../../BGMRPCCommon
+PYTHON_VERSION = 3
+
+system(python$${PYTHON_VERSION}-config --embed --libs) {
+  unix:LIBS += $$system(python$${PYTHON_VERSION}-config --embed --libs)
+} else: unix:LIBS += $$system(python$${PYTHON_VERSION}-config --libs)
+unix:QMAKE_CXXFLAGS += $$system(python$${PYTHON_VERSION}-config --includes)
+
+INCLUDEPATH += /usr/include/PythonQt/
+unix:!macx: LIBS += -lPythonQt-Qt5-Python3

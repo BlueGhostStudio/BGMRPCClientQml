@@ -10,17 +10,17 @@ Math::Math(QObject* parent) : ObjectInterface(parent)
     QObject::connect(this, &Math::callerExisted, [](QPointer<Caller> caller) {
         qDebug() << "caller exited" << caller->ID();
     });
-    QObject::connect(this, &Math::relatedCallerExisted,
+    QObject::connect(this, &Math::relatedCallerExited,
                      [=](QPointer<Caller> caller) {
                          qDebug() << "关联调用者退出" << caller->ID()
                                   << privateData(caller, "name");
                      });
 }
 
-QVariant Math::plus(QPointer<Caller> cli, const QVariantList& args)
+QVariant Math::plus(QPointer<Caller> /*cli*/, const QVariantList& args)
 {
-    QVariantMap t = {{"t", 123}, {"b", 234}};
-    cli->emitSignalReady("test_signal", t);
+    //    QVariantMap t = {{"t", 123}, {"b", 234}};
+    //    cli->emitSignalReady("test_signal", t);
     return args[0].toInt() + args[1].toInt();
 }
 
@@ -69,8 +69,8 @@ QVariant Math::testThread(QPointer<Caller>, const QVariantList& args)
     return args[0].toString();
 }
 
-bool Math::permit(QPointer<Caller> /*caller*/, const QString& /*method*/,
-                  const QVariantList& /*args*/)
+bool Math::verification(QPointer<Caller> /*caller*/, const QString& /*method*/,
+                        const QVariantList& /*args*/)
 {
     /*if (method == "join")
         return true;
@@ -90,7 +90,7 @@ void Math::registerMethods()
     m_methods["testThread"] = REG_METHOD(Math, testThread);
 }
 
-ObjectInterface* create(int, char **)
+ObjectInterface* create(int, char**)
 {
     return new Math;
 }

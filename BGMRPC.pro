@@ -7,4 +7,6 @@ SUBDIRS += \
     BGMRPCObjectLoader \
     BGMRPCCommon \
     TestBGMRPC \
+    interfaces/JsPlugin2 \
+    interfaces/PythonInterface \
     interfaces/math
