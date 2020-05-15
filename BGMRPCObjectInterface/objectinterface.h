@@ -73,7 +73,10 @@ protected:
     QLocalSocket* m_ctrlSocket;
     QLocalServer* m_dataServer;
     QString m_name;
-    QMap<QString, T_METHOD> m_methods;
+    //    QMap<QString, T_METHOD> m_methods;
+    QMap<QString, std::function<QVariant(ObjectInterface*, QPointer<Caller>,
+                                         const QVariantList&)>>
+        m_methods;
     QMap<quint64, QPointer<Caller>> m_relatedCaller;
 
     typedef QVariantMap t_priData;
