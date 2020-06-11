@@ -1,12 +1,14 @@
 #include "pythoninterface.h"
 #include "pyobj.h"
+#include <QDir>
 #include <QFileInfo>
 #include <QMutexLocker>
 #include <getopt.h>
 
 using namespace NS_BGMRPCObjectInterface;
 
-PythonInterface::PythonInterface(QObject* parent) : ObjectInterface(parent)
+PythonInterface::PythonInterface(QObject* parent)
+    : ObjectInterface(parent), m_hasPyRuning(false)
 {
     PythonQt::init(PythonQt::IgnoreSiteModule);
     m_pyMainContent = PythonQt::self()->getMainModule();
@@ -70,17 +72,27 @@ void PythonInterface::registerMethod(const QString& methodName)
     m_methods[methodName] = std::bind(
         [&](const QString& name, ObjectInterface*, QPointer<Caller> caller,
             const QVariantList& args) -> QVariant {
+
             if (caller.isNull())
                 return QVariant();
 
-            //            QMutexLocker locker(&m_mutex);
+            QMutexLocker locker(&m_mutex);
+            //if (!m_hasPyRuning)
+                //m_hasPyRuning = true;
+            //else
+                //m_waitForRun.wait(&m_mutex);
+
+
             QVariantList _args_(std::move(args));
             PyCaller* thePyCaller = new PyCaller(caller);
-            thePyCaller->deleteLater();
             _args_.prepend(QVariant::fromValue(thePyCaller));
-            m_mutex.lock();
+            // m_mutex.lock();
             QVariant ret = m_pyMainContent.call(name, _args_);
-            m_mutex.unlock();
+            // m_mutex.unlock();
+            thePyCaller->deleteLater();
+
+            //m_hasPyRuning = false;
+            //m_waitForRun.wakeOne();
 
             return ret;
         },
@@ -95,7 +107,6 @@ bool PythonInterface::verification(QPointer<Caller> caller,
     QMutexLocker locker(&m_mutex);
     if (m_pyMainContent.getVariable("verification").isValid()) {
         PyCaller* thePyCaller = new PyCaller(caller);
-        thePyCaller->deleteLater();
 
         QVariantList _args_;
         //        _args_ << 123 << 234;
@@ -105,10 +116,19 @@ bool PythonInterface::verification(QPointer<Caller> caller,
 
         bool ok = m_pyMainContent.call("verification", _args_).toBool();
         //        thePyCaller->deleteLater();
+        thePyCaller->deleteLater();
         return ok;
     } else
         return true;
 }
+
+/*void PythonInterface::callMethod(const QString& mID, QPointer<Caller> caller,
+                                 const QString& methodName,
+                                 const QVariantList& args)
+{
+    QMutexLocker locker(&m_mutex);
+    ObjectInterface::callMethod(mID, caller, methodName, args);
+}*/
 
 ObjectInterface* create(int argc, char** argv)
 {
@@ -116,16 +136,17 @@ ObjectInterface* create(int argc, char** argv)
     optind = 0;
     QString pyFile;
 
-    while ((opt = getopt(argc, argv, "p:")) != -1) {
+    while ((opt = getopt(argc, argv, "s:")) != -1) {
         switch (opt) {
-        case 'p':
-            pyFile = optarg;
+        case 's':
+            QDir::setCurrent(QDir::currentPath() + "/py/" + optarg);
+            //            pyFile = QString(optarg) + "/main.py";
             break;
         }
     }
 
     PythonInterface* obj = new PythonInterface;
-    obj->loadPyFile(pyFile);
+    obj->loadPyFile("main.py");
 
     return obj;
 }

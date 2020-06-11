@@ -4,12 +4,15 @@
 #include "objectctrl.h"
 #include <QLocalServer>
 #include <QObject>
+#include <QSettings>
 #include <QWebSocket>
 #include <QWebSocketServer>
 
-namespace NS_BGMRPC {
+namespace NS_BGMRPC
+{
 
-class BGMRPC : public QObject {
+class BGMRPC : public QObject
+{
     Q_OBJECT
 public:
     explicit BGMRPC(QObject* parent = nullptr);
@@ -17,16 +20,26 @@ public:
 
     bool start(/*ip, port*/);
     void setAddress(const QHostAddress& address);
+    void setPort(quint16 port);
     ObjectCtrl* objectCtrl(const QString& name);
+
+    void initial(const QString& file);
 
 signals:
     void test_addedObject(const QString&);
 
 public slots:
-    void newObject(const QString& name);
+    void ctrl_registerObject(const QString& name);
+    void ctrl_checkObject(const QString& name);
+    void ctrl_getConfig(quint8 cnf);
+    void ctrl_detachObject(const QString& name);
+    void ctrl_listObjects();
     void newClient();
 
 private:
+    QSettings* m_settings;
+    //    QString m_settingsFile;
+
     QLocalServer* m_ctrlServer;
     QMap<QString, ObjectCtrl*> m_objects;
 
@@ -34,7 +47,7 @@ private:
     QHostAddress m_address;
     quint16 m_port;
 
-    friend ObjectCtrl;
+    //    friend ObjectCtrl;
 
     //    QLocalServer* test_BGMRPCTcpServer;
 };

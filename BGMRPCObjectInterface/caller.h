@@ -31,6 +31,9 @@ private slots:
     void returnError(const QString& mID, quint8 errNo, const QString& errStr);
 
 private:
+    void unsetDataSocket();
+
+private:
     QLocalSocket* m_dataSocket;
     qint64 m_ID;
     bool m_localCall;

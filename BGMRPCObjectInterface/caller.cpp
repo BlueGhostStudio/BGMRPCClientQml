@@ -48,6 +48,8 @@ bool Caller::exited() const
 
 void Caller::returnData(const QString& mID, const QVariant& data)
 {
+    if (!m_dataSocket)
+        return;
     QJsonObject retJsonObj;
     retJsonObj["type"] = "return";
     retJsonObj["mID"] = mID;
@@ -65,7 +67,7 @@ void Caller::returnData(const QString& mID, const QVariant& data)
 
 void Caller::emitSignal(const QString& signal, const QVariant& args)
 {
-    if (m_localCall)
+    if (m_localCall || !m_dataSocket)
         return;
 
     QJsonObject signalJsonObj;
@@ -87,6 +89,8 @@ void Caller::emitSignal(const QString& signal, const QVariant& args)
 void Caller::returnError(const QString& mID, quint8 errNO,
                          const QString& errStr)
 {
+    if (!m_dataSocket)
+        return;
     //    QByteArray errData(2, '\x0');
     //    errData[0] = (quint8) NS_BGMRPC::DATA_ERROR;
     //    errData[1] = errNO;
@@ -113,4 +117,12 @@ void Caller::returnError(const QString& mID, quint8 errNO,
     //    errData.append(errStr);
     m_dataSocket->write(int2bytes<quint64>(errData.length()) + errData);
     m_dataSocket->flush();
+}
+
+void Caller::unsetDataSocket()
+{
+    QObject::disconnect(m_dataSocket, &QLocalSocket::disconnected, 0, 0);
+    m_dataSocket->disconnectFromServer();
+    m_dataSocket->deleteLater();
+    m_dataSocket = nullptr;
 }

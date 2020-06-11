@@ -96,6 +96,10 @@ public:
     /*! \overload */
     QVariant callLocalMethod(const QString& object, const QString& method,
                              const QVariantList& args);
+    /*void callLocalMethodNonblock(QPointer<Caller> caller, const QString&
+       object, const QString& method, const QVariantList& args);*/
+    void callLocalMethodNonblock(const QString& object, const QString& method,
+                                 const QVariantList& args);
     //! @}
 
     //! \name 调用者的私有对象数据
@@ -122,9 +126,16 @@ signals:
     void callerExisted(QPointer<Caller>);
     void relatedCallerExited(QPointer<Caller>);
 
+    void LC_requestCallMethod(bool block, qint64 callerID,
+                              const QString& object, const QString& method,
+                              const QVariantList& args);
+    void LC_return(const QVariant&);
+
 private slots:
     //    void callMethod();
     void newCaller();
+    void on_LC_callMethod(bool block, qint64 callerID, const QString& object,
+                          const QString& method, const QVariantList& args);
 
 protected:
     virtual bool verification(QPointer<Caller> caller, const QString& method,

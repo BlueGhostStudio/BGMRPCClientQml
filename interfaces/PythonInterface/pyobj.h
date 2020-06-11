@@ -40,16 +40,41 @@ public:
 
     QString objectName() const;
 
+    //! \name 線程鎖
+    //! @{
     Q_INVOKABLE void mutexLock();   // test ✔
     Q_INVOKABLE void mutexUnlock(); // test ✔
+    //! @}
 
+    //! \name 私有數據
+    //! @{
     Q_INVOKABLE void
     setPrivateData(const NS_BGMRPCObjectInterface::PyCaller* caller,
                    const QString& key, const QVariant& value); // test ✔
     Q_INVOKABLE QVariant
     privateData(const NS_BGMRPCObjectInterface::PyCaller* caller,
                 const QString& key) const; // test ✔
+    //! @}
 
+    //! \name 調用BGMRPC內部其他對象
+    //! @{
+    Q_INVOKABLE QVariant callLocalMethod(
+        const NS_BGMRPCObjectInterface::PyCaller* caller, const QString& object,
+        const QString& method, const QVariantList& args);
+    /*Q_INVOKABLE void
+      callLocalMethodNonblock(const NS_BGMRPCObjectInterface::PyCaller*
+      caller, const QString& object, const QString& method, const
+      QVariantList& args);*/
+    Q_INVOKABLE QVariant callLocalMethod(const QString& object,
+                                         const QString& method,
+                                         const QVariantList& args);
+    Q_INVOKABLE void callLocalMethodNonblock(const QString& object,
+                                             const QString& method,
+                                             const QVariantList& args);
+    //! @}
+
+    //! \name 關聯客戶端
+    //! @{
     /*!
      * \brief addRelClient
      * \param caller
@@ -64,6 +89,10 @@ public:
      */
     Q_INVOKABLE bool
     removeRelClient(const NS_BGMRPCObjectInterface::PyCaller* caller); // test ✔
+    /*!
+     * \overload
+     */
+    Q_INVOKABLE bool removeRelClient(qint64 callerID);
     /*!
      * \brief relClients
      * \return
@@ -84,15 +113,29 @@ public:
     Q_INVOKABLE bool containsRelClient(
         const NS_BGMRPCObjectInterface::PyCaller* caller) const; // test ✔
     /*!
+     * \overload
+     */
+    Q_INVOKABLE bool containsRelClient(qint64 callerID) const;
+    /*!
      * \brief findRelClient
      * \param callback
      * \return
      */
     Q_INVOKABLE NS_BGMRPCObjectInterface::PyCaller*
     findRelClient(PythonQtObjectPtr callback); // test ✔
+    //! @}
 
+    /*!
+     * \brief 關聯客戶端退出事件
+     * \param 回調函數
+     */
     Q_INVOKABLE void onRelClientRemoved(PythonQtObjectPtr callback); // test ✔
 
+    /*!
+     * \brief 向所有關聯客戶端廣播信號
+     * \param 信號
+     * \param 信號參數
+     */
     Q_INVOKABLE void emitSignal(const QString& signal,
                                 const QVariantList& args); // test ✔
 

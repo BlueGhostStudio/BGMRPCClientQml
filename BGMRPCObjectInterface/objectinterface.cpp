@@ -7,7 +7,7 @@
 using namespace NS_BGMRPCObjectInterface;
 
 ObjectInterface::ObjectInterface(QObject* parent)
-    : QObject(parent), m_ctrlSocket(new QLocalSocket(this)),
+    : QObject(parent), m_ctrlSocket(new QLocalSocket()),
       m_dataServer(new QLocalServer(this))
 {
 
@@ -25,6 +25,9 @@ ObjectInterface::ObjectInterface(QObject* parent)
 
     QObject::connect(m_dataServer, &QLocalServer::newConnection, this,
                      &ObjectInterface::newCaller);
+
+    QObject::connect(this, &ObjectInterface::LC_requestCallMethod, this,
+                     &ObjectInterface::on_LC_callMethod);
 }
 
 bool ObjectInterface::registerObject(const QByteArray& name)
@@ -126,74 +129,52 @@ QVariant ObjectInterface::callLocalMethod(QPointer<Caller> caller,
                                           const QString& method,
                                           const QVariantList& args)
 {
-    QByteArray checkObj(1, (quint8)NS_BGMRPC::CTRL_CHECKOBJECT);
-    checkObj.append(object);
-    m_ctrlSocket->write(checkObj);
-    if (!m_ctrlSocket->waitForBytesWritten()) {
-        qWarning() << "Call local method - Can't request check object";
-        return QVariant();
-    }
-    if (!m_ctrlSocket->waitForReadyRead() ||
-        !(quint8)(m_ctrlSocket->readAll()[0])) {
-        qWarning() << "Call local method - The requested object [" << object
-                   << "] does not exist";
-        return QVariant();
-    }
+    QEventLoop CL_loop;
+    QVariant retData;
 
-    QVariantMap callVariant;
-    callVariant["object"] = object;
-    callVariant["method"] = method;
-    callVariant["args"] = args;
-    QLocalSocket* localCallSocket = new QLocalSocket();
-    localCallSocket->connectToServer(/*NS_BGMRPC::*/ BGMRPCObjPrefix + object);
-    if (!localCallSocket->waitForConnected()) {
-        localCallSocket->deleteLater();
-        return QVariant();
-    }
+    LC_requestCallMethod(true, caller.isNull() ? -1 : caller->m_ID, object,
+                         method, args);
+    QObject::connect(this, &ObjectInterface::LC_return,
+                     [&](const QVariant& data) {
+                         retData = data;
+                         CL_loop.exit();
+                     });
 
-    QByteArray callData;
-    if (!caller.isNull()) {
-        callData.resize(1);
-        callData[0] = (quint8)NS_BGMRPC::DATA_LOCALCALL_CLIENTID;
-        callData.append(int2bytes<quint64>(caller->m_ID));
-    }
+    CL_loop.exec();
+    QObject::disconnect(this, &ObjectInterface::LC_return, nullptr, nullptr);
 
-    callData += QJsonDocument::fromVariant(callVariant).toJson();
-    localCallSocket->write(callData);
-    if (!localCallSocket->waitForBytesWritten()) {
-        localCallSocket->deleteLater();
-        return QVariant();
-    }
-
-    QVariant retVariant;
-    bool capturedReturn = false;
-    while (localCallSocket->waitForReadyRead()) {
-        /*NS_BGMRPC::*/ splitReturnData(
-            localCallSocket->readAll(), [&](const QByteArray& baRetData) {
-                QJsonDocument jsonDoc = QJsonDocument::fromJson(baRetData);
-                if (jsonDoc["type"].toString() == "return") {
-                    capturedReturn = true;
-                    retVariant = jsonDoc["values"].toVariant();
-                }
-            });
-        if (capturedReturn)
-            break;
-    }
-    localCallSocket->deleteLater();
-
-    return retVariant;
+    return retData;
 }
 
 /*!
  * \overload
  * \note
- * 忽略调用者参数，如果被调用的远端对象无需操作原始调用者客户端(例如私有数据)，则调用此成员函数
+ * 忽略调用者参数，如果被调用的远端对象无需操作原始调用者客户端(例如私有数据)，
+ * 则调用此成员函数
  */
 QVariant ObjectInterface::callLocalMethod(const QString& object,
                                           const QString& method,
                                           const QVariantList& args)
 {
     return callLocalMethod(nullptr, object, method, args);
+}
+
+/*void ObjectInterface::callLocalMethodNonblock(QPointer<Caller> caller,
+                                              const QString& object,
+                                              const QString& method,
+                                              const QVariantList& args)
+{
+    qDebug() << "ObjectInterface::callLocalMethodNonblock 1";
+    LC_requestCallMethod(false, caller.isNull() ? -1 : caller->m_ID, object,
+                         method, args);
+}*/
+
+void ObjectInterface::callLocalMethodNonblock(const QString& object,
+                                              const QString& method,
+                                              const QVariantList& args)
+{
+    LC_requestCallMethod(false, -2, object, method, args);
+    // callLocalMethodNonblock(nullptr, object, method, args);
 }
 
 void ObjectInterface::setPrivateData(QPointer<Caller> caller,
@@ -239,6 +220,15 @@ void ObjectInterface::newCaller()
 
             if (data.length() == 0)
                 return;
+        } else if (firstCh == NS_BGMRPC::DATA_NONBLOCK_LOCALCALL) {
+            qInfo().noquote() << "\033[34mOther Object call this object[" +
+                                     m_name + "].\033[0m";
+            caller->unsetDataSocket();
+            caller->m_localCall = true;
+            data = data.mid(1);
+
+            if (data.length() == 0)
+                return;
         }
 
         QJsonDocument callJsonDoc = QJsonDocument::fromJson(data);
@@ -255,9 +245,98 @@ void ObjectInterface::newCaller()
     });
 
     QObject::connect(caller.data(), &Caller::clientExited, [=]() {
-        callerExisted(caller);
-        m_privateDatas.remove(caller->m_ID);
+        if (!caller->m_localCall) {
+            callerExisted(caller);
+            m_privateDatas.remove(caller->m_ID);
+        }
     });
+}
+
+void ObjectInterface::on_LC_callMethod(bool block, qint64 callerID,
+                                       const QString& object,
+                                       const QString& method,
+                                       const QVariantList& args)
+{
+    QByteArray checkObj(1, (quint8)NS_BGMRPC::CTRL_CHECKOBJECT);
+    checkObj.append(object);
+    m_ctrlSocket->write(checkObj);
+    if (!m_ctrlSocket->waitForBytesWritten()) {
+        qWarning() << "Call local method - Can't request check object";
+        LC_return(QVariant());
+        return;
+    }
+    if (!m_ctrlSocket->waitForReadyRead() ||
+        !(quint8)(m_ctrlSocket->readAll()[0])) {
+        qWarning() << "Call local method - The requested object [" << object
+                   << "] does not exist";
+        LC_return(QVariant());
+        return;
+    }
+
+    QVariantMap callVariant;
+    callVariant["object"] = object;
+    callVariant["method"] = method;
+    callVariant["args"] = args;
+
+    QLocalSocket* localCallSocket = new QLocalSocket;
+    localCallSocket->connectToServer(BGMRPCObjPrefix + object);
+    if (!localCallSocket->waitForConnected()) {
+        LC_return(QVariant());
+        return;
+    }
+
+    QByteArray callData;
+    if (block == false) {
+        callData.resize(1);
+        callData[0] = (quint8)NS_BGMRPC::DATA_NONBLOCK_LOCALCALL;
+    } else if (callerID >= 0) {
+        callData.resize(1);
+        callData[0] = (quint8)NS_BGMRPC::DATA_LOCALCALL_CLIENTID;
+        callData.append(int2bytes<quint64>(callerID));
+    }
+
+    callData += QJsonDocument::fromVariant(callVariant).toJson();
+    localCallSocket->write(callData);
+    if (!localCallSocket->waitForBytesWritten()) {
+        localCallSocket->deleteLater();
+        LC_return(QVariant());
+        return;
+    }
+
+    /*QObject::connect(localCallSocket, &QLocalSocket::readyRead, [&]() {
+        splitReturnData(
+            localCallSocket->readAll(), [&](const QByteArray& baRetData) {
+                qDebug() << "->> QLocalSocket readyread ->>" << baRetData;
+                QJsonDocument jsonDoc = QJsonDocument::fromJson(baRetData);
+                if (jsonDoc["type"].toString() == "return") {
+                    LC_return(jsonDoc["mID"].toInt(),
+                              jsonDoc["values"].toVariant());
+                    QObject::disconnect(localCallSocket,
+                                        &QLocalSocket::readyRead, nullptr,
+                                        nullptr);
+                    localCallSocket->deleteLater();
+                }
+            });
+    });*/
+    if (block) {
+        bool capturedReturn = false;
+        QVariant retVariant;
+        while (localCallSocket->waitForReadyRead()) {
+            splitReturnData(
+                localCallSocket->readAll(), [&](const QByteArray& baRetData) {
+                    QJsonDocument jsonDoc = QJsonDocument::fromJson(baRetData);
+                    if (jsonDoc["type"].toString() == "return") {
+                        capturedReturn = true;
+                        retVariant = jsonDoc["values"].toVariant();
+                    }
+                });
+            if (capturedReturn)
+                break;
+        }
+        localCallSocket->deleteLater();
+        LC_return(retVariant);
+    } else
+        localCallSocket->deleteLater();
 }
 
 bool ObjectInterface::verification(QPointer<Caller> /*caller*/,

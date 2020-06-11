@@ -6,6 +6,7 @@
 #include <QMutex>
 #include <QObject>
 #include <objectinterface.h>
+#include <QWaitCondition>
 
 namespace NS_BGMRPCObjectInterface
 {
@@ -26,10 +27,15 @@ protected:
     void registerMethod(const QString& methodName);
     bool verification(QPointer<Caller> caller, const QString& method,
                       const QVariantList& args) override;
+    /*void callMethod(const QString& mID, QPointer<Caller> caller,
+                    const QString& methodName,
+                    const QVariantList& args) override;*/
 
 private:
     PythonQtObjectPtr m_pyMainContent;
     QString m_PWD;
+    bool m_hasPyRuning;
+    QWaitCondition m_waitForRun;
 
     QMutex m_mutex;
 };

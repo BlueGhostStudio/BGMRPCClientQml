@@ -96,6 +96,36 @@ QVariant PyObj::privateData(const NS_BGMRPCObjectInterface::PyCaller* caller,
         return QVariant();
 }
 
+QVariant
+PyObj::callLocalMethod(const NS_BGMRPCObjectInterface::PyCaller* caller,
+                       const QString& object, const QString& method,
+                       const QVariantList& args)
+{
+    return m_oif->callLocalMethod(caller->caller(), object, method, args);
+}
+
+/*void PyObj::callLocalMethodNonblock(
+    const NS_BGMRPCObjectInterface::PyCaller* caller, const QString& object,
+    const QString& method, const QVariantList& args)
+{
+    qDebug() << "callLocalMethodNonblock 1";
+    return m_oif->callLocalMethodNonblock(caller->caller(), object, method,
+                                          args);
+}*/
+
+QVariant PyObj::callLocalMethod(const QString& object, const QString& method,
+                                const QVariantList& args)
+{
+    return m_oif->callLocalMethod(object, method, args);
+}
+
+void PyObj::callLocalMethodNonblock(const QString& object,
+                                    const QString& method,
+                                    const QVariantList& args)
+{
+    return m_oif->callLocalMethodNonblock(object, method, args);
+}
+
 bool PyObj::addRelClient(const NS_BGMRPCObjectInterface::PyCaller* caller)
 {
     //    PyCaller* thePyCaller = caller.value<PyCaller*>();
@@ -113,6 +143,11 @@ bool PyObj::removeRelClient(const NS_BGMRPCObjectInterface::PyCaller* caller)
         return m_oif->removeRelatedCaller(caller->caller());
     else
         return false;
+}
+
+bool PyObj::removeRelClient(qint64 callerID)
+{
+    return removeRelClient(relClient(callerID));
 }
 
 QVariantList PyObj::relClients() const
@@ -153,14 +188,23 @@ NS_BGMRPCObjectInterface::PyCaller* PyObj::relClient(qint64 callerID) const
 bool PyObj::containsRelClient(
     const NS_BGMRPCObjectInterface::PyCaller* caller) const
 {
-    return !m_oif
-                ->findRelatedCaller([=](QPointer<Caller> theCaller) -> bool {
-                    if (theCaller->ID() == caller->ID())
-                        return true;
-                    else
-                        return false;
-                })
-                .isNull();
+    if (caller && caller->online())
+        return !m_oif
+                    ->findRelatedCaller(
+                        [=](QPointer<Caller> theCaller) -> bool {
+                            if (theCaller->ID() == caller->ID())
+                                return true;
+                            else
+                                return false;
+                        })
+                    .isNull();
+    else
+        return false;
+}
+
+bool PyObj::containsRelClient(qint64 callerID) const
+{
+    return containsRelClient(relClient(callerID));
 }
 
 NS_BGMRPCObjectInterface::PyCaller*

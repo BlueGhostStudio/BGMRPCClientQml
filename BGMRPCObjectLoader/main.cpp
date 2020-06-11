@@ -1,13 +1,15 @@
 #include <QCoreApplication>
 #include <QDebug>
+#include <QDir>
 #include <QElapsedTimer>
 #include <QLibrary>
+#include <bgmrpccommon.h>
 #include <getopt.h>
 #include <objectinterface.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-QElapsedTimer timer;
+/*QElapsedTimer timer;
 quint8 messageFlag = 0x1f;
 void OIFMessage(QtMsgType type, const QMessageLogContext& context,
                 const QString& msg)
@@ -41,29 +43,50 @@ void OIFMessage(QtMsgType type, const QMessageLogContext& context,
                     timer.elapsed(), function, context.line, logMsg);
         break;
     }
-}
+}*/
 
 int main(int argc, char* argv[])
 {
-    timer.start();
+    // Read some settings
+    QString interfacesPath;
+    QString rootPath;
+
+    QLocalSocket ctrlSocket;
+    ctrlSocket.connectToServer(BGMRPCCtrlSocket);
+
+    if (!ctrlSocket.waitForConnected(500))
+        return -1;
+
+    QByteArray cmd(1, NS_BGMRPC::CTRL_DAEMONCTRL);
+    ctrlSocket.write(cmd);
+    if (!ctrlSocket.waitForBytesWritten())
+        return -1;
+    if (ctrlSocket.waitForReadyRead())
+        ctrlSocket.readAll();
+    else
+        return -1;
+
+    interfacesPath = getSettings(ctrlSocket, NS_BGMRPC::CNF_PATH_INTERFACES);
+    rootPath = getSettings(ctrlSocket, NS_BGMRPC::CNF_PATH_ROOT);
+
+    // initial Log message
+    initialLogMessage(/*0x1D*/);
 
     QCoreApplication a(argc, argv);
-    //    messageFlag = 0x1c;
-    qInstallMessageHandler(OIFMessage);
 
     QString remoteObjectName;
     QString libName;
     int opt = 0;
     opterr = 0;
-    while ((opt = getopt(argc, argv, "kn:l:")) != -1) {
+    while ((opt = getopt(argc, argv, "n:I:p:")) != -1) {
         switch (opt) {
-        case 'k':
-            qDebug() << "kill";
-            break;
         case 'n':
             remoteObjectName = optarg;
             break;
-        case 'l':
+        case 'p':
+            interfacesPath = optarg;
+            break;
+        case 'I':
             libName = optarg;
             break;
         case '?':
@@ -75,14 +98,26 @@ int main(int argc, char* argv[])
     qInfo().noquote() << "Starting Remote object. The name is"
                       << remoteObjectName << ". By" << libName;
 
+    libName = interfacesPath + '/' + libName;
+    QDir::setCurrent(rootPath);
+
     QLibrary IFLib(libName);
-    if (IFLib.load())
+    IFLib.setLoadHints(QLibrary::ExportExternalSymbolsHint);
+    if (IFLib.load()) {
         qInfo().noquote() << "Load interface library - OK";
 
-    typedef NS_BGMRPCObjectInterface::ObjectInterface* (*T_CREATE)(int, char**);
-    T_CREATE create = (T_CREATE)IFLib.resolve("create");
-    NS_BGMRPCObjectInterface::ObjectInterface* objIF = create(argc, argv);
-    objIF->registerObject(remoteObjectName.toLatin1());
+        typedef NS_BGMRPCObjectInterface::ObjectInterface* (*T_CREATE)(int,
+                                                                       char**);
+        T_CREATE create = (T_CREATE)IFLib.resolve("create");
+        NS_BGMRPCObjectInterface::ObjectInterface* objIF = create(argc, argv);
+        objIF->registerObject(remoteObjectName.toLatin1());
 
-    return a.exec();
+        QObject::connect(
+            objIF,
+            &NS_BGMRPCObjectInterface::ObjectInterface::objectDisconnected, &a,
+            &QCoreApplication::quit);
+
+        return a.exec();
+    } else
+        qWarning() << "Can't load interface library" << libName;
 }

@@ -6,6 +6,7 @@ using namespace NS_BGMRPCObjectInterface;
 
 Math::Math(QObject* parent) : ObjectInterface(parent)
 {
+    qDebug() << "currentDir" << QDir::currentPath();
     registerMethods();
     QObject::connect(this, &Math::callerExisted, [](QPointer<Caller> caller) {
         qDebug() << "caller exited" << caller->ID();

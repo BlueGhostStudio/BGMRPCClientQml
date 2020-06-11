@@ -29,6 +29,8 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 unix:!macx: LIBS += -L$$OUT_PWD/../BGMRPCCommon/ -lBGMRPCCommon
 
+TARGET = BGMRPCd
+
 INCLUDEPATH += $$PWD/../BGMRPCCommon
 DEPENDPATH += $$PWD/../BGMRPCCommon
 
