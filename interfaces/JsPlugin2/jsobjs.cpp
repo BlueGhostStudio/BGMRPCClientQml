@@ -65,7 +65,7 @@ void JsCaller::emitSignal(const QJSValue& /*obj*/, const QString& signal,
 void JsCaller::emitSignal(const QString& signal, const QJSValue& args) const
 {
     if (!m_caller.isNull())
-        m_caller->emitSignalReady(signal, args.toVariant());
+        m_caller->emitSignal(signal, args.toVariant());
 }
 
 QPointer<Caller> JsCaller::caller() const

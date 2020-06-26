@@ -5,7 +5,7 @@
 QString BGMRPCObjPrefix = "BGMRPC_OBJ_";
 QString BGMRPCCtrlSocket = "BGMRPC_CTRL";
 
-void splitReturnData(const QByteArray& data,
+void splitData(const QByteArray& data,
                      std::function<void(const QByteArray&)> callback)
 {
     if (!callback)
@@ -50,30 +50,30 @@ void initialLogMessage(quint8 mf)
         switch (type) {
         case QtMsgType::QtDebugMsg:
             if (messageFlag & 0x01)
-                fprintf(stdout, "%10.3f \033[0m[DEBUG] %s:%u - %s\033[0m\n",
+                fprintf(stdout, "%10.3f,DEBUG,%s:%u,%s\n",
                         (double)timer.elapsed() / 1000, function, context.line,
                         logMsg);
             break;
         case QtMsgType::QtInfoMsg:
             if (messageFlag & 0x02)
-                fprintf(stdout, "%10.3f \033[34m[INFO]\033[0m %s\n",
+                fprintf(stdout, "%10.3f,INFO,%s\n",
                         (double)timer.elapsed() / 1000, logMsg);
             break;
         case QtMsgType::QtWarningMsg:
             if (messageFlag & 0x04)
-                fprintf(stderr, "%10.3f \033[31m[WARNING] %s:%u - %s\033[0m\n",
+                fprintf(stderr, "%10.3f,WARNING,%s:%u,%s\n",
                         (double)timer.elapsed() / 1000, function, context.line,
                         logMsg);
             break;
         case QtMsgType::QtCriticalMsg:
             if (messageFlag & 0x08)
-                fprintf(stderr, "%10.3f \033[31m[CRITICAL] %s:%u - %s\033[0m\n",
+                fprintf(stderr, "%10.3f,CRITICAL,%s:%u,%s\n",
                         (double)timer.elapsed() / 1000, function, context.line,
                         logMsg);
             break;
         case QtMsgType::QtFatalMsg:
             if (messageFlag & 0x10)
-                fprintf(stderr, "%10.3f \033[31m[FATAL] %s:%u - %s\033[0m\n",
+                fprintf(stderr, "%10.3f,FATAL,%s:%u,%s\n",
                         (double)timer.elapsed() / 1000, function, context.line,
                         logMsg);
             break;

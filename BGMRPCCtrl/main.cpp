@@ -55,20 +55,20 @@ void stopServer()
     if (serverRunning) {
         QByteArray cmd;
         cmd[0] = NS_BGMRPC::CTRL_STOPSERVER;
-        qInfo().noquote() << "Stoping...";
+        qInfo().noquote() << "BGMRPC,stopServer,Stoping...";
         ctrlSocket.write(cmd);
         if (ctrlSocket.waitForBytesWritten())
-            qInfo().noquote() << "Stoped";
+            qInfo().noquote() << "BGMRPC,stopServer,Stoped";
     }
 }
 
 void createObject(int argc, char* argv[])
 {
     if (!serverRunning) {
-        qWarning().noquote() << "Server not run";
+        qWarning().noquote() << "BGMRPC,createObject,Server not run";
         return;
     } else if (argc < 4) {
-        qWarning().noquote() << "Mistake arguments";
+        qWarning().noquote() << "Object,createObject,Mistake arguments";
         return;
     }
 
@@ -76,12 +76,15 @@ void createObject(int argc, char* argv[])
     cmd.append(argv[2]);
     ctrlSocket.write(cmd);
     if (!ctrlSocket.waitForBytesWritten() || !ctrlSocket.waitForReadyRead()) {
-        qWarning().noquote() << "Can't check object";
+        qWarning().noquote()
+            << "Object,createObject-checkObject,Can't check object";
         return;
     }
 
     if ((quint8)ctrlSocket.readAll()[0] == 1) {
-        qWarning().noquote() << "The Object already existed";
+        qWarning().noquote() << QString("Object,createObject-checkObject,The "
+                                        "Object(%1) already existed")
+                                    .arg(argv[2]);
         return;
     }
 
@@ -95,7 +98,6 @@ void createObject(int argc, char* argv[])
                       QString(argv[2]) + ".log";
     QString binPath = getSettings(ctrlSocket, NS_BGMRPC::CNF_PATH_BIN);
 
-    qDebug() << logPath << binPath;
     if (qgetenv("BGMRPCDebug") != "1") {
         loaderProcess.setStandardOutputFile(logPath /*, QIODevice::Append*/);
         loaderProcess.setStandardErrorFile(logPath /*, QIODevice::Append*/);
@@ -105,45 +107,48 @@ void createObject(int argc, char* argv[])
     loaderProcess.startDetached();
 }
 
-void stopObject(int argc, char* argv[])
+void detachObject(int argc, char* argv[])
 {
     if (!serverRunning) {
-        qWarning().noquote() << "server not run";
+        qWarning().noquote() << "BGMRPC,detachObject,server not run";
         return;
     } else if (argc < 2) {
-        qWarning().noquote() << "Mistake arguments";
+        qWarning().noquote() << "Object,detachObject,Mistake arguments";
         return;
     }
 
     QByteArray cmd;
     cmd[0] = NS_BGMRPC::CTRL_DETACHOBJECT;
-    qInfo().noquote() << "Detach object...";
+    qInfo().noquote()
+        << QString("Object(%1),detachObject,Detach object...").arg(argv[2]);
     cmd.append(argv[2]);
     ctrlSocket.write(cmd);
     if (ctrlSocket.waitForReadyRead() && (quint8)ctrlSocket.readAll()[0])
-        qInfo().noquote() << "Finished";
+        qInfo().noquote()
+            << QString("Object(%1),detachObject,Finished").arg(argv[2]);
     else
-        qWarning().noquote() << "Fail";
+        qWarning().noquote()
+            << QString("Object(%1),detachObject,Detach Fail").arg(argv[2]);
 }
 
 void listObjects()
 {
     if (!serverRunning) {
-        qWarning().noquote() << "Server not run";
+        qWarning().noquote() << "BGMRPC,listObjects,Server not run";
         return;
     }
 
     QByteArray cmd(1, NS_BGMRPC::CTRL_LISTOBJECTS);
     ctrlSocket.write(cmd);
     if (!ctrlSocket.waitForBytesWritten() || !ctrlSocket.waitForReadyRead()) {
-        qWarning().noquote() << "Can't get object list";
+        qWarning().noquote() << "BGMRPC,listObjects,Can't get object list";
         return;
     }
 
     QByteArray objListData = ctrlSocket.readAll();
     if (objListData[0] != '\x0')
         foreach (QByteArray obj, objListData.split(','))
-            qInfo().noquote() << "    " << obj;
+            qInfo().noquote() << "- " << obj;
 }
 
 int main(int argc, char* argv[])
@@ -185,7 +190,7 @@ int main(int argc, char* argv[])
     else if (strcmp(argv[1], "createObject") == 0)
         createObject(argc, argv);
     else if (strcmp(argv[1], "detachObject") == 0)
-        stopObject(argc, argv);
+        detachObject(argc, argv);
     else if (strcmp(argv[1], "listObjects") == 0)
         listObjects();
     else

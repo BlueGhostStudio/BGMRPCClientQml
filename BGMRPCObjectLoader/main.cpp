@@ -90,13 +90,14 @@ int main(int argc, char* argv[])
             libName = optarg;
             break;
         case '?':
-            qDebug() << "some other args";
             break;
         }
     }
 
-    qInfo().noquote() << "Starting Remote object. The name is"
-                      << remoteObjectName << ". By" << libName;
+    qInfo().noquote()
+        << QString("ObjectLoader,startRemoteObject,The name is %1. by %2")
+               .arg(remoteObjectName)
+               .arg(libName);
 
     libName = interfacesPath + '/' + libName;
     QDir::setCurrent(rootPath);
@@ -104,7 +105,10 @@ int main(int argc, char* argv[])
     QLibrary IFLib(libName);
     IFLib.setLoadHints(QLibrary::ExportExternalSymbolsHint);
     if (IFLib.load()) {
-        qInfo().noquote() << "Load interface library - OK";
+        qInfo().noquote()
+            << QString(
+                   "ObjectLoader,loadInterface,Load interface library(%1) - OK")
+                   .arg(libName);
 
         typedef NS_BGMRPCObjectInterface::ObjectInterface* (*T_CREATE)(int,
                                                                        char**);
@@ -119,5 +123,7 @@ int main(int argc, char* argv[])
 
         return a.exec();
     } else
-        qWarning() << "Can't load interface library" << libName;
+        qWarning().noquote()
+            << "ObjectLoader,loadInterface,Can't load interface library"
+            << libName << ". " << IFLib.errorString();
 }

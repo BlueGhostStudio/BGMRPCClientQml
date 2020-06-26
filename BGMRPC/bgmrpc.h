@@ -38,7 +38,6 @@ public slots:
 
 private:
     QSettings* m_settings;
-    //    QString m_settingsFile;
 
     QLocalServer* m_ctrlServer;
     QMap<QString, ObjectCtrl*> m_objects;
@@ -46,10 +45,6 @@ private:
     QWebSocketServer* m_BGMRPCServer;
     QHostAddress m_address;
     quint16 m_port;
-
-    //    friend ObjectCtrl;
-
-    //    QLocalServer* test_BGMRPCTcpServer;
 };
 
 } // namespace NS_BGMRPC

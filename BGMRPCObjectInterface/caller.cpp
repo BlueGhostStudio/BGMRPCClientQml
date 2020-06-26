@@ -1,15 +1,16 @@
 #include "caller.h"
-#include "objectinterface.h"
+
 #include <bgmrpccommon.h>
 #include <intbytes.h>
+
+#include "objectinterface.h"
 
 using namespace NS_BGMRPCObjectInterface;
 
 // quint64 Caller::m_totalID = 0;
 
 Caller::Caller(ObjectInterface* callee, QLocalSocket* socket, QObject* parent)
-    : QObject(parent), m_dataSocket(socket), m_callee(callee)
-{
+    : QObject(parent), m_dataSocket(socket), m_callee(callee) {
     m_localCall = false;
     m_ID = -1;
     m_exited = false;
@@ -22,34 +23,24 @@ Caller::Caller(ObjectInterface* callee, QLocalSocket* socket, QObject* parent)
     QObject::connect(m_dataSocket, &QLocalSocket::disconnected,
                      [=]() { clientExited(); });
 
-    QObject::connect(this, &Caller::emitSignalReady, this, &Caller::emitSignal);
-    QObject::connect(this, &Caller::returnDataReady, this, &Caller::returnData);
-    QObject::connect(this, &Caller::returnErrorReady, this,
-                     &Caller::returnError);
+    QObject::connect(this, &Caller::emitSignal, this, &Caller::onEmitSignal);
+    QObject::connect(this, &Caller::returnData, this, &Caller::onReturnData);
+    QObject::connect(this, &Caller::returnError, this, &Caller::onReturnError);
     //    m_ID = m_totalID;
     //    m_totalID++;
 }
 
-Caller::~Caller()
-{
-}
+Caller::~Caller() {}
 
-qint64 Caller::ID() const
-{
-    return m_ID;
-}
+qint64 Caller::ID() const { return m_ID; }
 
-bool Caller::exited() const
-{
-    return m_exited;
-}
+bool Caller::exited() const { return m_exited; }
 
 // void Caller::setID(quint64 id) { m_ID = id; }
 
-void Caller::returnData(const QString& mID, const QVariant& data)
-{
-    if (!m_dataSocket)
-        return;
+void Caller::onReturnData(const QString& mID, const QVariant& data) {
+    if (!m_dataSocket) return;
+
     QJsonObject retJsonObj;
     retJsonObj["type"] = "return";
     retJsonObj["mID"] = mID;
@@ -61,14 +52,19 @@ void Caller::returnData(const QString& mID, const QVariant& data)
     }
     QByteArray retData =
         QJsonDocument(retJsonObj).toJson(QJsonDocument::Compact);
+
+    qInfo().noquote() << QString(
+                             "Object(%1),returnData,%1.%2 return data.Size: %3")
+                             .arg(m_callee->objectName())
+                             .arg(m_calleeMethod)
+                             .arg(retData.length());
+
     m_dataSocket->write(int2bytes<quint64>(retData.length()) + retData);
     m_dataSocket->flush();
 }
 
-void Caller::emitSignal(const QString& signal, const QVariant& args)
-{
-    if (m_localCall || !m_dataSocket)
-        return;
+void Caller::onEmitSignal(const QString& signal, const QVariant& args) {
+    if (m_localCall || !m_dataSocket) return;
 
     QJsonObject signalJsonObj;
     signalJsonObj["type"] = "signal";
@@ -82,15 +78,20 @@ void Caller::emitSignal(const QString& signal, const QVariant& args)
 
     QByteArray signalData =
         QJsonDocument(signalJsonObj).toJson(QJsonDocument::Compact);
+
+    qInfo().noquote()
+        << QString("Object(%1),emitSignal,Emit signal(%2) to Client(%3)")
+               .arg(m_callee->objectName())
+               .arg(signal)
+               .arg(m_ID);
+
     m_dataSocket->write(int2bytes<quint64>(signalData.length()) + signalData);
     m_dataSocket->flush();
 }
 
-void Caller::returnError(const QString& mID, quint8 errNO,
-                         const QString& errStr)
-{
-    if (!m_dataSocket)
-        return;
+void Caller::onReturnError(const QString& mID, quint8 errNO,
+                           const QString& errStr) {
+    if (!m_dataSocket) return;
     //    QByteArray errData(2, '\x0');
     //    errData[0] = (quint8) NS_BGMRPC::DATA_ERROR;
     //    errData[1] = errNO;
@@ -119,8 +120,7 @@ void Caller::returnError(const QString& mID, quint8 errNO,
     m_dataSocket->flush();
 }
 
-void Caller::unsetDataSocket()
-{
+void Caller::unsetDataSocket() {
     QObject::disconnect(m_dataSocket, &QLocalSocket::disconnected, 0, 0);
     m_dataSocket->disconnectFromServer();
     m_dataSocket->deleteLater();

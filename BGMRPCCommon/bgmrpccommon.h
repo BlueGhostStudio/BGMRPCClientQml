@@ -13,7 +13,7 @@
 extern QString BGMRPCObjPrefix;
 extern QString BGMRPCCtrlSocket;
 
-void splitReturnData(const QByteArray& data,
+void splitData(const QByteArray& data,
                      std::function<void(const QByteArray&)> callback);
 QByteArray getSettings(QLocalSocket& ctrlSocket, NS_BGMRPC::Config cnf);
 

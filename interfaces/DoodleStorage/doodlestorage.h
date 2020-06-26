@@ -1,9 +1,9 @@
 #ifndef HWSTORAGE_H
 #define HWSTORAGE_H
 
+#include <QFile>
 #include <QMutex>
 #include <QObject>
-#include <QSqlDatabase>
 #include <objectinterface.h>
 
 namespace NS_BGMRPCObjectInterface
@@ -26,7 +26,7 @@ protected:
 private:
     QMutex m_mutex;
 
-    QSqlDatabase m_database;
+    QFile m_dataFile;
     QByteArray m_buffer;
 };
 

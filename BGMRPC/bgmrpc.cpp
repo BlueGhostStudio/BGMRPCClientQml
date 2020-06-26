@@ -26,7 +26,7 @@ bool BGMRPC::start()
 {
     if (m_ctrlServer->listen(/*NS_BGMRPC::*/ BGMRPCCtrlSocket) &&
         m_BGMRPCServer->listen(m_address, m_port)) {
-        qInfo().noquote() << "BGMRPC Started";
+        qInfo().noquote() << "BGMRPC,start,Started";
 
         QObject::connect(m_ctrlServer, &QLocalServer::newConnection, [=]() {
             ObjectCtrl* objCtrl = new ObjectCtrl(
@@ -49,17 +49,15 @@ bool BGMRPC::start()
             QObject::connect(
                 objCtrl, &ObjectCtrl::removeObject, [&](const QString& name) {
                     qInfo().noquote()
-                        << "Object[" + name + "] has ben disconnected";
+                        << QString("Object(%1),removeObject,Disconnected")
+                               .arg(name);
                     m_objects.remove(name);
                 });
 
             QObject::connect(objCtrl, &ObjectCtrl::stopServer, []() {
-                qInfo() << "stop server";
+                qInfo() << "BGMRPC,stopServer,Stoped";
                 qApp->quit();
             });
-
-            /*QObject::connect(objCtrl, &ObjectCtrl::createObject, this,
-                             &BGMRPC::createObject);*/
         });
 
         QObject::connect(m_BGMRPCServer, &QWebSocketServer::newConnection, this,
@@ -87,7 +85,6 @@ ObjectCtrl* BGMRPC::objectCtrl(const QString& name)
 
 void BGMRPC::initial(const QString& file)
 {
-    qDebug() << file;
     if (file.isEmpty())
         m_settings = new QSettings();
     else
@@ -100,7 +97,7 @@ void BGMRPC::initial(const QString& file)
 
 void BGMRPC::ctrl_registerObject(const QString& name)
 {
-    qInfo().noquote() << "Register new Object, Name: " << name;
+    qInfo().noquote() << "BGMRPC,Register Object," << name;
     m_objects[name] = qobject_cast<ObjectCtrl*>(sender());
     test_addedObject(name);
 }
@@ -196,7 +193,7 @@ void BGMRPC::ctrl_listObjects()
 
 void BGMRPC::newClient()
 {
-    qInfo().noquote() << "New client connect to Server";
+    qInfo().noquote() << "BGMRPC,newClient,New client connected";
 
     new Client(this, m_BGMRPCServer->nextPendingConnection());
 }

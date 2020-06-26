@@ -1,16 +1,17 @@
 #include "client.h"
-#include "bgmrpc.h"
+
 #include <bgmrpccommon.h>
 
 #include <QRegularExpression>
+
+#include "bgmrpc.h"
 
 using namespace NS_BGMRPC;
 
 quint64 Client::m_totalID = 0;
 
 Client::Client(BGMRPC* bgmrpc, QWebSocket* socket, QObject* parent)
-    : QObject(parent), m_BGMRPC(bgmrpc), m_BGMRPCSocket(socket)
-{
+    : QObject(parent), m_BGMRPC(bgmrpc), m_BGMRPCSocket(socket) {
     m_ID = m_totalID;
     m_totalID++;
 
@@ -19,27 +20,30 @@ Client::Client(BGMRPC* bgmrpc, QWebSocket* socket, QObject* parent)
         [=](const QString& message) { requestCall(message.toUtf8()); });
     QObject::connect(m_BGMRPCSocket, &QWebSocket::disconnected, this,
                      &Client::deleteLater);
+    QObject::connect(m_BGMRPCSocket, &QWebSocket::disconnected, m_BGMRPCSocket,
+                     &QWebSocket::deleteLater);
+
+    m_BGMRPCSocket->ping();
+    QObject::connect(m_BGMRPCSocket, &QWebSocket::pong, [=]() {
+        QPointer<QWebSocket> socketPointer(m_BGMRPCSocket);
+        QTimer::singleShot(5000, [=]() {
+            if (socketPointer) socketPointer->ping();
+        });
+    });
 }
 
-Client::~Client()
-{
-    m_relatedObjectSockets.clear();
-}
+Client::~Client() { m_relatedObjectSockets.clear(); }
 
-bool Client::operator==(const Client* other) const
-{
+bool Client::operator==(const Client* other) const {
     return m_ID == other->m_ID;
 }
 
-bool Client::operator==(quint64 cliID) const
-{
-    return m_ID == cliID;
-}
+bool Client::operator==(quint64 cliID) const { return m_ID == cliID; }
 
 // quint64 Client::ID() const { return m_ID; }
 
-QLocalSocket* Client::connectObject(const QString& mID, const QString& objName)
-{
+QLocalSocket* Client::connectObject(const QString& mID,
+                                    const QString& objName) {
     ObjectCtrl* objCtrl = m_BGMRPC->objectCtrl(objName);
     if (!objCtrl) {
         QJsonObject errJsonObj;
@@ -66,15 +70,23 @@ QLocalSocket* Client::connectObject(const QString& mID, const QString& objName)
 
             QObject::connect(m_BGMRPCSocket, &QWebSocket::disconnected, [=]() {
                 // relSocket->disconnectFromServer();
-                qInfo().noquote() << "Client disconnect from server";
+                qInfo().noquote() << QString(
+                                         "Client(%1),disconnected,"
+                                         "Disconnect from server")
+                                         .arg(m_ID);
                 if (m_relatedObjectSockets.contains(objName)) {
-                    qInfo().noquote()
-                        << "Client disconnect object[" + objName + "]";
+                    qInfo().noquote() << QString(
+                                             "Client(%1),eisconnected,"
+                                             "Disconnect object(%2)")
+                                             .arg(m_ID)
+                                             .arg(objName);
                     m_relatedObjectSockets[objName]->disconnectFromServer();
                 } else
-                    qWarning() << "The object[" + objName +
-                                      "] related with this client may "
-                                      "have crashed";
+                    qWarning() << QString(
+                                      "Client(%1),disconnected,"
+                                      "related object(%2) may has crashed")
+                                      .arg(m_ID)
+                                      .arg(objName);
             });
 
             QObject::connect(relSocket, &QLocalSocket::disconnected, [=]() {
@@ -83,14 +95,44 @@ QLocalSocket* Client::connectObject(const QString& mID, const QString& objName)
             });
 
             QObject::connect(relSocket, &QLocalSocket::readyRead, [=]() {
-                QByteArray rawData = relSocket->readAll();
+                int lenLen = sizeof(quint64);
+                if (relSocket->property("fragment").isValid()) {
+                    quint64 len =
+                        relSocket->property("fragmentLen").toULongLong();
+                    //                    QByteArray fragmentData =
+                    //                        relSocket->property("fragmeng").toByteArray();
+                    QByteArray readData = relSocket->read(len);
+                    quint64 readedLen = readData.length();
 
-                splitReturnData(rawData, [=](const QByteArray& retData) {
-                    /*if (retData[0] == DATA_ERROR)
-                        returnError((int)retData[1], retData.mid(2));
-                    else*/
+                    readData = relSocket->property("fragment").toByteArray() +
+                               readData;
+
+                    if (readedLen < len) {
+                        relSocket->setProperty("fragment", readData);
+                        relSocket->setProperty("fragmentLen", len - readedLen);
+
+                        return;
+                    } else {
+                        returnData(readData);
+                        relSocket->setProperty("fragment", QVariant());
+                        relSocket->setProperty("fragmentLen", QVariant());
+                    }
+                }
+                while (relSocket->bytesAvailable() > 0) {
+                    quint64 len = bytes2int<quint64>(relSocket->read(lenLen));
+                    QByteArray readData = relSocket->read(len);
+                    quint64 readedLen = readData.length();
+                    if (readedLen < len) {
+                        relSocket->setProperty("fragment", readData);
+                        relSocket->setProperty("fragmentLen", len - readedLen);
+                    } else
+                        returnData(readData);
+                }
+                /*QByteArray rawData = relSocket->readAll();
+
+                splitData(rawData, [=](const QByteArray& retData) {
                     returnData(retData);
-                });
+                });*/
             });
 
             return relSocket;
@@ -101,13 +143,11 @@ QLocalSocket* Client::connectObject(const QString& mID, const QString& objName)
     }
 }
 
-QLocalSocket* Client::relatedObjectSocket(const QString& objName) const
-{
+QLocalSocket* Client::relatedObjectSocket(const QString& objName) const {
     return m_relatedObjectSockets[objName];
 }
 
-bool Client::requestCall(const QByteArray& data)
-{
+bool Client::requestCall(const QByteArray& data) {
     //    if (data[0] > 30) {
     QJsonDocument jsonData = QJsonDocument::fromJson(data);
     QString objName = jsonData["object"].toString();
@@ -124,17 +164,17 @@ bool Client::requestCall(const QByteArray& data)
         QLocalSocket* relSocket = relatedObjectSocket(objName);
         if (!relSocket) {
             relSocket = connectObject(mID, objName);
-            if (!relSocket)
-                return false;
+            if (!relSocket) return false;
         }
-        relSocket->write(data);
+        relSocket->write(int2bytes<quint64>(data.length()) + data);
+        // relSocket->waitForBytesWritten();
+        // relSocket->flush();
         return true;
     } else
         return false;
 }
 
-void Client::returnData(const QByteArray& data)
-{
+void Client::returnData(const QByteArray& data) {
     m_BGMRPCSocket->sendTextMessage(data);
 }
 

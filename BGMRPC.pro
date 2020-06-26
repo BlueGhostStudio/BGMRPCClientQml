@@ -1,14 +1,15 @@
 TEMPLATE = subdirs
-
+CONFIG += ordered
 SUBDIRS += \
+    BGMRPCCommon \
     BGMRPC \
-    BGMRPCClient \
-    BGMRPCCtrl \
     BGMRPCObjectInterface \
     BGMRPCObjectLoader \
-    BGMRPCCommon \
-    TestBGMRPC \
+    BGMRPCClient \
+    BGMRPCCtrl \
     interfaces/JsPlugin2 \
     interfaces/PythonInterface \
     interfaces/math \
-    interfaces/DoodleStorage
+    TestBGMRPC # \
+#    interfaces/DoodleStorage
+

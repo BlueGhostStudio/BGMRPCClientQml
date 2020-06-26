@@ -32,7 +32,7 @@ bool PyCaller::online() const
 void PyCaller::emitSignal(const QString& signal, const QVariant& args) const
 {
     if (!m_caller.isNull())
-        m_caller->emitSignalReady(signal, args);
+        m_caller->emitSignal(signal, args);
 }
 
 NS_BGMRPCObjectInterface::PyCaller* PyCaller::clone() const
