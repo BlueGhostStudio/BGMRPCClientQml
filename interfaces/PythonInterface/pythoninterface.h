@@ -1,22 +1,24 @@
 #ifndef PYTHONINTERFACE_H
 #define PYTHONINTERFACE_H
 
-#include "PythonInterface_global.h"
 #include <PythonQt.h>
+#include <objectinterface.h>
+
 #include <QMutex>
 #include <QObject>
-#include <objectinterface.h>
 #include <QWaitCondition>
 
-namespace NS_BGMRPCObjectInterface
-{
-class PYTHONINTERFACE_EXPORT PythonInterface : public ObjectInterface
-{
+#include "PythonInterface_global.h"
+
+namespace NS_BGMRPCObjectInterface {
+class PYTHONINTERFACE_EXPORT PythonInterface : public ObjectInterface {
 public:
     PythonInterface(QObject* parent = nullptr);
 
     /*QVariant callPy(const QString& name, QPointer<Caller> cli,
                     const QVariantList& args);*/
+    void initial(const QString& appPath, const QString& dataPath, int argc,
+                 char** argv) override;
     bool loadPyFile(const QString& pyFileName);
 
     void mutexLock();
@@ -40,9 +42,9 @@ private:
     QMutex m_mutex;
 };
 
-} // namespace NS_BGMRPCObjectInterface
+}  // namespace NS_BGMRPCObjectInterface
 
 extern "C" {
-NS_BGMRPCObjectInterface::ObjectInterface* create(int, char**);
+NS_BGMRPCObjectInterface::ObjectInterface* create(/*int, char***/);
 }
-#endif // PYTHONINTERFACE_H
+#endif  // PYTHONINTERFACE_H

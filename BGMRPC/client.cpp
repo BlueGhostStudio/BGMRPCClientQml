@@ -149,9 +149,16 @@ QLocalSocket* Client::relatedObjectSocket(const QString& objName) const {
 
 bool Client::requestCall(const QByteArray& data) {
     //    if (data[0] > 30) {
-    QJsonDocument jsonData = QJsonDocument::fromJson(data);
+    /*QJsonDocument jsonData = QJsonDocument::fromJson(data);
     QString objName = jsonData["object"].toString();
-    QString mID = jsonData["mID"].toString();
+    QString mID = jsonData["mID"].toString();*/
+    QVariantMap callVariant = QJsonDocument::fromJson(data).toVariant().toMap();
+
+    QString objName = callVariant["object"].toString();
+    QString mID = callVariant["mID"].toString();
+    callVariant["callerID"] = m_ID;
+
+    QByteArray callJson = QJsonDocument::fromVariant(callVariant).toJson();
     /*QRegularExpression reObj(R"RX(^{[^{]*"object":\s*"([^\"]*)")RX");
     QRegularExpressionMatch matchObj = reObj.match(data);
 
@@ -166,7 +173,7 @@ bool Client::requestCall(const QByteArray& data) {
             relSocket = connectObject(mID, objName);
             if (!relSocket) return false;
         }
-        relSocket->write(int2bytes<quint64>(data.length()) + data);
+        relSocket->write(int2bytes<quint64>(callJson.length()) + callJson);
         // relSocket->waitForBytesWritten();
         // relSocket->flush();
         return true;

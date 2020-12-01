@@ -36,6 +36,12 @@ qint64 Caller::ID() const { return m_ID; }
 
 bool Caller::exited() const { return m_exited; }
 
+bool Caller::isLocalCall() const { return m_localCall; }
+
+QString Caller::callerObject() const { return m_callerObject; }
+
+QString Caller::callerGrp() const { return m_callerGrp; }
+
 // void Caller::setID(quint64 id) { m_ID = id; }
 
 void Caller::onReturnData(const QString& mID, const QVariant& data) {

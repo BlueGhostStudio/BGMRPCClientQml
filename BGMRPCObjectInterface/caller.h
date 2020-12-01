@@ -3,11 +3,9 @@
 
 #include <QLocalSocket>
 #include <QObject>
-namespace NS_BGMRPCObjectInterface
-{
+namespace NS_BGMRPCObjectInterface {
 class ObjectInterface;
-class Caller : public QObject
-{
+class Caller : public QObject {
     Q_OBJECT
 public:
     explicit Caller(ObjectInterface* callee, QLocalSocket* socket,
@@ -16,6 +14,9 @@ public:
 
     qint64 ID() const;
     bool exited() const;
+    bool isLocalCall() const;
+    QString callerObject() const;
+    QString callerGrp() const;
     //    void setID(quint64 id);
 
 signals:
@@ -39,9 +40,11 @@ private:
     bool m_exited;
     ObjectInterface* m_callee;
     QString m_calleeMethod;
+    QString m_callerObject;
+    QString m_callerGrp;
     //    static quint64 m_totalID;
 
     friend ObjectInterface;
 };
-} // namespace NS_BGMRPCObjectInterface
-#endif // CALLER_H
+}  // namespace NS_BGMRPCObjectInterface
+#endif  // CALLER_H

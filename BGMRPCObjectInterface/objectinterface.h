@@ -1,7 +1,8 @@
 #ifndef OBJECTINTERFACE_H
 #define OBJECTINTERFACE_H
 
-#include "ObjectInterface_global.h"
+#include <caller.h>
+
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -10,17 +11,17 @@
 #include <QLocalSocket>
 #include <QObject>
 #include <QPointer>
-#include <caller.h>
 #include <functional>
 
-#define REG_METHOD(OBJIF, METHOD)                                              \
-    [](ObjectInterface* obj, QPointer<Caller> cli,                             \
-       const QVariantList& args) -> QVariant {                                 \
-        return qobject_cast<OBJIF*>(obj)->METHOD(cli, args);                   \
+#include "ObjectInterface_global.h"
+
+#define REG_METHOD(OBJIF, METHOD)                            \
+    [](ObjectInterface* obj, QPointer<Caller> cli,           \
+       const QVariantList& args) -> QVariant {               \
+        return qobject_cast<OBJIF*>(obj)->METHOD(cli, args); \
     }
 
-namespace NS_BGMRPCObjectInterface
-{
+namespace NS_BGMRPCObjectInterface {
 
 class Caller;
 class ObjectInterface;
@@ -28,11 +29,15 @@ class ObjectInterface;
 typedef QVariant (*T_METHOD)(ObjectInterface*, QPointer<Caller>,
                              const QVariantList&);
 
-class OBJECTINTERFACE_EXPORT ObjectInterface : public QObject
-{
+class OBJECTINTERFACE_EXPORT ObjectInterface : public QObject {
     Q_OBJECT
 public:
     ObjectInterface(QObject* parent = nullptr);
+
+    void setAppPath(const QString& path);
+    QString appPath() const;
+    void setDataPath(const QString& path);
+    QString dataPath() const;
 
     //! \name 初始化和对象属性
     //! @{
@@ -41,12 +46,16 @@ public:
      * \param 对象明
      * \return 返回成功与否
      */
-    bool registerObject(const QByteArray& name);
+    bool registerObject(const QByteArray& name,
+                        const QByteArray& grp = QByteArray());
+    virtual void initial(const QString& appPath, const QString& dataPath,
+                         int argc, char** argv);
     /*!
      * \brief 获取当前对象名
      * \return 当前对象名
      */
     QString objectName() const;
+    QString group() const;
     //! @}
 
     //! \name 关联调用者(客户端)
@@ -67,8 +76,8 @@ public:
      * \param 回调函数，若查找成功此回调函数返回 true
      * \return 返回查找到的关联调用者，若无调用者则返回空
      */
-    QPointer<Caller>
-    findRelatedCaller(std::function<bool(QPointer<Caller>)> callback);
+    QPointer<Caller> findRelatedCaller(
+        std::function<bool(QPointer<Caller>)> callback);
     //! @}
 
     //! \name 向关联调用者广播信号
@@ -91,15 +100,15 @@ public:
      * \param args
      * \return
      */
-    QVariant callLocalMethod(QPointer<Caller> caller, const QString& object,
-                             const QString& method, const QVariantList& args);
+    QVariant call(QPointer<Caller> caller, const QString& object,
+                  const QString& method, const QVariantList& args);
     /*! \overload */
-    QVariant callLocalMethod(const QString& object, const QString& method,
-                             const QVariantList& args);
+    QVariant call(const QString& object, const QString& method,
+                  const QVariantList& args);
     /*void callLocalMethodNonblock(QPointer<Caller> caller, const QString&
        object, const QString& method, const QVariantList& args);*/
-    void callLocalMethodNonblock(const QString& object, const QString& method,
-                                 const QVariantList& args);
+    void callNonblock(const QString& object, const QString& method,
+                      const QVariantList& args);
     //! @}
 
     //! \name 调用者的私有对象数据
@@ -126,29 +135,30 @@ signals:
     void callerExisted(QPointer<Caller>);
     void relatedCallerExited(QPointer<Caller>);
 
-    void LC_requestCallMethod(bool block, qint64 callerID,
-                              const QString& object, const QString& method,
-                              const QVariantList& args);
-    void LC_return(const QVariant&);
+    void thread_signal_call(bool block, qint64 callerID, const QString& object,
+                            const QString& method, const QVariantList& args);
+    void thread_signal_return(const QVariant&);
 
 private slots:
     //    void callMethod();
     void newCaller();
-    void on_LC_callMethod(bool block, qint64 callerID, const QString& object,
-                          const QString& method, const QVariantList& args);
+    void on_thread_call(bool block, qint64 callerID, const QString& object,
+                        const QString& method, const QVariantList& args);
 
 protected:
     virtual bool verification(QPointer<Caller> caller, const QString& method,
                               const QVariantList& args);
-    virtual void callMethod(const QString& mID, QPointer<Caller> caller,
-                            const QString& methodName,
-                            const QVariantList& args);
+    virtual void exec(const QString& mID, QPointer<Caller> caller,
+                      const QString& methodName, const QVariantList& args);
     virtual void registerMethods() = 0;
 
 protected:
     QLocalSocket* m_ctrlSocket;
     QLocalServer* m_dataServer;
+    QString m_appPath;
+    QString m_dataPath;
     QString m_name;
+    QString m_grp;
     //    QMap<QString, T_METHOD> m_methods;
     QMap<QString, std::function<QVariant(ObjectInterface*, QPointer<Caller>,
                                          const QVariantList&)>>
@@ -158,6 +168,6 @@ protected:
     typedef QVariantMap t_priData;
     QMap<quint64, t_priData> m_privateDatas;
 };
-} // namespace NS_BGMRPCObjectInterface
+}  // namespace NS_BGMRPCObjectInterface
 
-#endif // OBJECTINTERFACE_H
+#endif  // OBJECTINTERFACE_H

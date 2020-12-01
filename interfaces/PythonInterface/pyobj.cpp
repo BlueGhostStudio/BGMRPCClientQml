@@ -1,58 +1,59 @@
 #include "pyobj.h"
+
 #include <PythonQt.h>
+
 #include <QObject>
 
 using namespace NS_BGMRPCObjectInterface;
 
 PyCaller::PyCaller(QPointer<Caller> caller, QObject* parent)
-    : QObject(parent), m_caller(caller)
-{
-}
+    : QObject(parent), m_caller(caller) {}
 
-PyCaller::~PyCaller()
-{
-}
+PyCaller::~PyCaller() {}
 
-qint64 PyCaller::ID() const
-{
+qint64 PyCaller::ID() const {
     if (m_caller.isNull())
         return 0;
     else
         return m_caller->ID();
 }
 
-bool PyCaller::online() const
-{
+bool PyCaller::isLocalCall() const {
+    if (m_caller.isNull())
+        return false;
+    else
+        return m_caller->isLocalCall();
+}
+
+QString PyCaller::callerObject() const {
+    return isLocalCall() ? m_caller->callerObject() : "";
+}
+
+QString PyCaller::callerGrp() const {
+    return isLocalCall() ? m_caller->callerGrp() : "";
+}
+
+bool PyCaller::online() const {
     if (m_caller.isNull())
         return false;
     else
         return !m_caller->exited();
 }
 
-void PyCaller::emitSignal(const QString& signal, const QVariant& args) const
-{
-    if (!m_caller.isNull())
-        m_caller->emitSignal(signal, args);
+void PyCaller::emitSignal(const QString& signal, const QVariant& args) const {
+    if (!m_caller.isNull()) m_caller->emitSignal(signal, args);
 }
 
-NS_BGMRPCObjectInterface::PyCaller* PyCaller::clone() const
-{
+NS_BGMRPCObjectInterface::PyCaller* PyCaller::clone() const {
     return new PyCaller(m_caller);
 }
 
-void PyCaller::destory()
-{
-    deleteLater();
-}
+void PyCaller::destory() { deleteLater(); }
 
-QPointer<Caller> PyCaller::caller() const
-{
-    return m_caller;
-}
+QPointer<Caller> PyCaller::caller() const { return m_caller; }
 
 PyObj::PyObj(PythonInterface* oif, QObject* parent)
-    : QObject(parent), m_oif(oif)
-{
+    : QObject(parent), m_oif(oif) {
     QObject::connect(m_oif, &PythonInterface::relatedCallerExited,
                      [=](QPointer<Caller> caller) {
                          if (!m_relClientRemovedHandle.isNull()) {
@@ -65,43 +66,36 @@ PyObj::PyObj(PythonInterface* oif, QObject* parent)
                      });
 }
 
-QString PyObj::objectName() const
-{
-    return m_oif->objectName();
-}
+QString PyObj::objectName() const { return m_oif->objectName(); }
 
-void PyObj::mutexLock()
-{
-    m_oif->mutexLock();
-}
+QString PyObj::group() const { return m_oif->group(); }
 
-void PyObj::mutexUnlock()
-{
-    m_oif->mutexUlock();
-}
+QString PyObj::appPath() const { return m_oif->appPath(); }
+
+QString PyObj::dataPath() const { return m_oif->dataPath(); }
+
+void PyObj::mutexLock() { m_oif->mutexLock(); }
+
+void PyObj::mutexUnlock() { m_oif->mutexUlock(); }
 
 void PyObj::setPrivateData(const NS_BGMRPCObjectInterface::PyCaller* caller,
-                           const QString& key, const QVariant& value)
-{
+                           const QString& key, const QVariant& value) {
     if (caller && caller->online())
         m_oif->setPrivateData(caller->caller(), key, value);
 }
 
 QVariant PyObj::privateData(const NS_BGMRPCObjectInterface::PyCaller* caller,
-                            const QString& key) const
-{
+                            const QString& key) const {
     if (caller && caller->online())
         return m_oif->privateData(caller->caller(), key);
     else
         return QVariant();
 }
 
-QVariant
-PyObj::callLocalMethod(const NS_BGMRPCObjectInterface::PyCaller* caller,
-                       const QString& object, const QString& method,
-                       const QVariantList& args)
-{
-    return m_oif->callLocalMethod(caller->caller(), object, method, args);
+QVariant PyObj::call(const NS_BGMRPCObjectInterface::PyCaller* caller,
+                     const QString& object, const QString& method,
+                     const QVariantList& args) {
+    return m_oif->call(caller->caller(), object, method, args);
 }
 
 /*void PyObj::callLocalMethodNonblock(
@@ -113,21 +107,17 @@ PyObj::callLocalMethod(const NS_BGMRPCObjectInterface::PyCaller* caller,
                                           args);
 }*/
 
-QVariant PyObj::callLocalMethod(const QString& object, const QString& method,
-                                const QVariantList& args)
-{
-    return m_oif->callLocalMethod(object, method, args);
+QVariant PyObj::call(const QString& object, const QString& method,
+                     const QVariantList& args) {
+    return m_oif->call(object, method, args);
 }
 
-void PyObj::callLocalMethodNonblock(const QString& object,
-                                    const QString& method,
-                                    const QVariantList& args)
-{
-    return m_oif->callLocalMethodNonblock(object, method, args);
+void PyObj::callNonblock(const QString& object, const QString& method,
+                         const QVariantList& args) {
+    return m_oif->callNonblock(object, method, args);
 }
 
-bool PyObj::addRelClient(const NS_BGMRPCObjectInterface::PyCaller* caller)
-{
+bool PyObj::addRelClient(const NS_BGMRPCObjectInterface::PyCaller* caller) {
     //    PyCaller* thePyCaller = caller.value<PyCaller*>();
     if (caller && caller->online()) {
         m_oif->addRelatedCaller(caller->caller());
@@ -136,8 +126,7 @@ bool PyObj::addRelClient(const NS_BGMRPCObjectInterface::PyCaller* caller)
         return false;
 }
 
-bool PyObj::removeRelClient(const NS_BGMRPCObjectInterface::PyCaller* caller)
-{
+bool PyObj::removeRelClient(const NS_BGMRPCObjectInterface::PyCaller* caller) {
     //    PyCaller* thePyCaller = caller.value<PyCaller*>();
     if (caller && caller->online())
         return m_oif->removeRelatedCaller(caller->caller());
@@ -145,13 +134,11 @@ bool PyObj::removeRelClient(const NS_BGMRPCObjectInterface::PyCaller* caller)
         return false;
 }
 
-bool PyObj::removeRelClient(qint64 callerID)
-{
+bool PyObj::removeRelClient(qint64 callerID) {
     return removeRelClient(relClient(callerID));
 }
 
-QVariantList PyObj::relClients() const
-{
+QVariantList PyObj::relClients() const {
     QVariantList cliList;
 
     m_oif->findRelatedCaller([&](QPointer<Caller> caller) -> bool {
@@ -165,8 +152,7 @@ QVariantList PyObj::relClients() const
     return cliList;
 }
 
-NS_BGMRPCObjectInterface::PyCaller* PyObj::relClient(qint64 callerID) const
-{
+NS_BGMRPCObjectInterface::PyCaller* PyObj::relClient(qint64 callerID) const {
     QPointer<Caller> caller =
         m_oif->findRelatedCaller([&](QPointer<Caller> caller) -> bool {
             if (caller->ID() == callerID)
@@ -186,8 +172,7 @@ NS_BGMRPCObjectInterface::PyCaller* PyObj::relClient(qint64 callerID) const
 }
 
 bool PyObj::containsRelClient(
-    const NS_BGMRPCObjectInterface::PyCaller* caller) const
-{
+    const NS_BGMRPCObjectInterface::PyCaller* caller) const {
     if (caller && caller->online())
         return !m_oif
                     ->findRelatedCaller(
@@ -202,14 +187,12 @@ bool PyObj::containsRelClient(
         return false;
 }
 
-bool PyObj::containsRelClient(qint64 callerID) const
-{
+bool PyObj::containsRelClient(qint64 callerID) const {
     return containsRelClient(relClient(callerID));
 }
 
-NS_BGMRPCObjectInterface::PyCaller*
-PyObj::findRelClient(PythonQtObjectPtr callback)
-{
+NS_BGMRPCObjectInterface::PyCaller* PyObj::findRelClient(
+    PythonQtObjectPtr callback) {
     QPointer<Caller> targetCaller =
         m_oif->findRelatedCaller([&](QPointer<Caller> theCaller) -> bool {
             PyCaller* thePyCaller = new PyCaller(theCaller);
@@ -228,12 +211,10 @@ PyObj::findRelClient(PythonQtObjectPtr callback)
     }
 }
 
-void PyObj::onRelClientRemoved(PythonQtObjectPtr callback)
-{
+void PyObj::onRelClientRemoved(PythonQtObjectPtr callback) {
     m_relClientRemovedHandle = callback;
 }
 
-void PyObj::emitSignal(const QString& signal, const QVariantList& args)
-{
+void PyObj::emitSignal(const QString& signal, const QVariantList& args) {
     m_oif->emitSignal(signal, args);
 }

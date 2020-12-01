@@ -1,13 +1,14 @@
-#include <QCoreApplication>
-#include <QDebug>
-#include <QDir>
-#include <QElapsedTimer>
-#include <QLibrary>
 #include <bgmrpccommon.h>
 #include <getopt.h>
 #include <objectinterface.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include <QCoreApplication>
+#include <QDebug>
+#include <QDir>
+#include <QElapsedTimer>
+#include <QLibrary>
 
 /*QElapsedTimer timer;
 quint8 messageFlag = 0x1f;
@@ -45,8 +46,7 @@ void OIFMessage(QtMsgType type, const QMessageLogContext& context,
     }
 }*/
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
     // Read some settings
     QString interfacesPath;
     QString rootPath;
@@ -54,13 +54,11 @@ int main(int argc, char* argv[])
     QLocalSocket ctrlSocket;
     ctrlSocket.connectToServer(BGMRPCCtrlSocket);
 
-    if (!ctrlSocket.waitForConnected(500))
-        return -1;
+    if (!ctrlSocket.waitForConnected(500)) return -1;
 
     QByteArray cmd(1, NS_BGMRPC::CTRL_DAEMONCTRL);
     ctrlSocket.write(cmd);
-    if (!ctrlSocket.waitForBytesWritten())
-        return -1;
+    if (!ctrlSocket.waitForBytesWritten()) return -1;
     if (ctrlSocket.waitForReadyRead())
         ctrlSocket.readAll();
     else
@@ -76,10 +74,18 @@ int main(int argc, char* argv[])
 
     QString remoteObjectName;
     QString libName;
+    QString group;
+    QString app;
     int opt = 0;
     opterr = 0;
-    while ((opt = getopt(argc, argv, "n:I:p:")) != -1) {
+    while ((opt = getopt(argc, argv, "g:a:n:I:p:")) != -1) {
         switch (opt) {
+        case 'g':
+            group = optarg;
+            break;
+        case 'a':
+            app = optarg;
+            break;
         case 'n':
             remoteObjectName = optarg;
             break;
@@ -94,13 +100,18 @@ int main(int argc, char* argv[])
         }
     }
 
+    if (app.isEmpty()) app = remoteObjectName;
+
     qInfo().noquote()
         << QString("ObjectLoader,startRemoteObject,The name is %1. by %2")
                .arg(remoteObjectName)
                .arg(libName);
-
+    // 13288999788
     libName = interfacesPath + '/' + libName;
-    QDir::setCurrent(rootPath);
+    if (app.isEmpty())
+        QDir::setCurrent(rootPath);
+    else
+        QDir::setCurrent(rootPath + "/apps/" + app);
 
     QLibrary IFLib(libName);
     IFLib.setLoadHints(QLibrary::ExportExternalSymbolsHint);
@@ -110,11 +121,18 @@ int main(int argc, char* argv[])
                    "ObjectLoader,loadInterface,Load interface library(%1) - OK")
                    .arg(libName);
 
-        typedef NS_BGMRPCObjectInterface::ObjectInterface* (*T_CREATE)(int,
-                                                                       char**);
+        typedef NS_BGMRPCObjectInterface::ObjectInterface* (*T_CREATE)(/*int,
+                                                                       char***/);
         T_CREATE create = (T_CREATE)IFLib.resolve("create");
-        NS_BGMRPCObjectInterface::ObjectInterface* objIF = create(argc, argv);
-        objIF->registerObject(remoteObjectName.toLatin1());
+        NS_BGMRPCObjectInterface::ObjectInterface* objIF =
+            create(/*argc, argv*/);
+        objIF->registerObject(remoteObjectName.toLatin1(), group.toLatin1());
+
+        if (group.isEmpty()) group = "default";
+        objIF->initial(rootPath + "/apps/" + app,
+                       rootPath + "/data/" + group + '/' + app, argc, argv);
+        /*objIF->setAppPath(rootPath + "/apps/" + app);
+        objIF->setDataPath(rootPath + "/data/" + group + '/' + app);*/
 
         QObject::connect(
             objIF,
