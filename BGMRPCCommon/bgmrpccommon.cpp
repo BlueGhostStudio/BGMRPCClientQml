@@ -1,11 +1,12 @@
 #include "bgmrpccommon.h"
+
 #include <QElapsedTimer>
 
 // namespace NS_BGMRPC {
 QString BGMRPCObjPrefix = "BGMRPC_OBJ_";
 QString BGMRPCCtrlSocket = "BGMRPC_CTRL";
 
-void splitData(const QByteArray& data,
+/*void splitData(const QByteArray& data,
                      std::function<void(const QByteArray&)> callback)
 {
     if (!callback)
@@ -20,12 +21,45 @@ void splitData(const QByteArray& data,
         i += len;
         callback(retData);
     }
-}
+}*/
 
 //} // namespace NS_BGMRPC
 
-QByteArray getSettings(QLocalSocket& ctrlSocket, NS_BGMRPC::Config cnf)
-{
+bool splitLocalSocketFragment(QLocalSocket* socket,
+                              std::function<void(const QByteArray&)> callback) {
+    int lenLen = sizeof(quint64);
+    bool end = false;
+    while (socket->bytesAvailable()) {
+        quint64 len = 0;
+        quint64 readLen = 0;
+        QByteArray readData;
+        if (!socket->property("fragment").isValid()) {
+            len = bytes2int<quint64>(socket->read(lenLen));
+            socket->setProperty("dataLen", len);
+        } else {
+            len = socket->property("dataLen").toULongLong();
+            readData = socket->property("fragment").toByteArray();
+            readLen = readData.length();
+        }
+
+        readData += socket->read(len - readLen);
+        readLen = readData.length();
+
+        if (readLen < len) {
+            socket->setProperty("fragment", readData);
+            //                break;
+        } else {
+            callback(readData);
+            socket->setProperty("fragment", QVariant());
+            socket->setProperty("dataLen", QVariant());
+            end = true;
+        }
+    }
+
+    return end;
+}
+
+QByteArray getSettings(QLocalSocket& ctrlSocket, NS_BGMRPC::Config cnf) {
     QByteArray cmd(2, '\x0');
     cmd[0] = NS_BGMRPC::CTRL_CONFIG;
     cmd[1] = cnf;
@@ -39,8 +73,7 @@ QByteArray getSettings(QLocalSocket& ctrlSocket, NS_BGMRPC::Config cnf)
 
 QElapsedTimer timer;
 
-void initialLogMessage(quint8 mf)
-{
+void initialLogMessage(quint8 mf) {
     static quint8 messageFlag = mf;
     timer.start();
     qInstallMessageHandler([](QtMsgType type, const QMessageLogContext& context,

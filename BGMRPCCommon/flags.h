@@ -2,8 +2,7 @@
 #define FLAGS_H
 #include <QtCore>
 
-namespace NS_BGMRPC
-{
+namespace NS_BGMRPC {
 enum Ctrl {
     CTRL_DAEMONCTRL = 0,
     CTRL_STOPSERVER,
@@ -24,7 +23,14 @@ enum Data {
     DATA_NONBLOCK_LOCALCALL
 };
 
-enum Error { ERR_NOOBJ = 0, ERR_NOMETHOD = 1, ERR_ACCESS };
-} // namespace NS_BGMRPC
+enum Call {
+    CALL_UNDEFINED = -1,
+    CALL_REMOTE = 0,
+    CALL_INTERNAL = 1,
+    CALL_INTERNAL_NOBLOCK = 2
+};
 
-#endif // FLAGS_H
+enum Error { ERR_NOOBJ = 0, ERR_NOMETHOD = 1, ERR_ACCESS };
+}  // namespace NS_BGMRPC
+
+#endif  // FLAGS_H

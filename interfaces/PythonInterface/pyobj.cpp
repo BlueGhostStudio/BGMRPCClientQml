@@ -18,19 +18,19 @@ qint64 PyCaller::ID() const {
         return m_caller->ID();
 }
 
-bool PyCaller::isLocalCall() const {
+bool PyCaller::isInternalCall() const {
     if (m_caller.isNull())
         return false;
     else
-        return m_caller->isLocalCall();
+        return m_caller->isInternalCall();
 }
 
 QString PyCaller::callerObject() const {
-    return isLocalCall() ? m_caller->callerObject() : "";
+    return isInternalCall() ? m_caller->callerObject() : "";
 }
 
 QString PyCaller::callerGrp() const {
-    return isLocalCall() ? m_caller->callerGrp() : "";
+    return isInternalCall() ? m_caller->callerGrp() : "";
 }
 
 bool PyCaller::online() const {

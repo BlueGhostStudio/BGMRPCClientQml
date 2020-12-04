@@ -64,9 +64,9 @@ QLocalSocket* Client::connectObject(const QString& mID,
         if (relSocket->waitForConnected()) {
             m_relatedObjectSockets[objName] = relSocket;
 
-            QByteArray id(1, (quint8)DATA_CLIENTID);
+            /*QByteArray id(1, (quint8)DATA_CLIENTID);
             id.append(int2bytes<quint64>(m_ID));
-            relSocket->write(id);
+            relSocket->write(id);*/
 
             QObject::connect(m_BGMRPCSocket, &QWebSocket::disconnected, [=]() {
                 // relSocket->disconnectFromServer();
@@ -95,14 +95,19 @@ QLocalSocket* Client::connectObject(const QString& mID,
             });
 
             QObject::connect(relSocket, &QLocalSocket::readyRead, [=]() {
-                int lenLen = sizeof(quint64);
+                splitLocalSocketFragment(relSocket,
+                                         [=](const QByteArray& readData) {
+                                             qDebug() << "in client";
+                                             returnData(readData);
+                                         });
+                /*int lenLen = sizeof(quint64);
                 if (relSocket->property("fragment").isValid()) {
                     quint64 len =
                         relSocket->property("fragmentLen").toULongLong();
                     //                    QByteArray fragmentData =
-                    //                        relSocket->property("fragmeng").toByteArray();
-                    QByteArray readData = relSocket->read(len);
-                    quint64 readedLen = readData.length();
+                    // relSocket->property("fragmeng").toByteArray(); QByteArray
+                readData = relSocket->read(len); quint64 readedLen =
+                readData.length();
 
                     readData = relSocket->property("fragment").toByteArray() +
                                readData;
@@ -127,7 +132,7 @@ QLocalSocket* Client::connectObject(const QString& mID,
                         relSocket->setProperty("fragmentLen", len - readedLen);
                     } else
                         returnData(readData);
-                }
+                }*/
                 /*QByteArray rawData = relSocket->readAll();
 
                 splitData(rawData, [=](const QByteArray& retData) {
@@ -157,6 +162,7 @@ bool Client::requestCall(const QByteArray& data) {
     QString objName = callVariant["object"].toString();
     QString mID = callVariant["mID"].toString();
     callVariant["callerID"] = m_ID;
+    callVariant["callType"] = CALL_REMOTE;
 
     QByteArray callJson = QJsonDocument::fromVariant(callVariant).toJson();
     /*QRegularExpression reObj(R"RX(^{[^{]*"object":\s*"([^\"]*)")RX");

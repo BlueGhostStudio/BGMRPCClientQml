@@ -1,6 +1,5 @@
 #include "caller.h"
 
-#include <bgmrpccommon.h>
 #include <intbytes.h>
 
 #include "objectinterface.h"
@@ -11,9 +10,11 @@ using namespace NS_BGMRPCObjectInterface;
 
 Caller::Caller(ObjectInterface* callee, QLocalSocket* socket, QObject* parent)
     : QObject(parent), m_dataSocket(socket), m_callee(callee) {
-    m_localCall = false;
+    //    m_localCall = false;
     m_ID = -1;
     m_exited = false;
+    m_callType = NS_BGMRPC::CALL_UNDEFINED;
+
     QObject::connect(m_dataSocket, &QLocalSocket::disconnected, [=]() {
         m_exited = true;
         deleteLater();
@@ -36,7 +37,10 @@ qint64 Caller::ID() const { return m_ID; }
 
 bool Caller::exited() const { return m_exited; }
 
-bool Caller::isLocalCall() const { return m_localCall; }
+bool Caller::isInternalCall() const {
+    return m_callType == NS_BGMRPC::CALL_INTERNAL ||
+           m_callType == NS_BGMRPC::CALL_INTERNAL_NOBLOCK;
+}
 
 QString Caller::callerObject() const { return m_callerObject; }
 
@@ -70,7 +74,10 @@ void Caller::onReturnData(const QString& mID, const QVariant& data) {
 }
 
 void Caller::onEmitSignal(const QString& signal, const QVariant& args) {
-    if (m_localCall || !m_dataSocket) return;
+    //    if (m_localCall || !m_dataSocket) return;
+    if (m_callType == NS_BGMRPC::CALL_INTERNAL ||
+        m_callType == NS_BGMRPC::CALL_INTERNAL_NOBLOCK || !m_dataSocket)
+        return;
 
     QJsonObject signalJsonObj;
     signalJsonObj["type"] = "signal";

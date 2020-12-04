@@ -1,6 +1,8 @@
 #ifndef CALLER_H
 #define CALLER_H
 
+#include <bgmrpccommon.h>
+
 #include <QLocalSocket>
 #include <QObject>
 namespace NS_BGMRPCObjectInterface {
@@ -14,7 +16,7 @@ public:
 
     qint64 ID() const;
     bool exited() const;
-    bool isLocalCall() const;
+    bool isInternalCall() const;
     QString callerObject() const;
     QString callerGrp() const;
     //    void setID(quint64 id);
@@ -36,12 +38,13 @@ private:
 private:
     QLocalSocket* m_dataSocket;
     qint64 m_ID;
-    bool m_localCall;
+    //    bool m_localCall;
     bool m_exited;
     ObjectInterface* m_callee;
     QString m_calleeMethod;
     QString m_callerObject;
     QString m_callerGrp;
+    NS_BGMRPC::Call m_callType;
     //    static quint64 m_totalID;
 
     friend ObjectInterface;

@@ -12,7 +12,7 @@ class PyCaller : public QObject {
     Q_OBJECT
 
     Q_PROPERTY(qint64 ID READ ID)
-    Q_PROPERTY(bool isLocalCall READ isLocalCall)
+    Q_PROPERTY(bool isInternalCall READ isInternalCall)
     Q_PROPERTY(QString callerObject READ callerObject)
     Q_PROPERTY(QString callerGrp READ callerGrp)
 
@@ -21,7 +21,7 @@ public:
     ~PyCaller();
 
     qint64 ID() const;
-    bool isLocalCall() const;
+    bool isInternalCall() const;
     QString callerObject() const;
     QString callerGrp() const;
 
