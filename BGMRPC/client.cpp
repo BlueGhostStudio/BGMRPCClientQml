@@ -26,7 +26,7 @@ Client::Client(BGMRPC* bgmrpc, QWebSocket* socket, QObject* parent)
     m_BGMRPCSocket->ping();
     QObject::connect(m_BGMRPCSocket, &QWebSocket::pong, [=]() {
         QPointer<QWebSocket> socketPointer(m_BGMRPCSocket);
-        QTimer::singleShot(5000, [=]() {
+        QTimer::singleShot(1000, [=]() {
             if (socketPointer) socketPointer->ping();
         });
     });
@@ -34,16 +34,20 @@ Client::Client(BGMRPC* bgmrpc, QWebSocket* socket, QObject* parent)
 
 Client::~Client() { m_relatedObjectSockets.clear(); }
 
-bool Client::operator==(const Client* other) const {
+bool
+Client::operator==(const Client* other) const {
     return m_ID == other->m_ID;
 }
 
-bool Client::operator==(quint64 cliID) const { return m_ID == cliID; }
+bool
+Client::operator==(quint64 cliID) const {
+    return m_ID == cliID;
+}
 
 // quint64 Client::ID() const { return m_ID; }
 
-QLocalSocket* Client::connectObject(const QString& mID,
-                                    const QString& objName) {
+QLocalSocket*
+Client::connectObject(const QString& mID, const QString& objName) {
     ObjectCtrl* objCtrl = m_BGMRPC->objectCtrl(objName);
     if (!objCtrl) {
         QJsonObject errJsonObj;
@@ -148,11 +152,13 @@ QLocalSocket* Client::connectObject(const QString& mID,
     }
 }
 
-QLocalSocket* Client::relatedObjectSocket(const QString& objName) const {
+QLocalSocket*
+Client::relatedObjectSocket(const QString& objName) const {
     return m_relatedObjectSockets[objName];
 }
 
-bool Client::requestCall(const QByteArray& data) {
+bool
+Client::requestCall(const QByteArray& data) {
     //    if (data[0] > 30) {
     /*QJsonDocument jsonData = QJsonDocument::fromJson(data);
     QString objName = jsonData["object"].toString();
@@ -187,7 +193,8 @@ bool Client::requestCall(const QByteArray& data) {
         return false;
 }
 
-void Client::returnData(const QByteArray& data) {
+void
+Client::returnData(const QByteArray& data) {
     m_BGMRPCSocket->sendTextMessage(data);
 }
 

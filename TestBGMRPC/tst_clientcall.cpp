@@ -1,21 +1,21 @@
-#include "bgmrpc.h"
-#include "client.h"
-#include <QCoreApplication>
-#include <QDebug>
-#include <QDir>
-#include <QProcess>
-#include <QSignalSpy>
-#include <QWebSocket>
-#include <QtTest>
 #include <bgmrpcclient.h>
 #include <bgmrpccommon.h>
 #include <objectinterface.h>
 
+#include <QCoreApplication>
+#include <QDebug>
+#include <QDir>
+#include <QProcess>
 #include <QRegularExpression>
+#include <QSignalSpy>
+#include <QWebSocket>
+#include <QtTest>
+
+#include "bgmrpc.h"
+#include "client.h"
 // add necessary includes here
 
-class ClientCall : public QObject
-{
+class ClientCall : public QObject {
     Q_OBJECT
 
 public:
@@ -32,26 +32,31 @@ private:
     QString currentAddObject;
 };
 
-ClientCall::ClientCall()
-{
+ClientCall::ClientCall() {}
+
+ClientCall::~ClientCall() {}
+
+void
+ClientCall::initTestCase() {}
+
+void
+ClientCall::cleanupTestCase() { /*delete RPC;*/
 }
 
-ClientCall::~ClientCall()
-{
-}
+void
+ClientCall::test_HW_doodle() {
+    qDebug() << "test_HW_doodle123";
+    NS_BGMRPCClient::BGMRPCClient testClient;
+    testClient.connectToHost(QUrl("ws://120.231.49.194:8000"));
 
-void ClientCall::initTestCase()
-{
-}
+    QObject::connect(&testClient, &NS_BGMRPCClient::BGMRPCClient::connected,
+                     [=]() { qDebug() << "testClient connected"; });
 
-void ClientCall::cleanupTestCase()
-{ /*delete RPC;*/
-}
-
-void ClientCall::test_HW_doodle()
-{
-    qDebug() << "test_HW_doodle";
-    NS_BGMRPCClient::BGMRPCClient testClient1;
+    QTest::qWait(500);
+    (new CallChain([&](CallChain* cc) {
+        testClient.callMethod(cc, "LennonWall", "join", {});
+    }))->exec();
+    /*NS_BGMRPCClient::BGMRPCClient testClient1;
     NS_BGMRPCClient::BGMRPCClient testClient2;
     testClient1.connectToHost(QUrl("ws://127.0.0.1:8000"));
     testClient2.connectToHost(QUrl("ws://127.0.0.1:8000"));
@@ -107,9 +112,9 @@ void ClientCall::test_HW_doodle()
             nullptr)
         ->then([&](CallChain* cc, const QVariant&) { cc->final(nullptr); },
                nullptr)
-        ->exec();
+        ->exec();*/
 
-    QTest::qWait(500);
+    QTest::qWait(5000);
 }
 
 QTEST_MAIN(ClientCall)
