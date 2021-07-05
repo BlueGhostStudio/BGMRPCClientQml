@@ -9,6 +9,7 @@ SUBDIRS += \
     BGMRPCClient \
     BGMRPCCtrl \
     interfaces/JsPlugin2 \
+    interfaces/JsPlugin2/JsModule \
     interfaces/PythonInterface \
     interfaces/math \
     TestBGMRPC # \

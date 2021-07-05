@@ -46,7 +46,7 @@ public:
      * \param 对象明
      * \return 返回成功与否
      */
-    bool registerObject(const QByteArray& name,
+    bool registerObject(const QByteArray& appName, const QByteArray& name,
                         const QByteArray& grp = QByteArray());
     virtual void initial(const QString& appPath, const QString& dataPath,
                          int argc, char** argv);
@@ -56,6 +56,7 @@ public:
      */
     QString objectName() const;
     QString group() const;
+    QString appName() const;
     //! @}
 
     //! \name 关联调用者(客户端)
@@ -158,6 +159,7 @@ protected:
     QString m_appPath;
     QString m_dataPath;
     QString m_name;
+    QString m_appName;
     QString m_grp;
     //    QMap<QString, T_METHOD> m_methods;
     QMap<QString, std::function<QVariant(ObjectInterface*, QPointer<Caller>,

@@ -26,11 +26,11 @@ bool PyCaller::isInternalCall() const {
 }
 
 QString PyCaller::callerObject() const {
-    return isInternalCall() ? m_caller->callerObject() : "";
+    return isInternalCall() ? m_caller->object() : "";
 }
 
 QString PyCaller::callerGrp() const {
-    return isInternalCall() ? m_caller->callerGrp() : "";
+    return isInternalCall() ? m_caller->grp() : "";
 }
 
 bool PyCaller::online() const {

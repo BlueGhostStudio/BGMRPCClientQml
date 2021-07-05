@@ -18,7 +18,7 @@ PythonInterface::PythonInterface(QObject* parent)
     // PythonQt::init();
     m_pyMainContent = PythonQt::self()->getMainModule();
     PythonQt::self()->registerQObjectClassNames(
-        {"NS_BGMRPCObjectInterface::PyCaller"});
+        { "NS_BGMRPCObjectInterface::PyCaller" });
     m_pyMainContent.addObject("OBJ", new PyObj(this));
 
     QObject::connect(
@@ -33,8 +33,9 @@ PythonInterface::PythonInterface(QObject* parent)
         });
 }
 
-void PythonInterface::initial(const QString& appPath, const QString& dataPath,
-                              int argc, char** argv) {
+void
+PythonInterface::initial(const QString& appPath, const QString& dataPath,
+                         int argc, char** argv) {
     ObjectInterface::initial(appPath, dataPath, argc, argv);
 
     __objName__ = argv[2];
@@ -65,7 +66,8 @@ void PythonInterface::initial(const QString& appPath, const QString& dataPath,
 {
 }*/
 
-bool PythonInterface::loadPyFile(const QString& pyFileName) {
+bool
+PythonInterface::loadPyFile(const QString& pyFileName) {
     qInfo().noquote() << QString(
                              "PythonObjectInterface(%1),loadPython,"
                              "Loading python file(%2)...")
@@ -101,11 +103,18 @@ bool PythonInterface::loadPyFile(const QString& pyFileName) {
     return ok;
 }
 
-void PythonInterface::mutexLock() { m_mutex.lock(); }
+void
+PythonInterface::mutexLock() {
+    m_mutex.lock();
+}
 
-void PythonInterface::mutexUlock() { m_mutex.unlock(); }
+void
+PythonInterface::mutexUlock() {
+    m_mutex.unlock();
+}
 
-void PythonInterface::registerMethods() {
+void
+PythonInterface::registerMethods() {
     QVariantList methods = m_pyMainContent.getVariable("methods").toList();
     qInfo().noquote()
         << QString("PythonObjectInterface(%1),registMethod,Register methods...")
@@ -120,7 +129,8 @@ void PythonInterface::registerMethods() {
     }
 }
 
-void PythonInterface::registerMethod(const QString& methodName) {
+void
+PythonInterface::registerMethod(const QString& methodName) {
     m_methods[methodName] = std::bind(
         [&](const QString& name, ObjectInterface*, QPointer<Caller> caller,
             const QVariantList& args) -> QVariant {
@@ -153,9 +163,9 @@ void PythonInterface::registerMethod(const QString& methodName) {
         std::placeholders::_3);
 }
 
-bool PythonInterface::verification(QPointer<Caller> caller,
-                                   const QString& method,
-                                   const QVariantList& args) {
+bool
+PythonInterface::verification(QPointer<Caller> caller, const QString& method,
+                              const QVariantList& args) {
     QMutexLocker locker(&m_mutex);
     if (m_pyMainContent.getVariable("verification").isValid()) {
         PyCaller* thePyCaller = new PyCaller(caller);
@@ -182,7 +192,8 @@ bool PythonInterface::verification(QPointer<Caller> caller,
     ObjectInterface::callMethod(mID, caller, methodName, args);
 }*/
 
-ObjectInterface* create() {
+ObjectInterface*
+create() {
     /*__objName__ = argv[2];
     int opt = 0;
     optind = 0;

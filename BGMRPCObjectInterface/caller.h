@@ -17,8 +17,9 @@ public:
     qint64 ID() const;
     bool exited() const;
     bool isInternalCall() const;
-    QString callerObject() const;
-    QString callerGrp() const;
+    QString app() const;
+    QString object() const;
+    QString grp() const;
     //    void setID(quint64 id);
 
 signals:
@@ -42,6 +43,7 @@ private:
     bool m_exited;
     ObjectInterface* m_callee;
     QString m_calleeMethod;
+    QString m_callerApp;
     QString m_callerObject;
     QString m_callerGrp;
     NS_BGMRPC::Call m_callType;

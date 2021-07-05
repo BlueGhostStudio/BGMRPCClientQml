@@ -37,16 +37,29 @@ ObjectInterface::ObjectInterface(QObject* parent)
                      &ObjectInterface::on_thread_call);
 }
 
-void ObjectInterface::setAppPath(const QString& path) { m_appPath = path; }
+void
+ObjectInterface::setAppPath(const QString& path) {
+    m_appPath = path;
+}
 
-QString ObjectInterface::appPath() const { return m_appPath; }
+QString
+ObjectInterface::appPath() const {
+    return m_appPath;
+}
 
-void ObjectInterface::setDataPath(const QString& path) { m_dataPath = path; }
+void
+ObjectInterface::setDataPath(const QString& path) {
+    m_dataPath = path;
+}
 
-QString ObjectInterface::dataPath() const { return m_dataPath; }
+QString
+ObjectInterface::dataPath() const {
+    return m_dataPath;
+}
 
-bool ObjectInterface::registerObject(const QByteArray& name,
-                                     const QByteArray& grp) {
+bool
+ObjectInterface::registerObject(const QByteArray& appName,
+                                const QByteArray& name, const QByteArray& grp) {
     if (!m_ctrlSocket->isOpen()) {
         //        qWarning() << "Register fail";
         return false;
@@ -61,6 +74,7 @@ bool ObjectInterface::registerObject(const QByteArray& name,
         if (m_dataServer->listen(socketServerName)) {
             m_name = name;
             m_grp = grp;
+            m_appName = appName;
             qInfo().noquote()
                 << QString("Object(%1),registerObject,ready").arg(m_name);
             return true;
@@ -74,15 +88,27 @@ bool ObjectInterface::registerObject(const QByteArray& name,
     }
 }
 
-void ObjectInterface::initial(const QString& appPath, const QString& dataPath,
-                              int /*argc*/, char** /*argv*/) {
+void
+ObjectInterface::initial(const QString& appPath, const QString& dataPath,
+                         int /*argc*/, char** /*argv*/) {
     setAppPath(appPath);
     setDataPath(dataPath);
 }
 
-QString ObjectInterface::objectName() const { return m_name; }
+QString
+ObjectInterface::objectName() const {
+    return m_name;
+}
 
-QString ObjectInterface::group() const { return m_grp; }
+QString
+ObjectInterface::group() const {
+    return m_grp;
+}
+
+QString
+ObjectInterface::appName() const {
+    return m_appName;
+}
 
 /*!
  * \brief 将调用者(客户端)与对象关联
@@ -91,7 +117,8 @@ QString ObjectInterface::group() const { return m_grp; }
  * + 对象在广播信号时只向其所关联的客户端发送信号，而非所有客户端
  * + 对象可在关联客户端中查找
  */
-void ObjectInterface::addRelatedCaller(QPointer<Caller> caller) {
+void
+ObjectInterface::addRelatedCaller(QPointer<Caller> caller) {
     if (caller.isNull() || caller->exited()) return;
 
     m_relatedCaller[caller->m_ID] = caller;
@@ -105,7 +132,8 @@ void ObjectInterface::addRelatedCaller(QPointer<Caller> caller) {
     });
 }
 
-bool ObjectInterface::removeRelatedCaller(QPointer<Caller> caller) {
+bool
+ObjectInterface::removeRelatedCaller(QPointer<Caller> caller) {
     if (caller.isNull() || caller->exited()) return false;
 
     if (m_relatedCaller.contains(caller->m_ID)) {
@@ -118,7 +146,8 @@ bool ObjectInterface::removeRelatedCaller(QPointer<Caller> caller) {
         return false;
 }
 
-QPointer<Caller> ObjectInterface::findRelatedCaller(
+QPointer<Caller>
+ObjectInterface::findRelatedCaller(
     std::function<bool(QPointer<Caller>)> callback) {
     foreach (QPointer<Caller> caller, m_relatedCaller) {
         if (callback(caller)) return caller;
@@ -127,7 +156,8 @@ QPointer<Caller> ObjectInterface::findRelatedCaller(
     return QPointer<Caller>();
 }
 
-void ObjectInterface::emitSignal(const QString& signal, const QVariant& args) {
+void
+ObjectInterface::emitSignal(const QString& signal, const QVariant& args) {
     foreach (QPointer<Caller> caller, m_relatedCaller)
         caller->emitSignal(signal, args);
 }
@@ -141,9 +171,9 @@ void ObjectInterface::emitSignal(const QString& signal, const QVariant& args) {
  * \return 返回对象方法的处理结果
  * \note 调用者为客户端而非远端对象
  */
-QVariant ObjectInterface::call(QPointer<Caller> caller, const QString& object,
-                               const QString& method,
-                               const QVariantList& args) {
+QVariant
+ObjectInterface::call(QPointer<Caller> caller, const QString& object,
+                      const QString& method, const QVariantList& args) {
     QEventLoop CL_loop;
     QVariant retData;
 
@@ -168,34 +198,38 @@ QVariant ObjectInterface::call(QPointer<Caller> caller, const QString& object,
  * 忽略调用者参数，如果被调用的远端对象无需操作原始调用者客户端(例如私有数据)，
  * 则调用此成员函数
  */
-QVariant ObjectInterface::call(const QString& object, const QString& method,
-                               const QVariantList& args) {
+QVariant
+ObjectInterface::call(const QString& object, const QString& method,
+                      const QVariantList& args) {
     return call(nullptr, object, method, args);
 }
 
-void ObjectInterface::callNonblock(const QString& object, const QString& method,
-                                   const QVariantList& args) {
+void
+ObjectInterface::callNonblock(const QString& object, const QString& method,
+                              const QVariantList& args) {
     thread_signal_call(false, -2, object, method, args);
 }
 
-void ObjectInterface::setPrivateData(QPointer<Caller> caller,
-                                     const QString& name,
-                                     const QVariant& data) {
+void
+ObjectInterface::setPrivateData(QPointer<Caller> caller, const QString& name,
+                                const QVariant& data) {
     quint64 cliID = caller->m_ID;
     if (!m_privateDatas.contains(cliID)) m_privateDatas[cliID] = QVariantMap();
 
     m_privateDatas[cliID][name] = data;
 }
 
-QVariant ObjectInterface::privateData(QPointer<Caller> caller,
-                                      const QString& name) const {
+QVariant
+ObjectInterface::privateData(QPointer<Caller> caller,
+                             const QString& name) const {
     quint64 cliID = caller->m_ID;
     if (!m_privateDatas.contains(cliID)) return QVariant();
 
     return m_privateDatas[cliID][name];
 }
 
-void ObjectInterface::newCaller() {
+void
+ObjectInterface::newCaller() {
     qDebug() << "in ObjectInterface::newCaller";
     QLocalSocket* cliDataSocket = m_dataServer->nextPendingConnection();
     QPointer<Caller> caller = new Caller(this, cliDataSocket);
@@ -263,6 +297,9 @@ void ObjectInterface::newCaller() {
 
                 if (caller->m_callType == NS_BGMRPC::CALL_INTERNAL ||
                     caller->m_callType == NS_BGMRPC::CALL_INTERNAL_NOBLOCK) {
+                    qDebug() << "----------in ObjectInterface newCaller"
+                             << callJsonDoc["callerApp"].toString();
+                    caller->m_callerApp = callJsonDoc["callerApp"].toString();
                     caller->m_callerObject =
                         callJsonDoc["callerObject"].toString();
                     caller->m_callerGrp = callJsonDoc["callerGrp"].toString();
@@ -408,10 +445,10 @@ void ObjectInterface::newCaller() {
     });
 }
 
-void ObjectInterface::on_thread_call(bool block, qint64 callerID,
-                                     const QString& object,
-                                     const QString& method,
-                                     const QVariantList& args) {
+void
+ObjectInterface::on_thread_call(bool block, qint64 callerID,
+                                const QString& object, const QString& method,
+                                const QVariantList& args) {
     QByteArray checkObj(1, (quint8)NS_BGMRPC::CTRL_CHECKOBJECT);
     checkObj.append(object);
     m_ctrlSocket->write(checkObj);
@@ -440,6 +477,7 @@ void ObjectInterface::on_thread_call(bool block, qint64 callerID,
     callVariant["object"] = object;
     callVariant["method"] = method;
     callVariant["args"] = args;
+    callVariant["callerApp"] = m_appName;
     callVariant["callerObject"] = m_name;
     callVariant["callerGrp"] = m_grp;
     callVariant["callerID"] = callerID;
@@ -557,15 +595,16 @@ callData.append(
         localCallSocket->deleteLater();
 }
 
-bool ObjectInterface::verification(QPointer<Caller> /*caller*/,
-                                   const QString& /*method*/,
-                                   const QVariantList& /*args*/) {
+bool
+ObjectInterface::verification(QPointer<Caller> /*caller*/,
+                              const QString& /*method*/,
+                              const QVariantList& /*args*/) {
     return true;
 }
 
-void ObjectInterface::exec(const QString& mID, QPointer<Caller> caller,
-                           const QString& methodName,
-                           const QVariantList& args) {
+void
+ObjectInterface::exec(const QString& mID, QPointer<Caller> caller,
+                      const QString& methodName, const QVariantList& args) {
     QThread* callThread = QThread::create([=]() {
         if (!caller.isNull() && verification(caller, methodName, args)) {
             qInfo().noquote() << QString("Caller(%1),call,Calling %2.%3(%4)")
@@ -584,7 +623,7 @@ void ObjectInterface::exec(const QString& mID, QPointer<Caller> caller,
                 caller->returnData(mID, ret);
             }
         } else if (!caller.isNull()) {
-            caller->emitSignal("ERROR_ACCESS", {methodName});
+            caller->emitSignal("ERROR_ACCESS", { methodName });
             caller->returnError(mID, NS_BGMRPC::ERR_ACCESS,
                                 m_name + '.' + methodName);
             caller->returnData(mID, QVariant());

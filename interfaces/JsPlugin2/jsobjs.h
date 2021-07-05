@@ -1,27 +1,31 @@
 #ifndef JSOBJS_H
 #define JSOBJS_H
 
-#include "jsengine.h"
-#include <QJSEngine>
-#include <QObject>
-#include <QPointer>
 #include <caller.h>
 #include <objectinterface.h>
 
-namespace NS_BGMRPCObjectInterface
-{
+#include <QJSEngine>
+#include <QObject>
+#include <QPointer>
 
-class JsCaller : public QObject
-{
+#include "jsengine.h"
+
+namespace NS_BGMRPCObjectInterface {
+
+class JsCaller : public QObject {
     Q_OBJECT
 
     Q_PROPERTY(quint64 cliID READ cliID)
     Q_PROPERTY(bool online READ online)
+    Q_PROPERTY(bool isInternalCall READ isInternalCall)
+    Q_PROPERTY(QString app READ app)
+    Q_PROPERTY(QString object READ object)
+    Q_PROPERTY(QString grp READ grp)
 public:
     explicit JsCaller(QPointer<Caller> caller, QObject* parent = nullptr);
 
     quint64 cliID() const;
-    bool online() const;
+    Q_INVOKABLE bool online() const;
     Q_INVOKABLE QJSValue clone() const;
     /*!
      * \brief 设置对象对应调用者的私有数据
@@ -54,6 +58,11 @@ public:
     Q_INVOKABLE void emitSignal(const QString& signal,
                                 const QJSValue& args) const;
 
+    Q_INVOKABLE bool isInternalCall() const;
+    Q_INVOKABLE QString app() const;
+    Q_INVOKABLE QString object() const;
+    Q_INVOKABLE QString grp() const;
+
     QPointer<Caller> caller() const;
 
 signals:
@@ -65,11 +74,16 @@ private:
 /*!
  * \brief 此JsJSObj类为供Js脚本使用的JsEngine对象的包装
  */
-class JsJSObj : public QObject
-{
+class JsJSObj : public QObject {
     Q_OBJECT
 
     Q_PROPERTY(QString __NAME__ READ objectName)
+    Q_PROPERTY(QString __PATH_APP__ READ appPath)
+    Q_PROPERTY(QString __PATH_DATA__ READ dataPath)
+    Q_PROPERTY(QString __PATH_MODULES__ READ modulesPath)
+    Q_PROPERTY(QString __PWD__ READ PWD)
+    Q_PROPERTY(QString __APP__ READ appName)
+    Q_PROPERTY(QString __GRP__ READ grp)
 
 public:
     explicit JsJSObj(JsEngine* jsEngine, QObject* parent = nullptr);
@@ -78,6 +92,13 @@ public:
      * \brief 获取当前对象名称
      */
     QString objectName() const;
+    QString appName() const;
+    QString grp() const;
+
+    QString appPath() const;
+    QString dataPath() const;
+    QString modulesPath() const;
+    QString PWD() const;
 
     JsEngine* jsEngine() const;
     /*!
@@ -108,6 +129,13 @@ public:
     Q_INVOKABLE QJSValue privateData(const QJSValue& caller,
                                      const QString& key) const;
 
+    Q_INVOKABLE QJSValue call(const QString& object, const QString& method,
+                              const QJSValue& args);
+    Q_INVOKABLE QJSValue call(const QJSValue& caller, const QString& object,
+                              const QString& method, const QJSValue& args);
+    Q_INVOKABLE void callNonblock(const QString& object, const QString& method,
+                                  const QJSValue& args);
+
     /*!
      * \brief 将调用者与对象关联
      * \param caller 调用者
@@ -136,7 +164,7 @@ public:
      */
     Q_INVOKABLE QJSValue relClient(int callerID, bool autoDel = true) const;
     Q_INVOKABLE bool containsRelClient(const QJSValue& caller) const;
-    Q_INVOKABLE QJSValue findRelClient(QJSValue& callback,
+    Q_INVOKABLE QJSValue findRelClient(const QJSValue& callback,
                                        bool autoDel = true) const;
 
     Q_INVOKABLE void onRelClientRemoved(const QJSValue& handle);
@@ -144,12 +172,12 @@ public:
     Q_INVOKABLE void emitSignal(const QString& signal,
                                 const QJsonArray& args) const;
     Q_INVOKABLE bool include(const QString& scrFileName) const;
-    Q_INVOKABLE bool loadModule(const QString& module) const;
+    Q_INVOKABLE void loadModule(const QString& module) const;
 
 private:
     JsEngine* m_jsEngine;
     QJSValue m_relClientRemovedHandle;
 };
 
-} // namespace NS_BGMRPCObjectInterface
-#endif // JSOBJS_H
+}  // namespace NS_BGMRPCObjectInterface
+#endif  // JSOBJS_H

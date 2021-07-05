@@ -46,7 +46,8 @@ void OIFMessage(QtMsgType type, const QMessageLogContext& context,
     }
 }*/
 
-int main(int argc, char* argv[]) {
+int
+main(int argc, char* argv[]) {
     // Read some settings
     QString interfacesPath;
     QString rootPath;
@@ -126,7 +127,8 @@ int main(int argc, char* argv[]) {
         T_CREATE create = (T_CREATE)IFLib.resolve("create");
         NS_BGMRPCObjectInterface::ObjectInterface* objIF =
             create(/*argc, argv*/);
-        objIF->registerObject(remoteObjectName.toLatin1(), group.toLatin1());
+        objIF->registerObject(app.toLatin1(), remoteObjectName.toLatin1(),
+                              group.toLatin1());
 
         if (group.isEmpty()) group = "default";
         objIF->initial(rootPath + "/apps/" + app,

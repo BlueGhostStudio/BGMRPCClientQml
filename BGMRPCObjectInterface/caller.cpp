@@ -33,22 +33,41 @@ Caller::Caller(ObjectInterface* callee, QLocalSocket* socket, QObject* parent)
 
 Caller::~Caller() {}
 
-qint64 Caller::ID() const { return m_ID; }
+qint64
+Caller::ID() const {
+    return m_ID;
+}
 
-bool Caller::exited() const { return m_exited; }
+bool
+Caller::exited() const {
+    return m_exited;
+}
 
-bool Caller::isInternalCall() const {
+bool
+Caller::isInternalCall() const {
     return m_callType == NS_BGMRPC::CALL_INTERNAL ||
            m_callType == NS_BGMRPC::CALL_INTERNAL_NOBLOCK;
 }
 
-QString Caller::callerObject() const { return m_callerObject; }
+QString
+Caller::app() const {
+    return m_callerApp;
+}
 
-QString Caller::callerGrp() const { return m_callerGrp; }
+QString
+Caller::object() const {
+    return m_callerObject;
+}
+
+QString
+Caller::grp() const {
+    return m_callerGrp;
+}
 
 // void Caller::setID(quint64 id) { m_ID = id; }
 
-void Caller::onReturnData(const QString& mID, const QVariant& data) {
+void
+Caller::onReturnData(const QString& mID, const QVariant& data) {
     if (!m_dataSocket) return;
 
     QJsonObject retJsonObj;
@@ -58,7 +77,7 @@ void Caller::onReturnData(const QString& mID, const QVariant& data) {
     if (retJsonValue.isArray())
         retJsonObj["values"] = retJsonValue;
     else {
-        retJsonObj["values"] = QJsonArray({retJsonValue});
+        retJsonObj["values"] = QJsonArray({ retJsonValue });
     }
     QByteArray retData =
         QJsonDocument(retJsonObj).toJson(QJsonDocument::Compact);
@@ -73,7 +92,8 @@ void Caller::onReturnData(const QString& mID, const QVariant& data) {
     m_dataSocket->flush();
 }
 
-void Caller::onEmitSignal(const QString& signal, const QVariant& args) {
+void
+Caller::onEmitSignal(const QString& signal, const QVariant& args) {
     //    if (m_localCall || !m_dataSocket) return;
     if (m_callType == NS_BGMRPC::CALL_INTERNAL ||
         m_callType == NS_BGMRPC::CALL_INTERNAL_NOBLOCK || !m_dataSocket)
@@ -87,7 +107,7 @@ void Caller::onEmitSignal(const QString& signal, const QVariant& args) {
     if (argsJsonValue.isArray())
         signalJsonObj["args"] = argsJsonValue;
     else
-        signalJsonObj["args"] = QJsonArray({argsJsonValue});
+        signalJsonObj["args"] = QJsonArray({ argsJsonValue });
 
     QByteArray signalData =
         QJsonDocument(signalJsonObj).toJson(QJsonDocument::Compact);
@@ -102,8 +122,8 @@ void Caller::onEmitSignal(const QString& signal, const QVariant& args) {
     m_dataSocket->flush();
 }
 
-void Caller::onReturnError(const QString& mID, quint8 errNO,
-                           const QString& errStr) {
+void
+Caller::onReturnError(const QString& mID, quint8 errNO, const QString& errStr) {
     if (!m_dataSocket) return;
     //    QByteArray errData(2, '\x0');
     //    errData[0] = (quint8) NS_BGMRPC::DATA_ERROR;
@@ -133,7 +153,8 @@ void Caller::onReturnError(const QString& mID, quint8 errNO,
     m_dataSocket->flush();
 }
 
-void Caller::unsetDataSocket() {
+void
+Caller::unsetDataSocket() {
     QObject::disconnect(m_dataSocket, &QLocalSocket::disconnected, 0, 0);
     m_dataSocket->disconnectFromServer();
     m_dataSocket->deleteLater();

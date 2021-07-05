@@ -1,4 +1,5 @@
 #include "jsobjs.h"
+
 #include <QFile>
 #include <QFileInfo>
 
@@ -11,44 +12,42 @@ using namespace NS_BGMRPCObjectInterface;
 // =================
 
 JsCaller::JsCaller(QPointer<Caller> caller, QObject* parent)
-    : QObject(parent), m_caller(caller)
-{
-}
+    : QObject(parent), m_caller(caller) {}
 
-quint64 JsCaller::cliID() const
-{
+quint64
+JsCaller::cliID() const {
     if (m_caller.isNull())
         return 0;
     else
         return m_caller->ID();
 }
 
-bool JsCaller::online() const
-{
+bool
+JsCaller::online() const {
     if (m_caller.isNull())
         return false;
     else
-        return m_caller->exited();
+        return !m_caller->exited();
 }
 
-QJSValue JsCaller::clone() const
-{
+QJSValue
+JsCaller::clone() const {
     if (m_caller.isNull())
         return QJSValue();
     else
         return qjsEngine(this)->newQObject(new JsCaller(m_caller));
 }
 
-void JsCaller::setPrivateData(const QJSValue& obj, const QString& key,
-                              const QJSValue& value)
-{
+void
+JsCaller::setPrivateData(const QJSValue& obj, const QString& key,
+                         const QJSValue& value) {
     JsJSObj* theObj = qobject_cast<JsJSObj*>(obj.toQObject());
     if (theObj && !m_caller.isNull())
         theObj->setPrivateData(m_caller, key, value);
 }
 
-QJSValue JsCaller::privateData(const QJSValue& obj, const QString& key)
-{
+QJSValue
+JsCaller::privateData(const QJSValue& obj, const QString& key) {
     JsJSObj* theObj = qobject_cast<JsJSObj*>(obj.toQObject());
     if (theObj && !m_caller.isNull())
         return theObj->privateData(m_caller, key);
@@ -56,64 +55,132 @@ QJSValue JsCaller::privateData(const QJSValue& obj, const QString& key)
         return QJSValue();
 }
 
-void JsCaller::emitSignal(const QJSValue& /*obj*/, const QString& signal,
-                          const QJSValue& args) const
-{
+void
+JsCaller::emitSignal(const QJSValue& /*obj*/, const QString& signal,
+                     const QJSValue& args) const {
     emitSignal(signal, args);
 }
 
-void JsCaller::emitSignal(const QString& signal, const QJSValue& args) const
-{
-    if (!m_caller.isNull())
-        m_caller->emitSignal(signal, args.toVariant());
+void
+JsCaller::emitSignal(const QString& signal, const QJSValue& args) const {
+    if (!m_caller.isNull()) m_caller->emitSignal(signal, args.toVariant());
 }
 
-QPointer<Caller> JsCaller::caller() const
-{
+bool
+JsCaller::isInternalCall() const {
+    return !m_caller.isNull() ? m_caller->isInternalCall() : false;
+}
+
+QString
+JsCaller::app() const {
+    return !m_caller.isNull() ? m_caller->app() : QString();
+}
+
+QString
+JsCaller::object() const {
+    return !m_caller.isNull() ? m_caller->object() : QString();
+}
+
+QString
+JsCaller::grp() const {
+    return !m_caller.isNull() ? m_caller->grp() : QString();
+}
+
+QPointer<Caller>
+JsCaller::caller() const {
     return m_caller;
 }
 
 JsJSObj::JsJSObj(JsEngine* jsEngine, QObject* parent)
-    : QObject(parent), m_jsEngine(jsEngine)
-{
-}
+    : QObject(parent), m_jsEngine(jsEngine) {}
 
-QString JsJSObj::objectName() const
-{
+QString
+JsJSObj::objectName() const {
     return m_jsEngine->objectName();
 }
 
-JsEngine* JsJSObj::jsEngine() const
-{
+QString
+JsJSObj::appName() const {
+    return m_jsEngine->appName();
+}
+
+QString
+JsJSObj::grp() const {
+    return m_jsEngine->group();
+}
+
+QString
+JsJSObj::appPath() const {
+    return m_jsEngine->appPath();
+}
+
+QString
+JsJSObj::dataPath() const {
+    return m_jsEngine->dataPath();
+}
+
+QString
+JsJSObj::modulesPath() const {
+    return m_jsEngine->modulesPath();
+}
+
+QString
+JsJSObj::PWD() const {
+    return m_jsEngine->PWD();
+}
+
+JsEngine*
+JsJSObj::jsEngine() const {
     return m_jsEngine;
 }
 
-void JsJSObj::setPrivateData(const QPointer<Caller>& caller, const QString& key,
-                             const QJSValue& value)
-{
+void
+JsJSObj::setPrivateData(const QPointer<Caller>& caller, const QString& key,
+                        const QJSValue& value) {
     m_jsEngine->setPrivateData(caller, key, value.toVariant());
 }
 
-QJSValue JsJSObj::privateData(QPointer<Caller> caller, const QString& key) const
-{
+QJSValue
+JsJSObj::privateData(QPointer<Caller> caller, const QString& key) const {
     return qjsEngine(this)->toScriptValue(m_jsEngine->privateData(caller, key));
 }
 
-void JsJSObj::setPrivateData(const QJSValue& caller, const QString& key,
-                             const QJSValue& value)
-{
+void
+JsJSObj::setPrivateData(const QJSValue& caller, const QString& key,
+                        const QJSValue& value) {
     JsCaller* theJsCaller = qobject_cast<JsCaller*>(caller.toQObject());
     setPrivateData(theJsCaller->caller(), key, value);
 }
 
-QJSValue JsJSObj::privateData(const QJSValue& caller, const QString& key) const
-{
+QJSValue
+JsJSObj::privateData(const QJSValue& caller, const QString& key) const {
     JsCaller* theJsCaller = qobject_cast<JsCaller*>(caller.toQObject());
     return privateData(theJsCaller->caller(), key);
 }
 
-bool JsJSObj::addRelClient(const QJSValue& caller) const
-{
+QJSValue
+JsJSObj::call(const QString& object, const QString& method,
+              const QJSValue& args) {
+    return qjsEngine(this)->toScriptValue(
+        m_jsEngine->call(object, method, args.toVariant().toList()));
+}
+
+QJSValue
+JsJSObj::call(const QJSValue& caller, const QString& object,
+              const QString& method, const QJSValue& args) {
+    JsCaller* theJsCaller = qobject_cast<JsCaller*>(caller.toQObject());
+    return qjsEngine(this)->toScriptValue(m_jsEngine->call(
+        theJsCaller->caller(), object, method, args.toVariant().toList()));
+}
+
+void
+JsJSObj::callNonblock(const QString& object, const QString& method,
+                      const QJSValue& args) {
+    m_jsEngine->callNonblock(object, method, args.toVariant().toList());
+}
+
+bool
+JsJSObj::addRelClient(const QJSValue& caller) const {
     JsCaller* theJsCaller = qobject_cast<JsCaller*>(caller.toQObject());
     if (theJsCaller && theJsCaller->online()) {
         m_jsEngine->addRelatedCaller(theJsCaller->caller());
@@ -122,8 +189,8 @@ bool JsJSObj::addRelClient(const QJSValue& caller) const
         return false;
 }
 
-bool JsJSObj::removeRelClient(const QJSValue& caller) const
-{
+bool
+JsJSObj::removeRelClient(const QJSValue& caller) const {
     JsCaller* theJsCaller = qobject_cast<JsCaller*>(caller.toQObject());
     if (theJsCaller && theJsCaller->online())
         return m_jsEngine->removeRelatedCaller(theJsCaller->caller());
@@ -131,16 +198,15 @@ bool JsJSObj::removeRelClient(const QJSValue& caller) const
         return false;
 }
 
-QJSValue JsJSObj::relClients(bool autoDel) const
-{
+QJSValue
+JsJSObj::relClients(bool autoDel) const {
     QJSEngine* engine = qjsEngine(this);
     QJSValue ret = engine->newArray();
 
     int i = 0;
     m_jsEngine->findRelatedCaller([=, &ret](QPointer<Caller> caller) -> bool {
         JsCaller* retItem = new JsCaller(caller);
-        if (autoDel)
-            retItem->deleteLater();
+        if (autoDel) retItem->deleteLater();
         ret.setProperty(i, engine->newQObject(retItem));
 
         return false;
@@ -149,8 +215,8 @@ QJSValue JsJSObj::relClients(bool autoDel) const
     return ret;
 }
 
-QJSValue JsJSObj::relClient(int callerID, bool autoDel) const
-{
+QJSValue
+JsJSObj::relClient(int callerID, bool autoDel) const {
     QJSEngine* engine = qjsEngine(this);
 
     QPointer<Caller> caller =
@@ -163,8 +229,7 @@ QJSValue JsJSObj::relClient(int callerID, bool autoDel) const
 
     if (!caller.isNull()) {
         JsCaller* jsCaller = new JsCaller(caller);
-        if (autoDel)
-            jsCaller->deleteLater();
+        if (autoDel) jsCaller->deleteLater();
 
         return engine->newQObject(jsCaller);
     }
@@ -172,8 +237,8 @@ QJSValue JsJSObj::relClient(int callerID, bool autoDel) const
     return QJSValue();
 }
 
-bool JsJSObj::containsRelClient(const QJSValue& caller) const
-{
+bool
+JsJSObj::containsRelClient(const QJSValue& caller) const {
     JsCaller* target = qobject_cast<JsCaller*>(caller.toQObject());
 
     QPointer<Caller> found =
@@ -187,10 +252,10 @@ bool JsJSObj::containsRelClient(const QJSValue& caller) const
     return !found.isNull();
 }
 
-QJSValue JsJSObj::findRelClient(QJSValue& callback, bool autoDel) const
-{
-    if (!callback.isCallable())
-        return QJSValue();
+QJSValue
+JsJSObj::findRelClient(const QJSValue& callback, bool autoDel) const {
+    qDebug() << "---------------in findRelClient-----------";
+    if (!callback.isCallable()) return QJSValue();
 
     QJSEngine* engine = qjsEngine(this);
 
@@ -199,7 +264,9 @@ QJSValue JsJSObj::findRelClient(QJSValue& callback, bool autoDel) const
             JsCaller* jsCaller = new JsCaller(caller);
             jsCaller->deleteLater();
 
-            return callback.call(QJSValueList() << engine->newQObject(jsCaller))
+            QJSValue __callback(callback);
+            return __callback
+                .call(QJSValueList() << engine->newQObject(jsCaller))
                 .toBool();
         });
 
@@ -207,14 +274,13 @@ QJSValue JsJSObj::findRelClient(QJSValue& callback, bool autoDel) const
         return QJSValue();
     else {
         JsCaller* jsFound = new JsCaller(found);
-        if (autoDel)
-            jsFound->deleteLater();
+        if (autoDel) jsFound->deleteLater();
         return engine->newQObject(jsFound);
     }
 }
 
-void JsJSObj::onRelClientRemoved(const QJSValue& handle)
-{
+void
+JsJSObj::onRelClientRemoved(const QJSValue& handle) {
     m_relClientRemovedHandle = handle;
     if (m_relClientRemovedHandle.isCallable()) {
         QObject::connect(m_jsEngine, &JsEngine::relatedCallerExited,
@@ -228,13 +294,13 @@ void JsJSObj::onRelClientRemoved(const QJSValue& handle)
     }
 }
 
-void JsJSObj::emitSignal(const QString& signal, const QJsonArray& args) const
-{
+void
+JsJSObj::emitSignal(const QString& signal, const QJsonArray& args) const {
     m_jsEngine->emitSignal(signal, args.toVariantList());
 }
 
-bool JsJSObj::include(const QString& scrFileName) const
-{
+bool
+JsJSObj::include(const QString& scrFileName) const {
     QString scrPath;
     if (QFileInfo(scrFileName).isRelative())
         scrPath = m_jsEngine->m_PWD + scrFileName;
@@ -262,13 +328,12 @@ bool JsJSObj::include(const QString& scrFileName) const
             ok = true;
     }
 
-    if (!ok)
-        qCritical() << "Include error: " << error;
+    if (!ok) qCritical() << "Include error: " << error;
 
     return ok;
 }
 
-bool JsJSObj::loadModule(const QString& module) const
-{
-    return m_jsEngine->loadModule(module);
+void
+JsJSObj::loadModule(const QString& module) const {
+    m_jsEngine->loadModule(module);
 }

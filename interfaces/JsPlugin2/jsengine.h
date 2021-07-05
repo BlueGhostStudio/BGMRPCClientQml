@@ -1,26 +1,31 @@
 #ifndef JSENGINE_H
 #define JSENGINE_H
 
+#include <objectinterface.h>
+
 #include <QJSEngine>
 #include <QObject>
 #include <QtCore>
-#include <objectinterface.h>
 
 #include "JsPlugin2_global.h"
-namespace NS_BGMRPCObjectInterface
-{
+namespace NS_BGMRPCObjectInterface {
 class JsJSObj;
 
-class JSPLUGIN2_EXPORT JsEngine : public ObjectInterface
-{
+class JSPLUGIN2_EXPORT JsEngine : public ObjectInterface {
     Q_OBJECT
 
 public:
     JsEngine(QObject* parent = nullptr);
 
+    void initial(const QString& appPath, const QString& dataPath, int argc,
+                 char** argv) override;
+
     QVariant callJs(const QString& name, QPointer<Caller> cli,
                     const QVariantList& args);
     bool loadJsFile(const QString& jsFileName);
+
+    QString modulesPath() const;
+    QString PWD() const;
 
 protected:
     void registerMethods() override;
@@ -29,7 +34,7 @@ protected:
                       const QVariantList& args) override;
 
 private:
-    bool loadModule(const QString& module);
+    void loadModule(const QString& module);
     QJSValue variant2JsValue(const QVariant& var);
 
 private:
@@ -37,15 +42,16 @@ private:
     QJSValue m_jsVerificationFun;
     QString m_PWD;
     QStringList m_loadedModules;
+    QString m_jsModulesPath;
 
     //    QMap<QString, QJSValue> m_jsMethods;
     QMutex m_mutex;
 
     friend JsJSObj;
 };
-} // namespace NS_BGMRPCObjectInterface
+}  // namespace NS_BGMRPCObjectInterface
 
 extern "C" {
-NS_BGMRPCObjectInterface::ObjectInterface* create(int, char**);
+NS_BGMRPCObjectInterface::ObjectInterface* create(/*int, char***/);
 }
-#endif // JSENGINE_H
+#endif  // JSENGINE_H
