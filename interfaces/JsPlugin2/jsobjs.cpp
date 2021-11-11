@@ -63,7 +63,7 @@ JsCaller::emitSignal(const QJSValue& /*obj*/, const QString& signal,
 
 void
 JsCaller::emitSignal(const QString& signal, const QJSValue& args) const {
-    if (!m_caller.isNull()) m_caller->emitSignal(signal, args.toVariant());
+    if (!m_caller.isNull()) emit m_caller->emitSignal(signal, args.toVariant());
 }
 
 bool
@@ -336,4 +336,14 @@ JsJSObj::include(const QString& scrFileName) const {
 void
 JsJSObj::loadModule(const QString& module) const {
     m_jsEngine->loadModule(module);
+}
+
+void
+JsJSObj::collectGarbage() {
+    qjsEngine(this)->collectGarbage();
+}
+
+void
+JsJSObj::destroyObject(const QJSValue& obj) {
+    if (obj.isQObject()) delete obj.toQObject();
 }

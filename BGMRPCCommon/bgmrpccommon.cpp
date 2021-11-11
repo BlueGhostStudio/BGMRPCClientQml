@@ -2,31 +2,12 @@
 
 #include <QElapsedTimer>
 
-// namespace NS_BGMRPC {
 QString BGMRPCObjPrefix = "BGMRPC_OBJ_";
 QString BGMRPCCtrlSocket = "BGMRPC_CTRL";
 
-/*void splitData(const QByteArray& data,
-                     std::function<void(const QByteArray&)> callback)
-{
-    if (!callback)
-        return;
-
-    int i = 0;
-    int lenLen = sizeof(quint64);
-    while (i < data.length()) {
-        quint64 len = bytes2int<quint64>(data.mid(i, lenLen));
-        i += lenLen;
-        QByteArray retData = data.mid(i, len);
-        i += len;
-        callback(retData);
-    }
-}*/
-
-//} // namespace NS_BGMRPC
-
-bool splitLocalSocketFragment(QLocalSocket* socket,
-                              std::function<void(const QByteArray&)> callback) {
+bool
+splitLocalSocketFragment(QLocalSocket* socket,
+                         std::function<void(const QByteArray&)> callback) {
     int lenLen = sizeof(quint64);
     bool end = false;
     while (socket->bytesAvailable()) {
@@ -59,7 +40,8 @@ bool splitLocalSocketFragment(QLocalSocket* socket,
     return end;
 }
 
-QByteArray getSettings(QLocalSocket& ctrlSocket, NS_BGMRPC::Config cnf) {
+QByteArray
+getSettings(QLocalSocket& ctrlSocket, NS_BGMRPC::Config cnf) {
     QByteArray cmd(2, '\x0');
     cmd[0] = NS_BGMRPC::CTRL_CONFIG;
     cmd[1] = cnf;
@@ -73,7 +55,8 @@ QByteArray getSettings(QLocalSocket& ctrlSocket, NS_BGMRPC::Config cnf) {
 
 QElapsedTimer timer;
 
-void initialLogMessage(quint8 mf) {
+void
+initialLogMessage(quint8 mf) {
     static quint8 messageFlag = mf;
     timer.start();
     qInstallMessageHandler([](QtMsgType type, const QMessageLogContext& context,

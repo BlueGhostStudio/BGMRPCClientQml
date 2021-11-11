@@ -439,7 +439,7 @@ ObjectInterface::newCaller() {
     QObject::connect(caller.data(), &Caller::clientExited, [=]() {
         // if (!caller->m_localCall) {
         if (caller->m_callType == NS_BGMRPC::CALL_REMOTE) {
-            callerExisted(caller);
+            emit callerExisted(caller);
             m_privateDatas.remove(caller->m_ID);
         }
     });
@@ -450,7 +450,7 @@ ObjectInterface::on_thread_call(bool block, qint64 callerID,
                                 const QString& object, const QString& method,
                                 const QVariantList& args) {
     QByteArray checkObj(1, (quint8)NS_BGMRPC::CTRL_CHECKOBJECT);
-    checkObj.append(object);
+    checkObj.append(object.toLatin1());
     m_ctrlSocket->write(checkObj);
     if (!m_ctrlSocket->waitForBytesWritten()) {
         qWarning() << QString(
@@ -458,7 +458,7 @@ ObjectInterface::on_thread_call(bool block, qint64 callerID,
                           "check object(%2)")
                           .arg(m_name)
                           .arg(object);
-        thread_signal_return(QVariant());
+        emit thread_signal_return(QVariant());
         return;
     }
     if (!m_ctrlSocket->waitForReadyRead() ||
@@ -469,7 +469,7 @@ ObjectInterface::on_thread_call(bool block, qint64 callerID,
                           "object(%2) does not exist")
                           .arg(m_name)
                           .arg(object);
-        thread_signal_return(QVariant());
+        emit thread_signal_return(QVariant());
         return;
     }
 
@@ -487,7 +487,7 @@ ObjectInterface::on_thread_call(bool block, qint64 callerID,
     QLocalSocket* localCallSocket = new QLocalSocket;
     localCallSocket->connectToServer(BGMRPCObjPrefix + object);
     if (!localCallSocket->waitForConnected()) {
-        thread_signal_return(QVariant());
+        emit thread_signal_return(QVariant());
         return;
     }
 
@@ -509,7 +509,7 @@ callData.append(
     localCallSocket->write(callData);
     if (!localCallSocket->waitForBytesWritten()) {
         localCallSocket->deleteLater();
-        thread_signal_return(QVariant());
+        emit thread_signal_return(QVariant());
         return;
     }
 
@@ -541,7 +541,7 @@ callData.append(
                     localCallSocket, [&](const QByteArray& dataFrame) {
                         QVariant retVariant = f(dataFrame);
                         if (retVariant.isValid()) {
-                            thread_signal_return(retVariant);
+                            emit thread_signal_return(retVariant);
                             localCallSocket->deleteLater();
                         }
                     }))
@@ -620,13 +620,13 @@ ObjectInterface::exec(const QString& mID, QPointer<Caller> caller,
                            .arg(m_name)
                            .arg(methodName)
                            .arg(mID);
-                caller->returnData(mID, ret);
+                emit caller->returnData(mID, ret);
             }
         } else if (!caller.isNull()) {
-            caller->emitSignal("ERROR_ACCESS", { methodName });
-            caller->returnError(mID, NS_BGMRPC::ERR_ACCESS,
-                                m_name + '.' + methodName);
-            caller->returnData(mID, QVariant());
+            emit caller->emitSignal("ERROR_ACCESS", { methodName });
+            emit caller->returnError(mID, NS_BGMRPC::ERR_ACCESS,
+                                     m_name + '.' + methodName);
+            emit caller->returnData(mID, QVariant());
             qWarning().noquote()
                 << QString("Object(%1),access,Not allow(%2) call %1.%3")
                        .arg(m_name)

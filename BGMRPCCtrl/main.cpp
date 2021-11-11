@@ -1,17 +1,18 @@
+#include <bgmrpccommon.h>
+
 #include <QCoreApplication>
 #include <QDebug>
 #include <QLocalSocket>
 #include <QProcess>
 #include <QSettings>
-#include <bgmrpccommon.h>
 #include <string>
 
 bool serverRunning = false;
 QLocalSocket ctrlSocket;
 QString binPath;
 
-void startServer(int argc, char* argv[])
-{
+void
+startServer(int argc, char* argv[]) {
     if (serverRunning) {
         qWarning().noquote() << "Server already running";
         return;
@@ -34,12 +35,12 @@ void startServer(int argc, char* argv[])
     }
 
     rootPath = settings->value("path/root").toString();
-    rootPath.replace(QRegExp("^~"), QDir::homePath());
+    rootPath.replace(QRegularExpression("^~"), QDir::homePath());
     logPath = settings->value("path/logs", rootPath + "/logs").toString() +
               "/BGMRPC.log";
-    logPath.replace(QRegExp("^~"), QDir::homePath());
+    logPath.replace(QRegularExpression("^~"), QDir::homePath());
     binPath = settings->value("path/bin", rootPath + "/bin").toString();
-    binPath.replace(QRegExp("^~"), QDir::homePath());
+    binPath.replace(QRegularExpression("^~"), QDir::homePath());
 
     if (qgetenv("BGMRPCDebug") != "1") {
         BGMRPCProcess.setStandardOutputFile(logPath /*, QIODevice::Append*/);
@@ -50,11 +51,10 @@ void startServer(int argc, char* argv[])
     BGMRPCProcess.startDetached();
 }
 
-void stopServer()
-{
+void
+stopServer() {
     if (serverRunning) {
-        QByteArray cmd;
-        cmd[0] = NS_BGMRPC::CTRL_STOPSERVER;
+        QByteArray cmd(1, NS_BGMRPC::CTRL_STOPSERVER);
         qInfo().noquote() << "BGMRPC,stopServer,Stoping...";
         ctrlSocket.write(cmd);
         if (ctrlSocket.waitForBytesWritten())
@@ -62,8 +62,8 @@ void stopServer()
     }
 }
 
-void createObject(int argc, char* argv[])
-{
+void
+createObject(int argc, char* argv[]) {
     if (!serverRunning) {
         qWarning().noquote() << "BGMRPC,createObject,Server not run";
         return;
@@ -82,16 +82,16 @@ void createObject(int argc, char* argv[])
     }
 
     if ((quint8)ctrlSocket.readAll()[0] == 1) {
-        qWarning().noquote() << QString("Object,createObject-checkObject,The "
-                                        "Object(%1) already existed")
+        qWarning().noquote() << QString(
+                                    "Object,createObject-checkObject,The "
+                                    "Object(%1) already existed")
                                     .arg(argv[2]);
         return;
     }
 
     QStringList args;
     args << "-n" << argv[2] << "-I" << argv[3];
-    for (int i = 4; i < argc; i++)
-        args << argv[i];
+    for (int i = 4; i < argc; i++) args << argv[i];
 
     QProcess loaderProcess;
     QString logPath = getSettings(ctrlSocket, NS_BGMRPC::CNF_PATH_LOGS) + "/" +
@@ -107,8 +107,8 @@ void createObject(int argc, char* argv[])
     loaderProcess.startDetached();
 }
 
-void detachObject(int argc, char* argv[])
-{
+void
+detachObject(int argc, char* argv[]) {
     if (!serverRunning) {
         qWarning().noquote() << "BGMRPC,detachObject,server not run";
         return;
@@ -117,8 +117,7 @@ void detachObject(int argc, char* argv[])
         return;
     }
 
-    QByteArray cmd;
-    cmd[0] = NS_BGMRPC::CTRL_DETACHOBJECT;
+    QByteArray cmd(1, NS_BGMRPC::CTRL_DETACHOBJECT);
     qInfo().noquote()
         << QString("Object(%1),detachObject,Detach object...").arg(argv[2]);
     cmd.append(argv[2]);
@@ -131,8 +130,8 @@ void detachObject(int argc, char* argv[])
             << QString("Object(%1),detachObject,Detach Fail").arg(argv[2]);
 }
 
-void listObjects()
-{
+void
+listObjects() {
     if (!serverRunning) {
         qWarning().noquote() << "BGMRPC,listObjects,Server not run";
         return;
@@ -146,13 +145,14 @@ void listObjects()
     }
 
     QByteArray objListData = ctrlSocket.readAll();
-    if (objListData[0] != '\x0')
+    if (objListData[0] != '\x0') {
         foreach (QByteArray obj, objListData.split(','))
             qInfo().noquote() << "- " << obj;
+    }
 }
 
-int main(int argc, char* argv[])
-{
+int
+main(int argc, char* argv[]) {
     QCoreApplication a(argc, argv);
 
     QString usage =
@@ -165,15 +165,13 @@ int main(int argc, char* argv[])
 
     ctrlSocket.connectToServer(BGMRPCCtrlSocket);
 
-    if (ctrlSocket.waitForConnected(500))
-        serverRunning = true;
+    if (ctrlSocket.waitForConnected(500)) serverRunning = true;
 
     if (serverRunning) {
-        QByteArray cmd;
-        cmd[0] = NS_BGMRPC::CTRL_DAEMONCTRL;
+        QByteArray cmd(1, NS_BGMRPC::CTRL_DAEMONCTRL);
+        //        cmd[0] = NS_BGMRPC::CTRL_DAEMONCTRL;
         ctrlSocket.write(cmd);
-        if (!ctrlSocket.waitForBytesWritten())
-            return -1;
+        if (!ctrlSocket.waitForBytesWritten()) return -1;
 
         if (ctrlSocket.waitForReadyRead())
             ctrlSocket.readAll();

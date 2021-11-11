@@ -1,20 +1,21 @@
 #ifndef BGMRPCCLIENT_H
 #define BGMRPCCLIENT_H
 
-#include "BGMRPCClient_global.h"
-#include "CallChain.h"
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QObject>
 #include <QWebSocket>
+#include <functional>
+
+#include "BGMRPCClient_global.h"
 
 namespace NS_BGMRPCClient {
 
 class BGMRPCClient;
 
-class Calling : public QObject {
+/*class Calling : public QObject {
     Q_OBJECT
 public:
     Calling(const QString& mID, QObject* parent = nullptr);
@@ -27,12 +28,16 @@ private:
 
 class BGMRPCCLIENT_EXPORT BGMRPCClient : public QObject {
     Q_OBJECT
+    Q_PROPERTY(bool isConnected READ isConnected NOTIFY isConnectedChanged)
 public:
     BGMRPCClient(QObject* parent = nullptr);
 
+    bool isConnected();
     void connectToHost(const QUrl& url);
+    void disconnectFromHost();
 
 signals:
+    void isConnectedChanged(bool status);
     void connected();
     void disconnected();
     void onReturn(const QJsonDocument& jsonDoc);
@@ -48,6 +53,51 @@ protected:
     QWebSocket m_socket;
     QString m_mID;
     static quint64 m_totalMID;
+};*/
+
+class BGMRPCCLIENT_EXPORT Calling : public QObject {
+    Q_OBJECT
+public:
+    Calling(BGMRPCClient* client, const QString& mID,
+            QObject* parent = nullptr);
+
+    void then(std::function<void(const QVariant&)> ret,
+              std::function<void(const QVariant&)> err = nullptr);
+
+private:
+    BGMRPCClient* m_client;
+    QString m_mID;
+    std::function<void(const QVariant&)> m_returnCallback;
+    std::function<void(const QVariant&)> m_errorCallback;
 };
-} // namespace NS_BGMRPCClient
-#endif // BGMRPCCLIENT_H
+
+class BGMRPCCLIENT_EXPORT BGMRPCClient : public QObject {
+    Q_OBJECT
+    Q_PROPERTY(bool isConnected READ isConnected NOTIFY isConnectedChanged)
+public:
+    BGMRPCClient(QObject* parent = nullptr);
+    virtual ~BGMRPCClient() {}
+
+    bool isConnected();
+    void connectToHost(const QUrl& url);
+    void disconnectFromHost();
+
+    Calling* callMethod(const QString& object, const QString& method,
+                        const QVariantList& args);
+
+signals:
+    void isConnectedChanged(bool status);
+    void connected();
+    void disconnected();
+    void onReturn(const QJsonDocument& jsonDoc);
+    void onError(const QJsonDocument& jsonDoc);
+    void onRemoteSignal(const QString& obj, const QString& sig,
+                        const QJsonArray& args);
+
+private:
+    friend Calling;
+    QWebSocket m_socket;
+    static quint64 m_totalMID;
+};
+}  // namespace NS_BGMRPCClient
+#endif  // BGMRPCCLIENT_H

@@ -1,15 +1,17 @@
 #include "bgmrpc.h"
-#include "client.h"
-#include <QDebug>
-#include <QLocalSocket>
-#include <QProcess>
+
 #include <bgmrpccommon.h>
 #include <stdlib.h>
 
+#include <QDebug>
+#include <QLocalSocket>
+#include <QProcess>
+
+#include "client.h"
+
 using namespace NS_BGMRPC;
 
-BGMRPC::BGMRPC(QObject* parent) : QObject(parent)
-{
+BGMRPC::BGMRPC(QObject* parent) : QObject(parent) {
     m_ctrlServer = new QLocalServer(this);
     m_BGMRPCServer = new QWebSocketServer(
         QString(), QWebSocketServer::NonSecureMode, parent);
@@ -17,13 +19,10 @@ BGMRPC::BGMRPC(QObject* parent) : QObject(parent)
     m_address = QHostAddress::Any;
 }
 
-BGMRPC::~BGMRPC()
-{
-    m_ctrlServer->close();
-}
+BGMRPC::~BGMRPC() { m_ctrlServer->close(); }
 
-bool BGMRPC::start()
-{
+bool
+BGMRPC::start() {
     if (m_ctrlServer->listen(/*NS_BGMRPC::*/ BGMRPCCtrlSocket) &&
         m_BGMRPCServer->listen(m_address, m_port)) {
         qInfo().noquote() << "BGMRPC,start,Started";
@@ -68,23 +67,23 @@ bool BGMRPC::start()
         return false;
 }
 
-void BGMRPC::setAddress(const QHostAddress& address)
-{
+void
+BGMRPC::setAddress(const QHostAddress& address) {
     m_address = address;
 }
 
-void BGMRPC::setPort(quint16 port)
-{
+void
+BGMRPC::setPort(quint16 port) {
     m_port = port;
 }
 
-ObjectCtrl* BGMRPC::objectCtrl(const QString& name)
-{
+ObjectCtrl*
+BGMRPC::objectCtrl(const QString& name) {
     return m_objects[name];
 }
 
-void BGMRPC::initial(const QString& file)
-{
+void
+BGMRPC::initial(const QString& file) {
     if (file.isEmpty())
         m_settings = new QSettings();
     else
@@ -95,15 +94,15 @@ void BGMRPC::initial(const QString& file)
     m_port = m_settings->value("server/port", 8000).toInt();
 }
 
-void BGMRPC::ctrl_registerObject(const QString& name)
-{
+void
+BGMRPC::ctrl_registerObject(const QString& name) {
     qInfo().noquote() << "BGMRPC,Register Object," << name;
     m_objects[name] = qobject_cast<ObjectCtrl*>(sender());
-    test_addedObject(name);
+    emit test_addedObject(name);
 }
 
-void BGMRPC::ctrl_checkObject(const QString& name)
-{
+void
+BGMRPC::ctrl_checkObject(const QString& name) {
     ObjectCtrl* theObjCtrl = qobject_cast<ObjectCtrl*>(sender());
     if (m_objects.contains(name))
         theObjCtrl->sendCtrlData(QByteArray::fromRawData("\x1", 1));
@@ -111,13 +110,19 @@ void BGMRPC::ctrl_checkObject(const QString& name)
         theObjCtrl->sendCtrlData(QByteArray::fromRawData("\x0", 1));
 }
 
-void BGMRPC::ctrl_getConfig(quint8 cnf)
-{
+void
+BGMRPC::ctrl_getConfig(quint8 cnf) {
     ObjectCtrl* theObjCtrl = qobject_cast<ObjectCtrl*>(sender());
-    QByteArray rootPath = m_settings->value("path/root")
+    /*QByteArray rootPath = m_settings->value("path/root")
                               .toString()
                               .replace(QRegExp("^~"), QDir::homePath())
-                              .toUtf8();
+                              .toUtf8();*/
+    QByteArray rootPath =
+        m_settings->value("path/root")
+            .toString()
+            .replace(QRegularExpression("^~"), QDir::homePath())
+            .toUtf8();
+
     switch (cnf) {
     case CNF_PATH_ROOT:
         theObjCtrl->sendCtrlData(rootPath);
@@ -126,28 +131,28 @@ void BGMRPC::ctrl_getConfig(quint8 cnf)
         theObjCtrl->sendCtrlData(
             m_settings->value("path/bin", rootPath + "/bin")
                 .toString()
-                .replace(QRegExp("^~"), QDir::homePath())
+                .replace(QRegularExpression("^~"), QDir::homePath())
                 .toUtf8());
         break;
     case CNF_PATH_INTERFACES:
         theObjCtrl->sendCtrlData(
             m_settings->value("path/interfaces", rootPath + "/interfaces")
                 .toString()
-                .replace(QRegExp("^~"), QDir::homePath())
+                .replace(QRegularExpression("^~"), QDir::homePath())
                 .toUtf8());
         break;
     case CNF_PATH_LOGS:
         theObjCtrl->sendCtrlData(
             m_settings->value("path/logs", rootPath + "/logs")
                 .toString()
-                .replace(QRegExp("^~"), QDir::homePath())
+                .replace(QRegularExpression("^~"), QDir::homePath())
                 .toUtf8());
         break;
     }
 }
 
-void BGMRPC::ctrl_detachObject(const QString& name)
-{
+void
+BGMRPC::ctrl_detachObject(const QString& name) {
     ObjectCtrl* theObjCtrl = qobject_cast<ObjectCtrl*>(sender());
     if (m_objects.contains(name)) {
         ObjectCtrl* target = m_objects[name];
@@ -160,8 +165,8 @@ void BGMRPC::ctrl_detachObject(const QString& name)
     }
 }
 
-void BGMRPC::ctrl_listObjects()
-{
+void
+BGMRPC::ctrl_listObjects() {
     ObjectCtrl* theObjCtrl = qobject_cast<ObjectCtrl*>(sender());
 
     QByteArray listData;
@@ -172,7 +177,7 @@ void BGMRPC::ctrl_listObjects()
         else
             listData += ',';
 
-        listData += objName;
+        listData += objName.toLatin1();
     }
     if (begin)
         theObjCtrl->sendCtrlData(QByteArray::fromRawData("\x0", 1));
@@ -191,8 +196,8 @@ void BGMRPC::ctrl_listObjects()
                             crArgs);
 }*/
 
-void BGMRPC::newClient()
-{
+void
+BGMRPC::newClient() {
     qInfo().noquote() << "BGMRPC,newClient,New client connected";
 
     new Client(this, m_BGMRPCServer->nextPendingConnection());

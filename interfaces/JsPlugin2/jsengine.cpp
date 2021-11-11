@@ -137,11 +137,13 @@ JsEngine::loadModule(const QString& module) {
         return false;
     }*/
     auto __loadModule = [&](const QString& lib) -> bool {
+        theModuleLib.unload();
         theModuleLib.setFileName(lib);
         bool ok = theModuleLib.isLoaded() || theModuleLib.load();
-        if (!ok)
-            qWarning().noquote() << "Can't load module lib: " << lib;
-        else
+        if (!ok) {
+            qWarning().noquote() << "Can't load module lib: " << lib << ". "
+                                 << theModuleLib.errorString();
+        } else
             qInfo().noquote() << lib << "loaded";
 
         return ok;
@@ -175,20 +177,20 @@ JsEngine::loadModule(const QString& module) {
 
 QJSValue
 JsEngine::variant2JsValue(const QVariant& var) {
-    switch (var.type()) {
-    case QVariant::Bool:
+    switch (var.typeId()) {
+    case QMetaType::Bool:  // QVariant::Bool:
         return QJSValue(var.toBool());
-    case QVariant::Int:
-    case QVariant::LongLong:
+    case QMetaType::Int:
+    case QMetaType::LongLong:
         return QJSValue(var.toInt());
-    case QVariant::UInt:
-    case QVariant::ULongLong:
+    case QMetaType::UInt:
+    case QMetaType::ULongLong:
         return QJSValue(var.toUInt());
-    case QVariant::Double:
+    case QMetaType::Double:
         return QJSValue(var.toDouble());
-    case QVariant::String:
+    case QMetaType::QString:
         return QJSValue(var.toString());
-    case QVariant::List: {
+    case QMetaType::QVariantList: {
         QVariantList varArray = var.toList();
         QJSValue jsArray = m_jsEngine->newArray(varArray.length());
         for (int i = 0; i < varArray.length(); i++)
@@ -196,7 +198,7 @@ JsEngine::variant2JsValue(const QVariant& var) {
 
         return jsArray;
     }
-    case QVariant::Map: {
+    case QMetaType::QVariantMap: {
         QVariantMap varMap = var.toMap();
         QJSValue jsObj = m_jsEngine->newObject();
 

@@ -10,8 +10,8 @@ SUBDIRS += \
     BGMRPCCtrl \
     interfaces/JsPlugin2 \
     interfaces/JsPlugin2/JsModule \
-    interfaces/PythonInterface \
-    interfaces/math \
-    TestBGMRPC # \
+    interfaces/PythonInterface #\
+#    interfaces/math \
+#    TestBGMRPC \
 #    interfaces/DoodleStorage
 

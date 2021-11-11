@@ -1,6 +1,7 @@
 #include "jsdb.h"
 
 #include <QDebug>
+#include <QJSValueIterator>
 
 JsDB::JsDB(QObject* parent) : QObject(parent) {}
 
@@ -38,13 +39,14 @@ JsDB::connectDB(const QString connectionName) {
     return DB.isOpen();
 }
 
-QJsonObject
-JsDB::exec(const QString& stm, const QJsonObject& bind) const {
-    QJsonObject ret;
+QJSValue
+JsDB::exec(const QString& stm, const QJSValue& bind) const {
+    //    QJsonObject ret;
+    QVariantMap ret;
     QSqlQuery query(DB);
     query.prepare(stm);
 
-    QJsonObject::const_iterator it;
+    /*QJsonObject::const_iterator it;
     for (it = bind.constBegin(); it != bind.constEnd(); ++it) {
         QVariant binVal;
         if (it.value().type() == QJsonValue::Double)
@@ -52,20 +54,42 @@ JsDB::exec(const QString& stm, const QJsonObject& bind) const {
         else
             binVal = QVariant(it.value().toString());
         query.bindValue(it.key(), binVal);
+    }*/
+    if (bind.isObject()) {
+        QJSValueIterator it(bind);
+        while (it.hasNext()) {
+            it.next();
+            qDebug() << it.value().toVariant();
+            query.bindValue(it.name(), it.value().toVariant());
+        }
     }
 
     if (query.exec()) {
         ret["ok"] = true;
 
         if (query.isSelect()) {
-            QJsonArray rows;
+            QVariantList rows;
+            //            QJsonArray rows;
             while (query.next()) {
-                QJsonObject row;
+                //                QJsonObject row;
+                QVariantMap row;
                 QSqlRecord record = query.record();
-                for (int i = 0; i < record.count(); i++)
+                for (int i = 0; i < record.count(); i++) {
                     // row[record.field (i).name ()] = record.value (i);
-                    row[record.field(i).name()] =
-                        QJsonValue::fromVariant(record.value(i));
+                    QString fieldName = record.field(i).name();
+                    QVariant data = record.value(i);
+                    row[fieldName] = data;
+                    /*if ((QMetaType::Type)data.type() == QMetaType::QByteArray)
+                    { qDebug()
+                            << "---------------" << data.toByteArray().length();
+                        row[fieldName] = QJsonValue(
+                            QString::fromUtf8(data.toByteArray().constData(),
+                                              data.toByteArray().length()));
+                    } else
+                        row[fieldName] = QJsonValue::fromVariant(data);*/
+                    /*row[record.field(i).name()] =
+                        QJsonValue::fromVariant(record.value(i));*/
+                }
                 rows.append(row);
             }
             ret["rows"] = rows;
@@ -76,13 +100,13 @@ JsDB::exec(const QString& stm, const QJsonObject& bind) const {
         ret["error"] = query.lastError().text();
     }
 
-    return ret;
+    return qjsEngine(this)->toScriptValue(ret);
 }
 
 JsDBFactory::JsDBFactory(QObject* parent) : JsObjFactory(parent, false) {}
 
 QObject*
-JsDBFactory::constructor() const {
+JsDBFactory::constructor(const QVariant&) const {
     return new JsDB();
 }
 

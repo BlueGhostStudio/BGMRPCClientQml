@@ -15,17 +15,17 @@ namespace NS_BGMRPCObjectInterface {
 class JsCaller : public QObject {
     Q_OBJECT
 
-    Q_PROPERTY(quint64 cliID READ cliID)
-    Q_PROPERTY(bool online READ online)
-    Q_PROPERTY(bool isInternalCall READ isInternalCall)
-    Q_PROPERTY(QString app READ app)
-    Q_PROPERTY(QString object READ object)
-    Q_PROPERTY(QString grp READ grp)
+    Q_PROPERTY(quint64 __ID__ READ cliID)
+    Q_PROPERTY(bool __ONLINE__ READ online)
+    Q_PROPERTY(bool __ISINTERNALCALL__ READ isInternalCall)
+    Q_PROPERTY(QString __APP__ READ app)
+    Q_PROPERTY(QString __OBJECT__ READ object)
+    Q_PROPERTY(QString __GRP__ READ grp)
 public:
     explicit JsCaller(QPointer<Caller> caller, QObject* parent = nullptr);
 
     quint64 cliID() const;
-    Q_INVOKABLE bool online() const;
+    bool online() const;
     Q_INVOKABLE QJSValue clone() const;
     /*!
      * \brief 设置对象对应调用者的私有数据
@@ -173,6 +173,9 @@ public:
                                 const QJsonArray& args) const;
     Q_INVOKABLE bool include(const QString& scrFileName) const;
     Q_INVOKABLE void loadModule(const QString& module) const;
+
+    Q_INVOKABLE void collectGarbage();
+    Q_INVOKABLE void destroyObject(const QJSValue& obj);
 
 private:
     JsEngine* m_jsEngine;
