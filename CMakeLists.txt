@@ -12,5 +12,4 @@ add_subdirectory(interfaces)
 
 add_subdirectory(BGMRPCClient)
 
-#add_subdirectory(BGMRPCClientQml)
-#add_subdirectory(TestBGMRPCClientQml)
+add_subdirectory(BGMRPCClientQml)

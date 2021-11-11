@@ -1,9 +1,13 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.5)
 
-project(TestBGMRPCClientQml VERSION 0.1 LANGUAGES CXX)
+project(BGMRPCConsole VERSION 0.1 LANGUAGES CXX)
 
-include(../../../cmake/BGSQml.cmake)
-add_compile_definitions(BGS_QML_IMPORT_PATH="${BGS_QML_IMPORT_PATH}")
+#include_directories(../BGMRPC/BGMRPCClient ../../CallGraph)
+
+find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets Core WebSockets REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets Core WebSockets REQUIRED)
+
+include_directories(../BGMRPC/BGMRPCClient ../../CallGraph)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -14,49 +18,44 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Quick REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Quick REQUIRED)
-
 set(PROJECT_SOURCES
         main.cpp
-        qml.qrc
+        mainwindow.cpp
+        mainwindow.h
+        mainwindow.ui
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    qt_add_executable(TestBGMRPCClientQml
+    qt_add_executable(BGMRPCConsole
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
     )
 # Define target properties for Android with Qt 6 as:
-#    set_property(TARGET TestBGMRPCClientQml APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
+#    set_property(TARGET BGMRPCConsole APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
 #                 ${CMAKE_CURRENT_SOURCE_DIR}/android)
 # For more information, see https://doc.qt.io/qt-6/qt-add-executable.html#target-creation
 else()
     if(ANDROID)
-        add_library(TestBGMRPCClientQml SHARED
+        add_library(BGMRPCConsole SHARED
             ${PROJECT_SOURCES}
         )
 # Define properties for Android with Qt 5 after find_package() calls as:
 #    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
     else()
-        add_executable(TestBGMRPCClientQml
-          ${PROJECT_SOURCES}
+        add_executable(BGMRPCConsole
+            ${PROJECT_SOURCES}
         )
     endif()
 endif()
 
-target_compile_definitions(TestBGMRPCClientQml
-  PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
-target_link_libraries(TestBGMRPCClientQml
-  PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Quick)
+target_link_libraries(BGMRPCConsole PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::WebSockets BGMRPCClient CallGraph)
 
-set_target_properties(TestBGMRPCClientQml PROPERTIES
+set_target_properties(BGMRPCConsole PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
 )
 
 if(QT_VERSION_MAJOR EQUAL 6)
-    qt_import_qml_plugins(TestBGMRPCClientQml)
-    qt_finalize_executable(TestBGMRPCClientQml)
+    qt_finalize_executable(BGMRPCConsole)
 endif()
