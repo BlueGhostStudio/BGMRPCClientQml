@@ -11,7 +11,7 @@ find_package(
 
 set(CMAKE_AUTOMOC ON)
 
-include(../../../cmake/BGSQml.cmake)
+include(../cmake/BGSQml.cmake)
 
 message(${BGS_QML_IMPORT_PATH})
 

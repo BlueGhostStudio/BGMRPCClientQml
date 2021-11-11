@@ -2,12 +2,12 @@ cmake_minimum_required(VERSION 3.5)
 
 project(BGMRPCConsole VERSION 0.1 LANGUAGES CXX)
 
-#include_directories(../BGMRPC/BGMRPCClient ../../CallGraph)
+#include_directories(../BGMRPCClient ../../CallGraph)
 
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets Core WebSockets REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets Core WebSockets REQUIRED)
 
-include_directories(../BGMRPC/BGMRPCClient ../../CallGraph)
+include_directories(../BGMRPCClient CallGraph)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
