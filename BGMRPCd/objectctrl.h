@@ -1,19 +1,18 @@
 #ifndef OBJECTCTRL_H
 #define OBJECTCTRL_H
 
-#include <QLocalSocket>
-#include <QObject>
 #include <bgmrpccommon.h>
 
-namespace NS_BGMRPC
-{
+#include <QLocalSocket>
+#include <QObject>
+
+namespace NS_BGMRPC {
 
 class Client;
 class BGMRPC;
 // class ObjectInterface;
 
-class ObjectCtrl : public QObject
-{
+class ObjectCtrl : public QObject {
     Q_OBJECT
 public:
     explicit ObjectCtrl(/*BGMRPC* bgmrpc, */ QLocalSocket* socket,
@@ -26,6 +25,7 @@ signals:
     void registerObject(const QString&);
     void checkObject(const QString&);
     void getConfig(quint8 cnf);
+    void getSetting(const QByteArray& key);
     void removeObject(const QString&);
     void stopServer();
     void detachObject(const QString&);
@@ -45,5 +45,5 @@ private:
     friend BGMRPC;
 };
 
-} // namespace NS_BGMRPC
-#endif // OBJECTCTRL_H
+}  // namespace NS_BGMRPC
+#endif  // OBJECTCTRL_H

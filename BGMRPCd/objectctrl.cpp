@@ -39,6 +39,9 @@ ObjectCtrl::ObjectCtrl(/*BGMRPC* bgmrpc, */ QLocalSocket* socket,
         case NS_BGMRPC::CTRL_CONFIG:
             emit getConfig(data[1]);
             break;
+        case NS_BGMRPC::CTRL_SETTING:
+            emit getSetting(data.mid(1));
+            break;
         case NS_BGMRPC::CTRL_DETACHOBJECT:
             if (m_daemonCtrl) emit detachObject(data.mid(1));
             break;

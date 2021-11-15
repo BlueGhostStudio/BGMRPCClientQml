@@ -14,6 +14,7 @@ bool splitLocalSocketFragment(QLocalSocket* socket,
                               std::function<void(const QByteArray&)> callback);
 
 QByteArray getSettings(QLocalSocket& ctrlSocket, NS_BGMRPC::Config cnf);
+QByteArray getSettings(QLocalSocket& ctrlSocket, const QString& key);
 
 void initialLogMessage(quint8 mf = 0x1f);
 

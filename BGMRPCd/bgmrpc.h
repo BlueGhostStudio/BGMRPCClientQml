@@ -1,18 +1,17 @@
 #ifndef BGMRPC_H
 #define BGMRPC_H
 
-#include "objectctrl.h"
 #include <QLocalServer>
 #include <QObject>
 #include <QSettings>
 #include <QWebSocket>
 #include <QWebSocketServer>
 
-namespace NS_BGMRPC
-{
+#include "objectctrl.h"
 
-class BGMRPC : public QObject
-{
+namespace NS_BGMRPC {
+
+class BGMRPC : public QObject {
     Q_OBJECT
 public:
     explicit BGMRPC(QObject* parent = nullptr);
@@ -32,6 +31,7 @@ public slots:
     void ctrl_registerObject(const QString& name);
     void ctrl_checkObject(const QString& name);
     void ctrl_getConfig(quint8 cnf);
+    void ctrl_getSetting(const QByteArray& key);
     void ctrl_detachObject(const QString& name);
     void ctrl_listObjects();
     void newClient();
@@ -47,5 +47,5 @@ private:
     quint16 m_port;
 };
 
-} // namespace NS_BGMRPC
-#endif // BGMRPC_H
+}  // namespace NS_BGMRPC
+#endif  // BGMRPC_H

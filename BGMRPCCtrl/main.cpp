@@ -46,6 +46,7 @@ startServer(int argc, char* argv[]) {
         BGMRPCProcess.setStandardOutputFile(logPath /*, QIODevice::Append*/);
         BGMRPCProcess.setStandardErrorFile(logPath /*, QIODevice::Append*/);
     }
+
     BGMRPCProcess.setProgram(binPath + "/BGMRPCd");
     BGMRPCProcess.setArguments(args);
     BGMRPCProcess.startDetached();

@@ -40,6 +40,9 @@ BGMRPC::start() {
             QObject::connect(objCtrl, &ObjectCtrl::getConfig, this,
                              &BGMRPC::ctrl_getConfig);
 
+            QObject::connect(objCtrl, &ObjectCtrl::getSetting, this,
+                             &BGMRPC::ctrl_getSetting);
+
             QObject::connect(objCtrl, &ObjectCtrl::detachObject, this,
                              &BGMRPC::ctrl_detachObject);
             QObject::connect(objCtrl, &ObjectCtrl::listObjects, this,
@@ -149,6 +152,12 @@ BGMRPC::ctrl_getConfig(quint8 cnf) {
                 .toUtf8());
         break;
     }
+}
+
+void
+BGMRPC::ctrl_getSetting(const QByteArray& key) {
+    ObjectCtrl* theObjCtrl = qobject_cast<ObjectCtrl*>(sender());
+    theObjCtrl->sendCtrlData(m_settings->value(key, "").toByteArray());
 }
 
 void

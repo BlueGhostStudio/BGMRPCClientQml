@@ -6,6 +6,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QLibrary>
+#include <QSettings>
 #include <functional>
 
 #include "jsobjs.h"
@@ -18,6 +19,14 @@ JsEngine::JsEngine(QObject* parent)
         getSettings(*m_ctrlSocket, NS_BGMRPC::CNF_PATH_INTERFACES) +
         "/JsModules";
     //    qDebug() << "-------module path--->" << m_jsModulePath;
+
+    QString rootPath = getSettings(*m_ctrlSocket, NS_BGMRPC::CNF_PATH_ROOT);
+    QString installDir = getSettings(*m_ctrlSocket, "path/installDir");
+
+    QSettings JSMSettings(rootPath + "/etc/JsModules.conf",
+                          QSettings::IniFormat);
+    m_jsModulesPath =
+        JSMSettings.value("path", installDir + "/JsModules.conf").toString();
 }
 
 void

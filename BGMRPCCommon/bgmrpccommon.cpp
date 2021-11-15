@@ -53,6 +53,18 @@ getSettings(QLocalSocket& ctrlSocket, NS_BGMRPC::Config cnf) {
         return QByteArray();
 }
 
+QByteArray
+getSettings(QLocalSocket& ctrlSocket, const QString& key) {
+    QByteArray cmd(1, NS_BGMRPC::CTRL_SETTING);
+    cmd.append(key.toLatin1());
+
+    ctrlSocket.write(cmd);
+    if (ctrlSocket.waitForReadyRead())
+        return ctrlSocket.readAll();
+    else
+        return QByteArray();
+}
+
 QElapsedTimer timer;
 
 void
