@@ -16,6 +16,12 @@ find_package(
   COMPONENTS Core Network
   REQUIRED)
 
+if(QT_VERSION_MAJOR EQUAL 5)
+    set(RUNTIME_OUTPUT_NAME "BGMRPCCtrl-qt5")
+else()
+    set(RUNTIME_OUTPUT_NAME "BGMRPCCtrl")
+endif()
+
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 
@@ -23,11 +29,10 @@ add_executable(BGMRPCCtrl main.cpp)
 
 set_target_properties(
   BGMRPCCtrl
-  PROPERTIES OUTPUT_NAME BGMRPCCtrl
+  PROPERTIES OUTPUT_NAME ${RUNTIME_OUTPUT_NAME}
              INSTALL_RPATH_USE_LINK_PATH ON
              INSTALL_RPATH "${BGMRPC_REMOTE}/${CMAKE_INSTALL_LIBDIR}")
 
-message(">>>>>${BGMRPCCommon_includeDir}")
 include_directories(${BGMRPCCommon_includeDir})
 
 target_link_libraries(

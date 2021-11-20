@@ -103,7 +103,10 @@ createObject(int argc, char* argv[]) {
         loaderProcess.setStandardOutputFile(logPath /*, QIODevice::Append*/);
         loaderProcess.setStandardErrorFile(logPath /*, QIODevice::Append*/);
     }
-    loaderProcess.setProgram(binPath + "/BGMRPCObjectLoader");
+
+    loaderProcess.setProgram(binPath + (QT_VERSION > 0X060000
+                                            ? "/BGMRPCObjectLoader"
+                                            : "/BGMRPCObjectLoader-qt5"));
     loaderProcess.setArguments(args);
     loaderProcess.startDetached();
 }

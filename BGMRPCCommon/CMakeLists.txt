@@ -15,9 +15,12 @@ find_package(
   Qt${QT_VERSION_MAJOR}
   COMPONENTS Core Network
   REQUIRED)
-message(
-  "-->Qt${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}, ${BGMRPC_REMOTE}/${CMAKE_INSTALL_LIBDIR}"
-)
+
+if(QT_VERSION_MAJOR EQUAL 5)
+    set(LIB_OUTPUT_NAME "BGMRPCCommon-qt5")
+else()
+    set(LIB_OUTPUT_NAME "BGMRPCCommon")
+endif()
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
@@ -34,7 +37,7 @@ set_target_properties(
   BGMRPCCommon
   PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR}
              VERSION ${PROJECT_VERSION}
-             OUTPUT_NAME BGMRPCCommon
+             OUTPUT_NAME ${LIB_OUTPUT_NAME}
              PUBLIC_HEADER "intbytes.h;flags.h;bgmrpccommon.h"
              INSTALL_RPATH_USE_LINK_PATH ON
              INSTALL_RPATH "${BGMRPC_REMOTE}/${CMAKE_INSTALL_LIBDIR}")

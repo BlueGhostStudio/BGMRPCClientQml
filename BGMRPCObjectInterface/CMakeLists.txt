@@ -16,6 +16,12 @@ find_package(
   COMPONENTS Core Network
   REQUIRED)
 
+if(QT_VERSION_MAJOR EQUAL 5)
+    set(LIB_OUTPUT_NAME "BGMRPCObjectInterface-qt5")
+else()
+    set(LIB_OUTPUT_NAME "BGMRPCObjectInterface")
+endif()
+
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 
@@ -34,7 +40,7 @@ set_target_properties(
   BGMRPCObjectInterface
   PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR}
              VERSION ${PROJECT_VERSION}
-             OUTPUT_NAME BGMRPCObjectInterface
+             OUTPUT_NAME ${LIB_OUTPUT_NAME}
              PUBLIC_HEADER "caller.h;objectinterface.h"
              INSTALL_RPATH_USE_LINK_PATH ON
              INSTALL_RPATH "${BGMRPC_REMOTE}/${CMAKE_INSTALL_LIBDIR}")

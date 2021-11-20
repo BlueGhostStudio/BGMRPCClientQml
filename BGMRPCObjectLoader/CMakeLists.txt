@@ -16,6 +16,12 @@ find_package(
   COMPONENTS Core Network
   REQUIRED)
 
+if(QT_VERSION_MAJOR EQUAL 5)
+    set(RUNTIME_OUTPUT_NAME "BGMRPCObjectLoader-qt5")
+else()
+    set(RUNTIME_OUTPUT_NAME "BGMRPCObjectLoader")
+endif()
+
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 
@@ -23,7 +29,7 @@ add_executable(BGMRPCObjectLoader main.cpp)
 
 set_target_properties(
   BGMRPCObjectLoader
-  PROPERTIES OUTPUT_NAME BGMRPCObjectLoader
+  PROPERTIES OUTPUT_NAME ${RUNTIME_OUTPUT_NAME}
              INSTALL_RPATH_USE_LINK_PATH ON
              INSTALL_RPATH "${BGMRPC_REMOTE}/${CMAKE_INSTALL_LIBDIR}")
 
