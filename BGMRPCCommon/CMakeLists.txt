@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.18)
 project(
   BGMRPCCommon
   LANGUAGES CXX
-  VERSION 2.0.0)
+  VERSION 1.0.0)
 
 include(../cmake/BGMRPC.cmake)
 
@@ -17,9 +17,9 @@ find_package(
   REQUIRED)
 
 if(QT_VERSION_MAJOR EQUAL 5)
-    set(LIB_OUTPUT_NAME "BGMRPCCommon-qt5")
+    set(LIB_OUTPUT_NAME "BGMRPCCommon2-qt5")
 else()
-    set(LIB_OUTPUT_NAME "BGMRPCCommon")
+    set(LIB_OUTPUT_NAME "BGMRPCCommon2")
 endif()
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)

@@ -1,7 +1,7 @@
 project(
   jsByteArray
   LANGUAGES CXX
-  VERSION 2.0.0)
+  VERSION 1.0.0)
 
 # include(${CMAKE_CURRENT_LIST_DIR})
 include(../../../../cmake/BGMRPC.cmake)

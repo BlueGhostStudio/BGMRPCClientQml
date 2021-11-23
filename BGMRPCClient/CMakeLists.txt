@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.18)
 project(
   BGMRPCClient
   LANGUAGES CXX
-  VERSION 2.0.0)
+  VERSION 1.0.0)
 
 include(../cmake/BGMRPC.cmake)
 
@@ -25,7 +25,7 @@ set_target_properties(
   BGMRPCClient
   PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR}
              VERSION ${PROJECT_VERSION}
-             OUTPUT_NAME BGMRPCClient
+             OUTPUT_NAME BGMRPCClient2
              PUBLIC_HEADER "bgmrpcclient.h"
              INSTALL_RPATH_USE_LINK_PATH ON
              INSTALL_RPATH "${BGMRPC_CLIENT}/${CMAKE_INSTALL_LIBDIR}")

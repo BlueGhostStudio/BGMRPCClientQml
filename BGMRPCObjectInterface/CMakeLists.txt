@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.18)
 project(
   BGMRPCObjectInterface
   LANGUAGES CXX
-  VERSION 2.0.0)
+  VERSION 1.0.0)
 
 include(../cmake/BGMRPC.cmake)
 
@@ -17,9 +17,9 @@ find_package(
   REQUIRED)
 
 if(QT_VERSION_MAJOR EQUAL 5)
-    set(LIB_OUTPUT_NAME "BGMRPCObjectInterface-qt5")
+    set(LIB_OUTPUT_NAME "BGMRPCObjectInterface2-qt5")
 else()
-    set(LIB_OUTPUT_NAME "BGMRPCObjectInterface")
+    set(LIB_OUTPUT_NAME "BGMRPCObjectInterface2")
 endif()
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)

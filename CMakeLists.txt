@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 
-project(BGMRPC VERSION 2.0.0)
+project(BGMRPC2 VERSION 1.0.0)
 
 if(NOT DEFINED QT_NAMES)
     SET(QT_NAMES "Qt6" "Qt5")

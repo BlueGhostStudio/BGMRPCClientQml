@@ -1,7 +1,7 @@
 project(
   JsModuleCommon
   LANGUAGES CXX
-  VERSION 2.0.0)
+  VERSION 1.0.0)
 
 include(../../../../cmake/BGMRPC.cmake)
 
