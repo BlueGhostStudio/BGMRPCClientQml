@@ -7,14 +7,16 @@
 #include "flags.h"
 #include "intbytes.h"
 
-extern QString BGMRPCObjPrefix;
-extern QString BGMRPCCtrlSocket;
+extern QByteArray BGMRPCObjPrefix;
+extern QByteArray BGMRPCServerCtrlSocket;
+// extern QByteArray BGMRPCObjectCtrlSocket;
+extern QByteArray BGMRPCObjectSocket;
 
 bool splitLocalSocketFragment(QLocalSocket* socket,
                               std::function<void(const QByteArray&)> callback);
 
 QByteArray getSettings(QLocalSocket& ctrlSocket, NS_BGMRPC::Config cnf);
-QByteArray getSettings(QLocalSocket& ctrlSocket, const QString& key);
+QByteArray getSettings(QLocalSocket& ctrlSocket, const QByteArray& key);
 
 void initialLogMessage(quint8 mf = 0x1f);
 

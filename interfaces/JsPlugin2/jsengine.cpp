@@ -14,40 +14,7 @@
 using namespace NS_BGMRPCObjectInterface;
 
 JsEngine::JsEngine(QObject* parent)
-    : ObjectInterface(parent), m_jsEngine(nullptr) {
-    m_jsModulesPath =
-        getSettings(*m_ctrlSocket, NS_BGMRPC::CNF_PATH_INTERFACES) +
-        "/JsModules";
-    //    qDebug() << "-------module path--->" << m_jsModulePath;
-
-    QString rootPath = getSettings(*m_ctrlSocket, NS_BGMRPC::CNF_PATH_ROOT);
-    QString installDir = getSettings(*m_ctrlSocket, "path/installDir");
-
-    QSettings JSMSettings(rootPath + "/etc/JsModules.conf",
-                          QSettings::IniFormat);
-    m_jsModulesPath =
-        JSMSettings.value("path", installDir + "/JsModules.conf").toString();
-}
-
-void
-JsEngine::initial(const QString& appPath, const QString& dataPath, int argc,
-                  char** argv) {
-    ObjectInterface::initial(appPath, dataPath, argc, argv);
-
-    int opt = 0;
-    optind = 0;
-    QString jsFile;
-
-    while ((opt = getopt(argc, argv, "j:")) != -1) {
-        switch (opt) {
-        case 'j':
-            jsFile = optarg;
-            break;
-        }
-    }
-
-    loadJsFile(jsFile);
-}
+    : ObjectInterface(parent), m_jsEngine(nullptr) {}
 
 QVariant
 JsEngine::callJs(const QString& name, QPointer<Caller> caller,
@@ -220,6 +187,33 @@ JsEngine::variant2JsValue(const QVariant& var) {
     default:
         return QJSValue();
     }
+}
+
+void
+JsEngine::initial(int argc, char** argv) {
+    ObjectInterface::initial(argc, argv);
+
+    QString rootPath = getSettings(*m_objectPlug, NS_BGMRPC::CNF_PATH_ROOT);
+    QString installDir = getSettings(*m_objectPlug, "path/installDir");
+
+    QSettings JSMSettings(rootPath + "/etc/JsModules.conf",
+                          QSettings::IniFormat);
+    m_jsModulesPath =
+        JSMSettings.value("path", installDir + "/JsModules.conf").toString();
+
+    int opt = 0;
+    optind = 0;
+    QString jsFile;
+
+    while ((opt = getopt(argc, argv, "j:")) != -1) {
+        switch (opt) {
+        case 'j':
+            jsFile = optarg;
+            break;
+        }
+    }
+
+    loadJsFile(jsFile);
 }
 
 void

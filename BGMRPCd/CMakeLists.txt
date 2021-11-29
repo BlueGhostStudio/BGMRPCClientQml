@@ -26,8 +26,12 @@ add_executable(
   client.h
   client.cpp
   main.cpp
-  objectctrl.h
-  objectctrl.cpp)
+  objectplug.h
+  objectplug.cpp
+  serverctrl.h
+  serverctrl.cpp
+  ctrlbase.h
+  ctrlbase.cpp)
 set_target_properties(
   BGMRPCd
   PROPERTIES OUTPUT_NAME BGMRPCd

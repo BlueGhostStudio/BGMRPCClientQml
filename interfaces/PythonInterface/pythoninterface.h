@@ -17,14 +17,13 @@ public:
 
     /*QVariant callPy(const QString& name, QPointer<Caller> cli,
                     const QVariantList& args);*/
-    void initial(const QString& appPath, const QString& dataPath, int argc,
-                 char** argv) override;
     bool loadPyFile(const QString& pyFileName);
 
     void mutexLock();
     void mutexUlock();
 
 protected:
+    void initial(int argc, char** argv) override;
     void registerMethods() override;
     void registerMethod(const QString& methodName);
     bool verification(QPointer<Caller> caller, const QString& method,

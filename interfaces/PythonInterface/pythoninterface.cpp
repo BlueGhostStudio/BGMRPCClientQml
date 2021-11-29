@@ -33,34 +33,6 @@ PythonInterface::PythonInterface(QObject* parent)
         });
 }
 
-void
-PythonInterface::initial(const QString& appPath, const QString& dataPath,
-                         int argc, char** argv) {
-    ObjectInterface::initial(appPath, dataPath, argc, argv);
-
-    __objName__ = argv[2];
-    int opt = 0;
-    optind = 0;
-
-    while ((opt = getopt(argc, argv, "s:S:")) != -1) {
-        switch (opt) {
-        case 's':
-            QDir::setCurrent(QDir::currentPath() + '/' + optarg);
-            loadPyFile("main.py");
-            break;
-        case 'S':
-            loadPyFile(optarg);
-            break;
-        }
-    }
-
-    if (m_pyMainContent.getVariable("constructor").isValid()) {
-        qInfo().noquote()
-            << QString("PythonObjectInterface(%1),initial...").arg(__objName__);
-        m_pyMainContent.call("constructor");
-    }
-}
-
 /*QVariant PythonInterface::callPy(const QString& name, QPointer<Caller> cli,
                                  const QVariantList& args)
 {
@@ -111,6 +83,33 @@ PythonInterface::mutexLock() {
 void
 PythonInterface::mutexUlock() {
     m_mutex.unlock();
+}
+
+void
+PythonInterface::initial(int argc, char** argv) {
+    ObjectInterface::initial(argc, argv);
+
+    __objName__ = argv[2];
+    int opt = 0;
+    optind = 0;
+
+    while ((opt = getopt(argc, argv, "s:S:")) != -1) {
+        switch (opt) {
+        case 's':
+            QDir::setCurrent(QDir::currentPath() + '/' + optarg);
+            loadPyFile("main.py");
+            break;
+        case 'S':
+            loadPyFile(optarg);
+            break;
+        }
+    }
+
+    if (m_pyMainContent.getVariable("constructor").isValid()) {
+        qInfo().noquote()
+            << QString("PythonObjectInterface(%1),initial...").arg(__objName__);
+        m_pyMainContent.call("constructor");
+    }
 }
 
 void

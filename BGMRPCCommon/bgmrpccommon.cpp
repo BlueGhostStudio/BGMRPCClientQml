@@ -2,8 +2,10 @@
 
 #include <QElapsedTimer>
 
-QString BGMRPCObjPrefix = "BGMRPC_OBJ_";
-QString BGMRPCCtrlSocket = "BGMRPC_CTRL";
+QByteArray BGMRPCObjPrefix = "BGMRPC_OBJ_";
+QByteArray BGMRPCServerCtrlSocket = "BGMRPC_CTRL";
+// QByteArray BGMRPCObjectCtrlSocket = "BGMRPC_OBJ_CTRL";
+QByteArray BGMRPCObjectSocket = "BGMRPC_OBJSOCKET";
 
 bool
 splitLocalSocketFragment(QLocalSocket* socket,
@@ -54,9 +56,9 @@ getSettings(QLocalSocket& ctrlSocket, NS_BGMRPC::Config cnf) {
 }
 
 QByteArray
-getSettings(QLocalSocket& ctrlSocket, const QString& key) {
+getSettings(QLocalSocket& ctrlSocket, const QByteArray& key) {
     QByteArray cmd(1, NS_BGMRPC::CTRL_SETTING);
-    cmd.append(key.toLatin1());
+    cmd.append(key);
 
     ctrlSocket.write(cmd);
     if (ctrlSocket.waitForReadyRead())

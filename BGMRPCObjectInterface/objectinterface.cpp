@@ -8,11 +8,10 @@
 
 using namespace NS_BGMRPCObjectInterface;
 
-ObjectInterface::ObjectInterface(QObject* parent)
-    : QObject(parent),
-      m_ctrlSocket(new QLocalSocket()),
-      m_dataServer(new QLocalServer(this)) {
-    m_ctrlSocket->connectToServer(/*NS_BGMRPC::*/ BGMRPCCtrlSocket);
+ObjectInterface::ObjectInterface(QObject* parent) : QObject(parent) {
+    // FINISHED 修正对象连接控制socket的名称
+    /*m_ctrlSocket->connectToServer(
+        BGMRPCObjectCtrlSocket);
     if (m_ctrlSocket->waitForConnected(-1))
         qInfo().noquote()
             << QString("Object(%1),connect_server,Connect to BGMRPC ok")
@@ -26,38 +25,146 @@ ObjectInterface::ObjectInterface(QObject* parent)
         m_ctrlSocket, &QLocalSocket::disconnected, [&]() {
             qInfo().noquote()
                 << QString("Object(%1),disconnected,disconnected").arg(m_name);
-            objectDisconnected();
+            emit objectDisconnected();
             m_dataServer->close();
-        });
+        });*/
+}
+
+void
+ObjectInterface::setAppPath(const QByteArray& path) {
+    m_appPath = path;
+}
+
+QByteArray
+ObjectInterface::appPath() const {
+    return m_appPath;
+}
+
+void
+ObjectInterface::setDataPath(const QByteArray& path) {
+    m_dataPath = path;
+}
+
+QByteArray
+ObjectInterface::dataPath() const {
+    return m_dataPath;
+}
+
+/*QLocalSocket*
+ObjectInterface::plugIntoBGMRPC(const QByteArray& group, const QByteArray& app,
+                                const QByteArray& name) {
+    QLocalSocket* plug = new QLocalSocket;
+    plug->connectToServer(BGMRPCObjectSocket);
+    if (plug->waitForConnected(-1)) {
+        QByteArray data(1, (quint8)NS_BGMRPC::CTRL_REGISTER);
+        data.append(refObjName(group, app, name));
+        plug->write(data);
+
+        qInfo().noquote() << QString("Object Control connect to BGMRPC OK");
+
+        return plug;
+    } else {
+        delete plug;
+
+        qWarning().noquote()
+            << QString("Object Control connect to BGMRPC FAIL");
+
+        return nullptr;
+    }
+}*/
+
+bool
+ObjectInterface::setup(const QByteArray& appName, const QByteArray& name,
+                       const QByteArray& grp, int argc, char** argv) {
+    // if (!objPlug) return false;
+    QByteArray objName = refObjName(
+        grp, appName, name);  // grp.isEmpty() ? name : grp + "::" + name;
+
+    m_objectPlug = new QLocalSocket;
+    m_objectPlug->connectToServer(BGMRPCObjectSocket);
+    if (m_objectPlug->waitForConnected(-1)) {
+        QByteArray data(1, (quint8)NS_BGMRPC::CTRL_REGISTER);
+        data.append(objName);
+        m_objectPlug->write(data);
+        // m_objectPlug->waitForBytesWritten(-1);
+        if (m_objectPlug->waitForReadyRead() &&
+            (quint8)m_objectPlug->readAll()[0])
+            qInfo().noquote()
+                << QString("Object(%1) plug to BGMRPC OK").arg(objName);
+        else {
+            qWarning().noquote()
+                << QString(
+                       "An object named \"%1\" already exists on the BGMRPC")
+                       .arg(objName);
+
+            return -1;
+        }
+    } else {
+        delete m_objectPlug;
+
+        qWarning().noquote()
+            << QString("Object(%1) connect to BGMRPC FAIL").arg(objName);
+
+        return -1;
+    }
+
+    // m_ctrlSocket = new QLocalSocket();
+    m_dataServer = new QLocalServer(this);
+    m_dataServer->setSocketOptions(QLocalServer::WorldAccessOption);
 
     QObject::connect(m_dataServer, &QLocalServer::newConnection, this,
                      &ObjectInterface::newCaller);
 
     QObject::connect(this, &ObjectInterface::thread_signal_call, this,
                      &ObjectInterface::on_thread_call);
+
+    QObject::connect(m_objectPlug, &QLocalSocket::disconnected, this, [&]() {
+        detachObject();
+
+        QCoreApplication::quit();
+    });
+
+    /*m_ctrlSocket->connectToServer(BGMRPCObjectCtrlSocket);
+    if (m_ctrlSocket->waitForConnected(-1))
+        qInfo().noquote() << QString("Object Control connect to BGMRPC OK");
+    else {
+        qWarning().noquote()
+            << QString("Object Control connect to BGMRPC FAIL");
+        detachObject();
+        return false;
+    }*/
+
+    QString dataServerName = BGMRPCObjPrefix + objName;
+
+    if (m_dataServer->listen(dataServerName)) {
+        m_name = name;
+        m_grp = grp;
+        m_appName = appName;
+        qInfo().noquote()
+            << QString("Object(%1),registerObject,ready").arg(m_name);
+
+        QByteArray rootPath =
+            getSettings(*m_objectPlug, NS_BGMRPC::CNF_PATH_ROOT);
+        QByteArray dataPath = rootPath + "/data/" +
+                              (m_grp.isEmpty() ? "default" : m_grp) + '/' +
+                              m_appName;
+        setAppPath(rootPath + "/apps/" + m_appName);
+        setDataPath(dataPath);
+
+        initial(argc, argv);
+
+        return true;
+    } else {
+        qWarning().noquote()
+            << QString("Object(%1)(%2),registerObject,Not ready")
+                   .arg(QString(objName), dataServerName);
+        detachObject();
+
+        return false;
+    }
 }
 
-void
-ObjectInterface::setAppPath(const QString& path) {
-    m_appPath = path;
-}
-
-QString
-ObjectInterface::appPath() const {
-    return m_appPath;
-}
-
-void
-ObjectInterface::setDataPath(const QString& path) {
-    m_dataPath = path;
-}
-
-QString
-ObjectInterface::dataPath() const {
-    return m_dataPath;
-}
-
-bool
+/*bool
 ObjectInterface::registerObject(const QByteArray& appName,
                                 const QByteArray& name, const QByteArray& grp) {
     if (!m_ctrlSocket->isOpen()) {
@@ -70,7 +177,7 @@ ObjectInterface::registerObject(const QByteArray& appName,
         ctrl.append(objName);
         m_ctrlSocket->write(ctrl);
 
-        QString socketServerName = /*NS_BGMRPC::*/ BGMRPCObjPrefix + objName;
+        QString socketServerName =  BGMRPCObjPrefix + objName;
         if (m_dataServer->listen(socketServerName)) {
             m_name = name;
             m_grp = grp;
@@ -86,14 +193,7 @@ ObjectInterface::registerObject(const QByteArray& appName,
             return false;
         }
     }
-}
-
-void
-ObjectInterface::initial(const QString& appPath, const QString& dataPath,
-                         int /*argc*/, char** /*argv*/) {
-    setAppPath(appPath);
-    setDataPath(dataPath);
-}
+}*/
 
 QString
 ObjectInterface::objectName() const {
@@ -177,8 +277,8 @@ ObjectInterface::call(QPointer<Caller> caller, const QString& object,
     QEventLoop CL_loop;
     QVariant retData;
 
-    thread_signal_call(true, caller.isNull() ? -1 : caller->m_ID, object,
-                       method, args);
+    emit thread_signal_call(true, caller.isNull() ? -1 : caller->m_ID, object,
+                            method, args);
     QObject::connect(this, &ObjectInterface::thread_signal_return,
                      [&](const QVariant& data) {
                          retData = data;
@@ -207,7 +307,7 @@ ObjectInterface::call(const QString& object, const QString& method,
 void
 ObjectInterface::callNonblock(const QString& object, const QString& method,
                               const QVariantList& args) {
-    thread_signal_call(false, -2, object, method, args);
+    emit thread_signal_call(false, -2, object, method, args);
 }
 
 void
@@ -226,6 +326,19 @@ ObjectInterface::privateData(QPointer<Caller> caller,
     if (!m_privateDatas.contains(cliID)) return QVariant();
 
     return m_privateDatas[cliID][name];
+}
+
+void
+ObjectInterface::detachObject() {
+    qInfo().noquote()
+        << QString("Object(%1),disconnected,disconnected").arg(m_name);
+    m_dataServer->close();
+    m_dataServer->deleteLater();
+    // m_ctrlSocket->disconnectFromServer();
+    // m_ctrlSocket->deleteLater();
+    m_objectPlug->disconnectFromServer();
+    m_objectPlug->deleteLater();
+    deleteLater();
 }
 
 void
@@ -451,8 +564,8 @@ ObjectInterface::on_thread_call(bool block, qint64 callerID,
                                 const QVariantList& args) {
     QByteArray checkObj(1, (quint8)NS_BGMRPC::CTRL_CHECKOBJECT);
     checkObj.append(object.toLatin1());
-    m_ctrlSocket->write(checkObj);
-    if (!m_ctrlSocket->waitForBytesWritten()) {
+    m_objectPlug->write(checkObj);
+    if (!m_objectPlug->waitForBytesWritten()) {
         qWarning() << QString(
                           "Object(%1),localCall-checkObject,Can't request "
                           "check object(%2)")
@@ -461,8 +574,8 @@ ObjectInterface::on_thread_call(bool block, qint64 callerID,
         emit thread_signal_return(QVariant());
         return;
     }
-    if (!m_ctrlSocket->waitForReadyRead() ||
-        !(quint8)(m_ctrlSocket->readAll()[0])) {
+    if (!m_objectPlug->waitForReadyRead() ||
+        !(quint8)(m_objectPlug->readAll()[0])) {
         qWarning() << QString(
                           "Object(%1),localCall-checkObject,"
                           "(Call local method)The requested "
@@ -595,6 +708,9 @@ callData.append(
         localCallSocket->deleteLater();
 }
 
+void
+ObjectInterface::initial(int /*argc*/, char** /*argv*/) {}
+
 bool
 ObjectInterface::verification(QPointer<Caller> /*caller*/,
                               const QString& /*method*/,
@@ -643,4 +759,19 @@ ObjectInterface::exec(const QString& mID, QPointer<Caller> caller,
                      &QThread::deleteLater);
 
     callThread->start();
+}
+
+QByteArray
+NS_BGMRPCObjectInterface::refObjName(const QByteArray& grp,
+                                     const QByteArray& app,
+                                     const QByteArray& name) {
+    QByteArray _name;
+
+    if (!grp.isEmpty()) _name = grp + "::";
+    // if (!app.isEmpty()) _name += app + "::";
+    // NOTE call("grp::app::obj::method", arg1, arg2)
+
+    _name += name;
+
+    return _name;
 }

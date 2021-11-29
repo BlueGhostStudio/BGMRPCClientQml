@@ -157,6 +157,8 @@ listObjects() {
 
 int
 main(int argc, char* argv[]) {
+    QCoreApplication::setSetuidAllowed(true);
+
     QCoreApplication a(argc, argv);
 
     QString usage =
@@ -167,12 +169,12 @@ main(int argc, char* argv[]) {
         return -1;
     }
 
-    ctrlSocket.connectToServer(BGMRPCCtrlSocket);
+    ctrlSocket.connectToServer(BGMRPCServerCtrlSocket);
 
     if (ctrlSocket.waitForConnected(500)) serverRunning = true;
 
     if (serverRunning) {
-        QByteArray cmd(1, NS_BGMRPC::CTRL_DAEMONCTRL);
+        /*QByteArray cmd(1, NS_BGMRPC::CTRL_DAEMONCTRL);
         //        cmd[0] = NS_BGMRPC::CTRL_DAEMONCTRL;
         ctrlSocket.write(cmd);
         if (!ctrlSocket.waitForBytesWritten()) return -1;
@@ -180,7 +182,7 @@ main(int argc, char* argv[]) {
         if (ctrlSocket.waitForReadyRead())
             ctrlSocket.readAll();
         else
-            return -1;
+            return -1;*/
 
         binPath = getSettings(ctrlSocket, NS_BGMRPC::CNF_PATH_BIN);
     }

@@ -4,7 +4,7 @@
 
 namespace NS_BGMRPC {
 enum Ctrl {
-    CTRL_DAEMONCTRL = 0,
+    // CTRL_DAEMONCTRL = 0,
     CTRL_STOPSERVER,
     //    CTRL_CREATEOBJ,
     //    CTRL_GETSETTINGSFILE,

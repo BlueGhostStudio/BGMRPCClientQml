@@ -34,10 +34,10 @@ class OBJECTINTERFACE_EXPORT ObjectInterface : public QObject {
 public:
     ObjectInterface(QObject* parent = nullptr);
 
-    void setAppPath(const QString& path);
-    QString appPath() const;
-    void setDataPath(const QString& path);
-    QString dataPath() const;
+    void setAppPath(const QByteArray& path);
+    QByteArray appPath() const;
+    void setDataPath(const QByteArray& path);
+    QByteArray dataPath() const;
 
     //! \name 初始化和对象属性
     //! @{
@@ -46,10 +46,15 @@ public:
      * \param 对象明
      * \return 返回成功与否
      */
-    bool registerObject(const QByteArray& appName, const QByteArray& name,
-                        const QByteArray& grp = QByteArray());
-    virtual void initial(const QString& appPath, const QString& dataPath,
-                         int argc, char** argv);
+    /*bool registerObject(const QByteArray& appName, const QByteArray& name,
+                        const QByteArray& grp = QByteArray());*/
+    /*static QLocalSocket* plugIntoBGMRPC(const QByteArray& group,
+                                        const QByteArray& app,
+                                        const QByteArray& name);*/
+
+    bool setup(const QByteArray& appName, const QByteArray& name,
+               const QByteArray& grp = QByteArray(), int argc = 0,
+               char** argv = nullptr);
     /*!
      * \brief 获取当前对象名
      * \return 当前对象名
@@ -132,13 +137,16 @@ public:
     //! @}
 
 signals:
-    void objectDisconnected();
-    void callerExisted(QPointer<Caller>);
-    void relatedCallerExited(QPointer<Caller>);
+    //    void objectDisconnected();
+    void callerExisted(QPointer<NS_BGMRPCObjectInterface::Caller>);
+    void relatedCallerExited(QPointer<NS_BGMRPCObjectInterface::Caller>);
 
     void thread_signal_call(bool block, qint64 callerID, const QString& object,
                             const QString& method, const QVariantList& args);
     void thread_signal_return(const QVariant&);
+
+public slots:
+    void detachObject();
 
 private slots:
     //    void callMethod();
@@ -147,6 +155,7 @@ private slots:
                         const QString& method, const QVariantList& args);
 
 protected:
+    virtual void initial(int, char**);
     virtual bool verification(QPointer<Caller> caller, const QString& method,
                               const QVariantList& args);
     virtual void exec(const QString& mID, QPointer<Caller> caller,
@@ -154,13 +163,13 @@ protected:
     virtual void registerMethods() = 0;
 
 protected:
-    QLocalSocket* m_ctrlSocket;
+    QLocalSocket* m_objectPlug;
     QLocalServer* m_dataServer;
-    QString m_appPath;
-    QString m_dataPath;
-    QString m_name;
-    QString m_appName;
-    QString m_grp;
+    QByteArray m_appPath;
+    QByteArray m_dataPath;
+    QByteArray m_name;
+    QByteArray m_appName;
+    QByteArray m_grp;
     //    QMap<QString, T_METHOD> m_methods;
     QMap<QString, std::function<QVariant(ObjectInterface*, QPointer<Caller>,
                                          const QVariantList&)>>
@@ -170,6 +179,9 @@ protected:
     typedef QVariantMap t_priData;
     QMap<quint64, t_priData> m_privateDatas;
 };
+
+QByteArray refObjName(const QByteArray& grp, const QByteArray& app,
+                      const QByteArray& name);
 }  // namespace NS_BGMRPCObjectInterface
 
 #endif  // OBJECTINTERFACE_H

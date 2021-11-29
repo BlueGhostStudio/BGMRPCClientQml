@@ -17,9 +17,6 @@ class JSPLUGIN2_EXPORT JsEngine : public ObjectInterface {
 public:
     JsEngine(QObject* parent = nullptr);
 
-    void initial(const QString& appPath, const QString& dataPath, int argc,
-                 char** argv) override;
-
     QVariant callJs(const QString& name, QPointer<Caller> cli,
                     const QVariantList& args);
     bool loadJsFile(const QString& jsFileName);
@@ -28,6 +25,8 @@ public:
     QString PWD() const;
 
 protected:
+    void initial(int argc, char** argv) override;
+
     void registerMethods() override;
     void registerMethod(const QString& methodName);
     bool verification(QPointer<Caller> caller, const QString& method,

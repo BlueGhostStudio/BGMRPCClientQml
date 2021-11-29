@@ -5,6 +5,7 @@
 #include <QRegularExpression>
 
 #include "bgmrpc.h"
+#include "objectplug.h"
 
 using namespace NS_BGMRPC;
 
@@ -48,7 +49,7 @@ Client::operator==(quint64 cliID) const {
 
 QLocalSocket*
 Client::connectObject(const QString& mID, const QString& objName) {
-    ObjectCtrl* objCtrl = m_BGMRPC->objectCtrl(objName);
+    ObjectPlug* objCtrl = m_BGMRPC->objectCtrl(objName);
     if (!objCtrl) {
         QJsonObject errJsonObj;
         errJsonObj["type"] = "error";
@@ -64,7 +65,7 @@ Client::connectObject(const QString& mID, const QString& objName) {
     } else {
         QLocalSocket* relSocket = new QLocalSocket(this);
         //        relSocket->setObjectName(objName);
-        relSocket->connectToServer(objCtrl->dataSocketName());
+        relSocket->connectToServer(BGMRPCObjPrefix + objName);
         if (relSocket->waitForConnected()) {
             m_relatedObjectSockets[objName] = relSocket;
 

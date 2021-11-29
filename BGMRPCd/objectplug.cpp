@@ -1,4 +1,4 @@
-#include "objectctrl.h"
+#include "objectplug.h"
 
 #include <bgmrpccommon.h>
 
@@ -9,9 +9,9 @@
 
 using namespace NS_BGMRPC;
 
-ObjectCtrl::ObjectCtrl(/*BGMRPC* bgmrpc, */ QLocalSocket* socket,
+/*ObjectCtrl::ObjectCtrl(QLocalSocket* socket,
                        QObject* parent)
-    : QObject(parent), /*m_BGMRPC(bgmrpc), */ m_ctrlStroke(socket) {
+    : QObject(parent),  m_ctrlStroke(socket) {
     m_daemonCtrl = false;
     QObject::connect(m_ctrlStroke, &QLocalSocket::readyRead, [&]() {
         QByteArray data = m_ctrlStroke->readAll();
@@ -66,4 +66,45 @@ ObjectCtrl::dataSocketName() const {
 void
 ObjectCtrl::sendCtrlData(const QByteArray& data) {
     m_ctrlStroke->write(data);
+}*/
+
+ObjectPlug::ObjectPlug(BGMRPC* bgmrpc, QLocalSocket* socket, QObject* parent)
+    : CtrlBase(bgmrpc, socket, parent) {
+    QObject::connect(m_ctrlSocket, &QLocalSocket::disconnected, this, [&]() {
+        m_ctrlSocket->deleteLater();
+        deleteLater();
+        if (!m_objectName.isEmpty()) m_BGMRPC->removeObject(m_objectName);
+    });
+}
+
+/*QByteArray
+ObjectCtrl::dataSocketName() const {
+    return m_dataSocketName;
+}*/
+
+/*void
+ObjectCtrl::closeCtrlSocket() {
+    m_ctrlSocket->disconnectFromServer();
+}*/
+
+bool
+ObjectPlug::ctrl(const QByteArray& data) {
+    if (!CtrlBase::ctrl(data)) {
+        switch (data[0]) {
+        case NS_BGMRPC::CTRL_REGISTER:
+            m_objectName = data.mid(1);
+            m_dataSocketName = BGMRPCObjPrefix + m_objectName;
+            if (m_BGMRPC->registerObject(
+                    this,
+                    m_objectName))  // FINISHED register object
+                sendCtrlData(QByteArray(1, '\x1'));
+            else
+                sendCtrlData(QByteArray(1, '\x0'));
+            break;
+        }
+
+        return true;
+    }
+
+    return true;
 }

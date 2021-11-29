@@ -8,59 +8,90 @@
 #include <QProcess>
 
 #include "client.h"
+#include "objectplug.h"
+#include "serverctrl.h"
 
 using namespace NS_BGMRPC;
 
 BGMRPC::BGMRPC(QObject* parent) : QObject(parent) {
-    m_ctrlServer = new QLocalServer(this);
+    // m_objectCtrlServer = new QLocalServer(this);
+    // m_objectCtrlServer->setSocketOptions(QLocalServer::WorldAccessOption);
+
+    m_serverCtrlServer = new QLocalServer(this);
+    m_serverCtrlServer->setSocketOptions(QLocalServer::UserAccessOption);
+
+    m_objectSocketServer = new QLocalServer(this);
+    m_objectSocketServer->setSocketOptions(QLocalServer::WorldAccessOption);
+
     m_BGMRPCServer = new QWebSocketServer(
         QString(), QWebSocketServer::NonSecureMode, parent);
     m_port = 8000;
     m_address = QHostAddress::Any;
 }
 
-BGMRPC::~BGMRPC() { m_ctrlServer->close(); }
+BGMRPC::~BGMRPC() { m_serverCtrlServer->close(); }
 
 bool
 BGMRPC::start() {
-    if (m_ctrlServer->listen(/*NS_BGMRPC::*/ BGMRPCCtrlSocket) &&
+    if (m_serverCtrlServer->listen(/*NS_BGMRPC::*/ BGMRPCServerCtrlSocket) &&
+        // m_objectCtrlServer->listen(BGMRPCObjectCtrlSocket) &&
+        m_objectSocketServer->listen(BGMRPCObjectSocket) &&
         m_BGMRPCServer->listen(m_address, m_port)) {
         qInfo().noquote() << "BGMRPC,start,Started";
 
-        QObject::connect(m_ctrlServer, &QLocalServer::newConnection, [=]() {
-            ObjectCtrl* objCtrl = new ObjectCtrl(
-                /*this, */ m_ctrlServer->nextPendingConnection(), this);
+        QObject::connect(
+            m_serverCtrlServer, &QLocalServer::newConnection, this, [=]() {
+                //            ObjectCtrl* objCtrl = new ObjectCtrl(
+                //                this,
+                //                m_serverCtrlServer->nextPendingConnection());
+                ServerCtrl* serCtrl = new ServerCtrl(
+                    this, m_serverCtrlServer->nextPendingConnection());
 
-            QObject::connect(objCtrl, &ObjectCtrl::registerObject, this,
-                             &BGMRPC::ctrl_registerObject);
+                /*QObject::connect(objCtrl,
+                &ObjectCtrl::registerObject, this,
+                                 &BGMRPC::ctrl_registerObject);
 
-            QObject::connect(objCtrl, &ObjectCtrl::checkObject, this,
-                             &BGMRPC::ctrl_checkObject);
+                QObject::connect(objCtrl, &ObjectCtrl::checkObject,
+                this, &BGMRPC::ctrl_checkObject);
 
-            QObject::connect(objCtrl, &ObjectCtrl::getConfig, this,
-                             &BGMRPC::ctrl_getConfig);
+                QObject::connect(objCtrl, &ObjectCtrl::getConfig,
+                this, &BGMRPC::ctrl_getConfig);
 
-            QObject::connect(objCtrl, &ObjectCtrl::getSetting, this,
-                             &BGMRPC::ctrl_getSetting);
+                QObject::connect(objCtrl, &ObjectCtrl::getSetting,
+                this, &BGMRPC::ctrl_getSetting);
 
-            QObject::connect(objCtrl, &ObjectCtrl::detachObject, this,
-                             &BGMRPC::ctrl_detachObject);
-            QObject::connect(objCtrl, &ObjectCtrl::listObjects, this,
-                             &BGMRPC::ctrl_listObjects);
+                QObject::connect(objCtrl,
+                &ObjectCtrl::detachObject, this,
+                                 &BGMRPC::ctrl_detachObject);
+                QObject::connect(objCtrl, &ObjectCtrl::listObjects,
+                this, &BGMRPC::ctrl_listObjects);
 
-            QObject::connect(
-                objCtrl, &ObjectCtrl::removeObject, [&](const QString& name) {
-                    qInfo().noquote()
-                        << QString("Object(%1),removeObject,Disconnected")
-                               .arg(name);
-                    m_objects.remove(name);
-                });
+                QObject::connect(
+                    objCtrl, &ObjectCtrl::removeObject, [&](const
+                QString& name) { qInfo().noquote()
+                            <<
+                QString("Object(%1),removeObject,Disconnected")
+                                   .arg(name);
+                        m_objects.remove(name);
+                    });
 
-            QObject::connect(objCtrl, &ObjectCtrl::stopServer, []() {
-                qInfo() << "BGMRPC,stopServer,Stoped";
-                qApp->quit();
+                QObject::connect(objCtrl, &ObjectCtrl::stopServer,
+                []() { qInfo() << "BGMRPC,stopServer,Stoped";
+                    qApp->quit();
+                });*/
             });
-        });
+
+        /*QObject::connect(
+            m_objectCtrlServer, &QLocalServer::newConnection, this, [=]() {
+                CtrlBase* objCtrl = new CtrlBase(
+                    this, m_objectCtrlServer->nextPendingConnection());
+            });*/
+
+        QObject::connect(
+            m_objectSocketServer, &QLocalServer::newConnection, this, [=]() {
+                ObjectPlug* objPlug = new ObjectPlug(
+                    this, m_objectSocketServer->nextPendingConnection());
+            });
 
         QObject::connect(m_BGMRPCServer, &QWebSocketServer::newConnection, this,
                          &BGMRPC::newClient);
@@ -80,7 +111,7 @@ BGMRPC::setPort(quint16 port) {
     m_port = port;
 }
 
-ObjectCtrl*
+ObjectPlug*
 BGMRPC::objectCtrl(const QString& name) {
     return m_objects[name];
 }
@@ -97,7 +128,7 @@ BGMRPC::initial(const QString& file) {
     m_port = m_settings->value("server/port", 8000).toInt();
 }
 
-void
+/*void
 BGMRPC::ctrl_registerObject(const QString& name) {
     qInfo().noquote() << "BGMRPC,Register Object," << name;
     m_objects[name] = qobject_cast<ObjectCtrl*>(sender());
@@ -116,10 +147,6 @@ BGMRPC::ctrl_checkObject(const QString& name) {
 void
 BGMRPC::ctrl_getConfig(quint8 cnf) {
     ObjectCtrl* theObjCtrl = qobject_cast<ObjectCtrl*>(sender());
-    /*QByteArray rootPath = m_settings->value("path/root")
-                              .toString()
-                              .replace(QRegExp("^~"), QDir::homePath())
-                              .toUtf8();*/
     QByteArray rootPath =
         m_settings->value("path/root")
             .toString()
@@ -192,7 +219,7 @@ BGMRPC::ctrl_listObjects() {
         theObjCtrl->sendCtrlData(QByteArray::fromRawData("\x0", 1));
     else
         theObjCtrl->sendCtrlData(listData);
-}
+}*/
 
 /*void BGMRPC::createObject(const QString& name, const QString& oif,
                           const QString& crArgs)
@@ -210,4 +237,94 @@ BGMRPC::newClient() {
     qInfo().noquote() << "BGMRPC,newClient,New client connected";
 
     new Client(this, m_BGMRPCServer->nextPendingConnection());
+}
+
+QByteArray
+BGMRPC::listObjects() {
+    QByteArray listData;
+    bool begin = true;
+    foreach (QString objName, m_objects.keys()) {
+        if (begin)
+            begin = false;
+        else
+            listData += ',';
+
+        listData += objName.toLatin1();
+    }
+
+    return listData;
+}
+
+void
+BGMRPC::stopServer() {
+    qInfo() << "BGMRPC,stopServer,Stoped";
+    qApp->quit();
+}
+
+bool
+BGMRPC::detachObject(const QByteArray& name) {
+    if (m_objects.contains(name)) {
+        m_objects[name]->closeCtrlSocket();
+        return true;
+    } else
+        return false;
+}
+
+void
+BGMRPC::removeObject(const QByteArray& name) {
+    // FINISHED 实现BGMRPC::detachObject, ObjectCtrl
+    m_objects.remove(name);
+}
+
+bool
+BGMRPC::registerObject(ObjectPlug* ctrl, const QByteArray& name) {
+    qInfo().noquote() << "BGMRPC,Register Object," << name;
+    // m_objects[name] = ctrl;
+    if (m_objects.contains(name))
+        return false;
+    else {
+        m_objects[name] = ctrl;
+        return true;
+    }
+}
+
+bool
+BGMRPC::checkObject(const QByteArray& name) {
+    return m_objects.contains(name);
+}
+
+QByteArray
+BGMRPC::getConfig(quint8 cnf) {
+    QByteArray rootPath =
+        m_settings->value("path/root")
+            .toString()
+            .replace(QRegularExpression("^~"), QDir::homePath())
+            .toUtf8();
+
+    QByteArray configData;
+    switch (cnf) {
+    case CNF_PATH_ROOT:
+        return rootPath;
+    case CNF_PATH_BIN:
+        return m_settings->value("path/bin", rootPath + "/bin")
+            .toString()
+            .replace(QRegularExpression("^~"), QDir::homePath())
+            .toUtf8();
+    case CNF_PATH_INTERFACES:
+        return m_settings->value("path/interfaces", rootPath + "/interfaces")
+            .toString()
+            .replace(QRegularExpression("^~"), QDir::homePath())
+            .toUtf8();
+    case CNF_PATH_LOGS:
+        return m_settings->value("path/logs", rootPath + "/logs")
+            .toString()
+            .replace(QRegularExpression("^~"), QDir::homePath())
+            .toUtf8();
+    }
+    return QByteArray(1, '\x0');
+}
+
+QByteArray
+BGMRPC::getSetting(const QByteArray& key) {
+    return m_settings->value(key, "").toByteArray();
 }
