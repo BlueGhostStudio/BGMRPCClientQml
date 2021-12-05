@@ -1,6 +1,3 @@
-[submodule "BGMRPCConsole/CallGraph"]
-	path = BGMRPCConsole/CallGraph
-	url = https://github.com/SeekAWayOut/CallGraph.git
 [submodule "cmake"]
 	path = cmake
 	url = https://github.com/SeekAWayOut/BGStudio-cmake.git

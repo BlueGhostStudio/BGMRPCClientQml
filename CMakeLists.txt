@@ -15,7 +15,6 @@ add_subdirectory(BGMRPCCommon)
 add_subdirectory(BGMRPCObjectInterface)
 add_subdirectory(BGMRPCObjectLoader)
 add_subdirectory(BGMRPCCtrl)
-add_subdirectory(BGMRPCConsole)
 
 if(QT_VERSION_MAJOR EQUAL 6)
     add_subdirectory(BGMRPCd)
