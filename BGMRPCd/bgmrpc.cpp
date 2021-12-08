@@ -23,8 +23,8 @@ BGMRPC::BGMRPC(QObject* parent) : QObject(parent) {
     m_objectSocketServer = new QLocalServer(this);
     m_objectSocketServer->setSocketOptions(QLocalServer::WorldAccessOption);
 
-    m_BGMRPCServer = new QWebSocketServer(
-        QString(), QWebSocketServer::NonSecureMode, parent);
+    m_BGMRPCServer =
+        new QWebSocketServer(QString(), QWebSocketServer::SecureMode, parent);
     m_port = 8000;
     m_address = QHostAddress::Any;
 }
