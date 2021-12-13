@@ -6,6 +6,7 @@
 #include <QDebug>
 #include <QLocalSocket>
 #include <QProcess>
+#include <QSslKey>
 
 #include "client.h"
 #include "objectplug.h"
@@ -22,11 +23,6 @@ BGMRPC::BGMRPC(QObject* parent) : QObject(parent) {
 
     m_objectSocketServer = new QLocalServer(this);
     m_objectSocketServer->setSocketOptions(QLocalServer::WorldAccessOption);
-
-    m_BGMRPCServer =
-        new QWebSocketServer(QString(), QWebSocketServer::SecureMode, parent);
-    m_port = 8000;
-    m_address = QHostAddress::Any;
 }
 
 BGMRPC::~BGMRPC() { m_serverCtrlServer->close(); }
@@ -126,6 +122,52 @@ BGMRPC::initial(const QString& file) {
     QString ip = m_settings->value("server/ip").toString();
     m_address = !ip.isEmpty() ? QHostAddress(ip) : QHostAddress::Any;
     m_port = m_settings->value("server/port", 8000).toInt();
+
+    bool ssl = false;
+    QString ssl_certificate =
+        m_settings->value("server/ssl_certificate").toString();
+    QString ssl_certificate_key =
+        m_settings->value("server/ssl_certificate_key").toString();
+    if (!ssl_certificate.isEmpty() && !ssl_certificate_key.isEmpty()) {
+        ssl_certificate =
+            ssl_certificate.replace(QRegularExpression("^~"), QDir::homePath());
+        ssl_certificate_key = ssl_certificate_key.replace(
+            QRegularExpression("^~"), QDir::homePath());
+
+        QString rootPath = getConfig(CNF_PATH_ROOT);
+
+        if (QDir::isRelativePath(ssl_certificate))
+            ssl_certificate = rootPath + '/' + ssl_certificate;
+        if (QDir::isRelativePath(ssl_certificate_key))
+            ssl_certificate_key = rootPath + '/' + ssl_certificate_key;
+
+        QFile crtFile(ssl_certificate);
+        QFile keyFile(ssl_certificate_key);
+        if (crtFile.open(QIODevice::ReadOnly) &&
+            keyFile.open(QIODevice::ReadOnly)) {
+            m_BGMRPCServer =
+                new QWebSocketServer(QString(), QWebSocketServer::SecureMode);
+            ssl = true;
+
+            QSslConfiguration sslConfiguration;
+
+            QSslCertificate certificate(&crtFile, QSsl::Pem);
+            QSslKey sslKey(&keyFile, QSsl::Rsa, QSsl::Pem);
+
+            sslConfiguration.setPeerVerifyMode(QSslSocket::VerifyNone);
+            sslConfiguration.setLocalCertificate(certificate);
+            sslConfiguration.setPrivateKey(sslKey);
+
+            m_BGMRPCServer->setSslConfiguration(sslConfiguration);
+        }
+
+        crtFile.close();
+        keyFile.close();
+    }
+
+    if (!ssl)
+        m_BGMRPCServer =
+            new QWebSocketServer(QString(), QWebSocketServer::NonSecureMode);
 }
 
 /*void
@@ -296,7 +338,7 @@ BGMRPC::checkObject(const QByteArray& name) {
 QByteArray
 BGMRPC::getConfig(quint8 cnf) {
     QByteArray rootPath =
-        m_settings->value("path/root")
+        m_settings->value("path/root", QDir::homePath())
             .toString()
             .replace(QRegularExpression("^~"), QDir::homePath())
             .toUtf8();

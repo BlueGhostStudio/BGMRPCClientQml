@@ -32,6 +32,7 @@ add_executable(
   serverctrl.cpp
   ctrlbase.h
   ctrlbase.cpp)
+
 set_target_properties(
   BGMRPCd
   PROPERTIES OUTPUT_NAME BGMRPCd

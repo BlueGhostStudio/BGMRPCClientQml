@@ -85,11 +85,11 @@ BGMRPCClient::callMethod(CallChain* callChain, const QString& object,
     m_socket.sendTextMessage(QJsonDocument::fromVariant(callVariant).toJson());
 }*/
 
-Calling::Calling(BGMRPCClient *client, const QString &mID, QObject *parent)
+Calling::Calling(BGMRPCClient* client, const QString& mID, QObject* parent)
     : QObject(parent), m_client(client), m_mID(mID) {
     QObject::connect(
         m_client, &BGMRPCClient::onReturn, this,
-        [=](const QJsonDocument &jsonDoc) {
+        [=](const QJsonDocument& jsonDoc) {
             if (jsonDoc["mID"].toString() == m_mID) {
                 QObject::disconnect(m_client, &BGMRPCClient::onReturn, this, 0);
                 QObject::disconnect(m_client, &BGMRPCClient::onError, this, 0);
@@ -99,7 +99,7 @@ Calling::Calling(BGMRPCClient *client, const QString &mID, QObject *parent)
         });
     QObject::connect(
         m_client, &BGMRPCClient::onError, this,
-        [=](const QJsonDocument &jsonDoc) {
+        [=](const QJsonDocument& jsonDoc) {
             if (jsonDoc["mID"].toString() == m_mID) {
                 QObject::disconnect(m_client, &BGMRPCClient::onReturn, this, 0);
                 QObject::disconnect(m_client, &BGMRPCClient::onError, this, 0);
@@ -110,15 +110,15 @@ Calling::Calling(BGMRPCClient *client, const QString &mID, QObject *parent)
 }
 
 void
-Calling::then(std::function<void(const QVariant &)> ret,
-              std::function<void(const QVariant &)> err) {
+Calling::then(std::function<void(const QVariant&)> ret,
+              std::function<void(const QVariant&)> err) {
     m_returnCallback = ret;
     m_errorCallback = err;
 }
 
 quint64 BGMRPCClient::m_totalMID = 0;
 
-BGMRPCClient::BGMRPCClient(QObject *parent) : QObject(parent) {
+BGMRPCClient::BGMRPCClient(QObject* parent) : QObject(parent) {
     QObject::connect(
         &m_socket, &QWebSocket::stateChanged, this,
         [=](QAbstractSocket::SocketState state) {
@@ -130,7 +130,7 @@ BGMRPCClient::BGMRPCClient(QObject *parent) : QObject(parent) {
                      &BGMRPCClient::disconnected);
 
     QObject::connect(&m_socket, &QWebSocket::textMessageReceived, this,
-                     [=](const QString &message) {
+                     [=](const QString& message) {
                          QJsonDocument jsonDoc =
                              QJsonDocument::fromJson(message.toUtf8());
                          QString type = jsonDoc["type"].toString();
@@ -151,7 +151,14 @@ BGMRPCClient::isConnected() {
 }
 
 void
-BGMRPCClient::connectToHost(const QUrl &url) {
+BGMRPCClient::connectToHost(const QUrl& url) {
+    if (url.scheme() == "wss") {
+        QSslConfiguration conf;
+        conf.setPeerVerifyMode(QSslSocket::VerifyNone);
+        // conf.setProtocol(QSsl::TlsV1SslV3);
+        m_socket.setSslConfiguration(conf);
+    }
+
     m_socket.open(url);
 }
 
@@ -160,9 +167,9 @@ BGMRPCClient::disconnectFromHost() {
     m_socket.close();
 }
 
-Calling *
-BGMRPCClient::callMethod(const QString &object, const QString &method,
-                         const QVariantList &args) {
+Calling*
+BGMRPCClient::callMethod(const QString& object, const QString& method,
+                         const QVariantList& args) {
     QString mID = QString("#%1").arg(m_totalMID);
     m_totalMID++;
     QVariantMap callVariant;
@@ -171,7 +178,7 @@ BGMRPCClient::callMethod(const QString &object, const QString &method,
     callVariant["args"] = args;
     callVariant["mID"] = mID;
 
-    Calling *newCalling = new Calling(this, mID);
+    Calling* newCalling = new Calling(this, mID);
     m_socket.sendTextMessage(QJsonDocument::fromVariant(callVariant).toJson());
 
     return newCalling;
