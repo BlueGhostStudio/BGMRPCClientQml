@@ -88,21 +88,21 @@ BGMRPCClient::callMethod(CallChain* callChain, const QString& object,
 Calling::Calling(BGMRPCClient* client, const QString& mID, QObject* parent)
     : QObject(parent), m_client(client), m_mID(mID) {
     QObject::connect(
-        m_client, &BGMRPCClient::onReturn, this,
+        m_client, &BGMRPCClient::returned, this,
         [=](const QJsonDocument& jsonDoc) {
             if (jsonDoc["mID"].toString() == m_mID) {
-                QObject::disconnect(m_client, &BGMRPCClient::onReturn, this, 0);
-                QObject::disconnect(m_client, &BGMRPCClient::onError, this, 0);
+                QObject::disconnect(m_client, &BGMRPCClient::returned, this, 0);
+                QObject::disconnect(m_client, &BGMRPCClient::error, this, 0);
                 m_returnCallback(jsonDoc["values"].toVariant());
                 deleteLater();
             }
         });
     QObject::connect(
-        m_client, &BGMRPCClient::onError, this,
+        m_client, &BGMRPCClient::error, this,
         [=](const QJsonDocument& jsonDoc) {
             if (jsonDoc["mID"].toString() == m_mID) {
-                QObject::disconnect(m_client, &BGMRPCClient::onReturn, this, 0);
-                QObject::disconnect(m_client, &BGMRPCClient::onError, this, 0);
+                QObject::disconnect(m_client, &BGMRPCClient::returned, this, 0);
+                QObject::disconnect(m_client, &BGMRPCClient::error, this, 0);
                 m_errorCallback(jsonDoc.toVariant());
                 deleteLater();
             }
@@ -124,6 +124,8 @@ BGMRPCClient::BGMRPCClient(QObject* parent) : QObject(parent) {
         [=](QAbstractSocket::SocketState state) {
             emit isConnectedChanged(state == QAbstractSocket::ConnectedState);
         });
+    QObject::connect(&m_socket, &QWebSocket::stateChanged, this,
+                     &BGMRPCClient::stateChanged);
     QObject::connect(&m_socket, &QWebSocket::connected, this,
                      &BGMRPCClient::connected);
     QObject::connect(&m_socket, &QWebSocket::disconnected, this,
@@ -135,13 +137,13 @@ BGMRPCClient::BGMRPCClient(QObject* parent) : QObject(parent) {
                              QJsonDocument::fromJson(message.toUtf8());
                          QString type = jsonDoc["type"].toString();
                          if (type == "return")
-                             emit onReturn(jsonDoc);
+                             emit returned(jsonDoc);
                          else if (type == "error")
-                             emit onError(jsonDoc);
+                             emit error(jsonDoc);
                          else if (type == "signal")
-                             emit onRemoteSignal(jsonDoc["object"].toString(),
-                                                 jsonDoc["signal"].toString(),
-                                                 jsonDoc["args"].toArray());
+                             emit remoteSignal(jsonDoc["object"].toString(),
+                                               jsonDoc["signal"].toString(),
+                                               jsonDoc["args"].toArray());
                      });
 }
 
@@ -180,6 +182,8 @@ BGMRPCClient::callMethod(const QString& object, const QString& method,
 
     Calling* newCalling = new Calling(this, mID);
     m_socket.sendTextMessage(QJsonDocument::fromVariant(callVariant).toJson());
+
+    emit calling(mID, object, method);
 
     return newCalling;
 }

@@ -87,11 +87,13 @@ public:
 
 signals:
     void isConnectedChanged(bool status);
+    void stateChanged(QAbstractSocket::SocketState state);
     void connected();
     void disconnected();
-    void onReturn(const QJsonDocument& jsonDoc);
-    void onError(const QJsonDocument& jsonDoc);
-    void onRemoteSignal(const QString& obj, const QString& sig,
+    void calling(const QString& mID, const QString& obj, const QString& method);
+    void returned(const QJsonDocument& jsonDoc);
+    void error(const QJsonDocument& jsonDoc);
+    void remoteSignal(const QString& obj, const QString& sig,
                         const QJsonArray& args);
 
 private:
