@@ -76,7 +76,7 @@ main(int argc, char* argv[]) {
     bool noAppPrefix = false;
     int opt = 0;
     opterr = 0;
-    while ((opt = getopt(argc, argv, "g:a:n:I:p:")) != -1) {
+    while ((opt = getopt(argc, argv, "g:a:An:I:p:")) != -1) {
         switch (opt) {
         case 'g':
             appGroup = optarg;
@@ -85,7 +85,7 @@ main(int argc, char* argv[]) {
             app = optarg;
             break;
         case 'A':
-            noAppPrefix = optarg;
+            noAppPrefix = true;
             break;
         case 'n':
             remoteObjectName = optarg;
