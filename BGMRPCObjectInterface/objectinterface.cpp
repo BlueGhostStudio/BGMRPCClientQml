@@ -139,7 +139,7 @@ ObjectInterface::setup(const QByteArray& appName, const QByteArray& name,
     QString dataServerName = BGMRPCObjPrefix + objName;
 
     if (m_dataServer->listen(dataServerName)) {
-        m_name = name;
+        m_name = objName;
         m_grp = grp;
         m_appName = appName;
         qInfo().noquote()
