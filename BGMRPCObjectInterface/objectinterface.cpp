@@ -75,10 +75,12 @@ ObjectInterface::plugIntoBGMRPC(const QByteArray& group, const QByteArray& app,
 
 bool
 ObjectInterface::setup(const QByteArray& appName, const QByteArray& name,
-                       const QByteArray& grp, int argc, char** argv) {
+                       const QByteArray& grp, int argc, char** argv,
+                       bool noAppPrefix) {
     // if (!objPlug) return false;
-    QByteArray objName = refObjName(
-        grp, appName, name);  // grp.isEmpty() ? name : grp + "::" + name;
+    QByteArray objName =
+        refObjName(grp, appName, name,
+                   noAppPrefix);  // grp.isEmpty() ? name : grp + "::" + name;
 
     m_objectPlug = new QLocalSocket;
     m_objectPlug->connectToServer(BGMRPCObjectSocket);
@@ -97,7 +99,7 @@ ObjectInterface::setup(const QByteArray& appName, const QByteArray& name,
                        "An object named \"%1\" already exists on the BGMRPC")
                        .arg(objName);
 
-            return -1;
+            return false;
         }
     } else {
         delete m_objectPlug;
@@ -105,7 +107,7 @@ ObjectInterface::setup(const QByteArray& appName, const QByteArray& name,
         qWarning().noquote()
             << QString("Object(%1) connect to BGMRPC FAIL").arg(objName);
 
-        return -1;
+        return false;
     }
 
     // m_ctrlSocket = new QLocalSocket();
@@ -764,10 +766,12 @@ ObjectInterface::exec(const QString& mID, QPointer<Caller> caller,
 QByteArray
 NS_BGMRPCObjectInterface::refObjName(const QByteArray& grp,
                                      const QByteArray& app,
-                                     const QByteArray& name) {
+                                     const QByteArray& name, bool noAppPrefix) {
     QByteArray _name;
+    if (!noAppPrefix) _name = app + "::";
+    if (!grp.isEmpty()) _name = grp + "::" + _name;
 
-    if (!grp.isEmpty()) _name = grp + "::";
+    // if (!grp.isEmpty()) _name = grp + "::";
     // if (!app.isEmpty()) _name += app + "::";
     // NOTE call("grp::app::obj::method", arg1, arg2)
 

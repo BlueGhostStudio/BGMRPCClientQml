@@ -53,8 +53,8 @@ public:
                                         const QByteArray& name);*/
 
     bool setup(const QByteArray& appName, const QByteArray& name,
-               const QByteArray& grp = QByteArray(), int argc = 0,
-               char** argv = nullptr);
+               const QByteArray& grp = QByteArray(),
+               int argc = 0, char** argv = nullptr, bool noAppPrefix = false);
     /*!
      * \brief 获取当前对象名
      * \return 当前对象名
@@ -181,7 +181,7 @@ protected:
 };
 
 QByteArray refObjName(const QByteArray& grp, const QByteArray& app,
-                      const QByteArray& name);
+                      const QByteArray& name, bool noAppPrefix = false);
 }  // namespace NS_BGMRPCObjectInterface
 
 #endif  // OBJECTINTERFACE_H

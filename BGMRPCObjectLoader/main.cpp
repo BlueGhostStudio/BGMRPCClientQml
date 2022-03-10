@@ -73,6 +73,7 @@ main(int argc, char* argv[]) {
     QString libName;
     QByteArray appGroup;
     QByteArray app;
+    bool noAppPrefix = false;
     int opt = 0;
     opterr = 0;
     while ((opt = getopt(argc, argv, "g:a:n:I:p:")) != -1) {
@@ -82,6 +83,9 @@ main(int argc, char* argv[]) {
             break;
         case 'a':
             app = optarg;
+            break;
+        case 'A':
+            noAppPrefix = optarg;
             break;
         case 'n':
             remoteObjectName = optarg;
@@ -139,7 +143,8 @@ main(int argc, char* argv[]) {
             typedef NS_BGMRPCObjectInterface::ObjectInterface* (*T_CREATE)();
             T_CREATE create = (T_CREATE)IFLib.resolve("create");
             NS_BGMRPCObjectInterface::ObjectInterface* objIF = create();
-            ok = objIF->setup(app, remoteObjectName, appGroup, argc, argv);
+            ok = objIF->setup(app, remoteObjectName, appGroup, argc, argv,
+                              noAppPrefix);
             if (!ok) delete objIF;
         }
 

@@ -73,7 +73,7 @@ createObject(int argc, char* argv[]) {
         return;
     }
 
-    QByteArray cmd(1, NS_BGMRPC::CTRL_CHECKOBJECT);
+    /*QByteArray cmd(1, NS_BGMRPC::CTRL_CHECKOBJECT);
     cmd.append(argv[2]);
     ctrlSocket.write(cmd);
     if (!ctrlSocket.waitForBytesWritten() || !ctrlSocket.waitForReadyRead()) {
@@ -88,7 +88,7 @@ createObject(int argc, char* argv[]) {
                                     "Object(%1) already existed")
                                     .arg(argv[2]);
         return;
-    }
+    }*/
 
     QStringList args;
     args << "-n" << argv[2] << "-I" << argv[3];
