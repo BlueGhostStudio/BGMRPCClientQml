@@ -19,6 +19,7 @@ public:
     bool isInternalCall() const;
     QString app() const;
     QString object() const;
+    QString objectID() const;
     QString grp() const;
     //    void setID(quint64 id);
 
@@ -45,6 +46,7 @@ private:
     QString m_calleeMethod;
     QString m_callerApp;
     QString m_callerObject;
+    QString m_callerObjectID;
     QString m_callerGrp;
     NS_BGMRPC::Call m_callType;
     //    static quint64 m_totalID;

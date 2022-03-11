@@ -82,6 +82,11 @@ JsCaller::object() const {
 }
 
 QString
+JsCaller::objectID() const {
+    return !m_caller.isNull() ? m_caller->objectID() : QString();
+}
+
+QString
 JsCaller::grp() const {
     return !m_caller.isNull() ? m_caller->grp() : QString();
 }
@@ -97,6 +102,11 @@ JsJSObj::JsJSObj(JsEngine* jsEngine, QObject* parent)
 QString
 JsJSObj::objectName() const {
     return m_jsEngine->objectName();
+}
+
+QString
+JsJSObj::objectID() const {
+    return m_jsEngine->objectID();
 }
 
 QString

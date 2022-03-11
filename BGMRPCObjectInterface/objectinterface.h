@@ -53,13 +53,14 @@ public:
                                         const QByteArray& name);*/
 
     bool setup(const QByteArray& appName, const QByteArray& name,
-               const QByteArray& grp = QByteArray(),
-               int argc = 0, char** argv = nullptr, bool noAppPrefix = false);
+               const QByteArray& grp = QByteArray(), int argc = 0,
+               char** argv = nullptr, bool noAppPrefix = false);
     /*!
      * \brief 获取当前对象名
      * \return 当前对象名
      */
     QString objectName() const;
+    QString objectID() const;
     QString group() const;
     QString appName() const;
     //! @}
@@ -168,6 +169,7 @@ protected:
     QByteArray m_appPath;
     QByteArray m_dataPath;
     QByteArray m_name;
+    QByteArray m_ID;
     QByteArray m_appName;
     QByteArray m_grp;
     //    QMap<QString, T_METHOD> m_methods;

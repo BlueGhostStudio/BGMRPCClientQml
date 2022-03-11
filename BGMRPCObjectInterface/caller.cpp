@@ -60,6 +60,11 @@ Caller::object() const {
 }
 
 QString
+Caller::objectID() const {
+    return m_callerObjectID;
+}
+
+QString
 Caller::grp() const {
     return m_callerGrp;
 }
@@ -84,7 +89,7 @@ Caller::onReturnData(const QString& mID, const QVariant& data) {
 
     qInfo().noquote() << QString(
                              "Object(%1),returnData,%1.%2 return data.Size: %3")
-                             .arg(m_callee->objectName())
+                             .arg(m_callee->objectID())
                              .arg(m_calleeMethod)
                              .arg(retData.length());
 
@@ -101,7 +106,7 @@ Caller::onEmitSignal(const QString& signal, const QVariant& args) {
 
     QJsonObject signalJsonObj;
     signalJsonObj["type"] = "signal";
-    signalJsonObj["object"] = m_callee->objectName();
+    signalJsonObj["object"] = m_callee->objectID();
     signalJsonObj["signal"] = signal;
     QJsonValue argsJsonValue = args.toJsonValue();
     if (argsJsonValue.isArray())
@@ -114,7 +119,7 @@ Caller::onEmitSignal(const QString& signal, const QVariant& args) {
 
     qInfo().noquote()
         << QString("Object(%1),emitSignal,Emit signal(%2) to Client(%3)")
-               .arg(m_callee->objectName())
+               .arg(m_callee->objectID())
                .arg(signal)
                .arg(m_ID);
 

@@ -78,7 +78,7 @@ ObjectInterface::setup(const QByteArray& appName, const QByteArray& name,
                        const QByteArray& grp, int argc, char** argv,
                        bool noAppPrefix) {
     // if (!objPlug) return false;
-    QByteArray objName =
+    QByteArray objID =
         refObjName(grp, appName, name,
                    noAppPrefix);  // grp.isEmpty() ? name : grp + "::" + name;
 
@@ -86,18 +86,18 @@ ObjectInterface::setup(const QByteArray& appName, const QByteArray& name,
     m_objectPlug->connectToServer(BGMRPCObjectSocket);
     if (m_objectPlug->waitForConnected(-1)) {
         QByteArray data(1, (quint8)NS_BGMRPC::CTRL_REGISTER);
-        data.append(objName);
+        data.append(objID);
         m_objectPlug->write(data);
         // m_objectPlug->waitForBytesWritten(-1);
         if (m_objectPlug->waitForReadyRead() &&
             (quint8)m_objectPlug->readAll()[0])
             qInfo().noquote()
-                << QString("Object(%1) plug to BGMRPC OK").arg(objName);
+                << QString("Object(%1) plug to BGMRPC OK").arg(objID);
         else {
             qWarning().noquote()
                 << QString(
                        "An object named \"%1\" already exists on the BGMRPC")
-                       .arg(objName);
+                       .arg(objID);
 
             return false;
         }
@@ -105,7 +105,7 @@ ObjectInterface::setup(const QByteArray& appName, const QByteArray& name,
         delete m_objectPlug;
 
         qWarning().noquote()
-            << QString("Object(%1) connect to BGMRPC FAIL").arg(objName);
+            << QString("Object(%1) connect to BGMRPC FAIL").arg(objID);
 
         return false;
     }
@@ -136,14 +136,15 @@ ObjectInterface::setup(const QByteArray& appName, const QByteArray& name,
         return false;
     }*/
 
-    QString dataServerName = BGMRPCObjPrefix + objName;
+    QString dataServerName = BGMRPCObjPrefix + objID;
 
     if (m_dataServer->listen(dataServerName)) {
-        m_name = objName;
+        m_name = name;
+        m_ID = objID;
         m_grp = grp;
         m_appName = appName;
         qInfo().noquote()
-            << QString("Object(%1),registerObject,ready").arg(m_name);
+            << QString("Object(%1),registerObject,ready").arg(m_ID);
 
         QByteArray rootPath =
             getSettings(*m_objectPlug, NS_BGMRPC::CNF_PATH_ROOT);
@@ -159,7 +160,7 @@ ObjectInterface::setup(const QByteArray& appName, const QByteArray& name,
     } else {
         qWarning().noquote()
             << QString("Object(%1)(%2),registerObject,Not ready")
-                   .arg(QString(objName), dataServerName);
+                   .arg(QString(objID), dataServerName);
         detachObject();
 
         return false;
@@ -200,6 +201,11 @@ ObjectInterface::registerObject(const QByteArray& appName,
 QString
 ObjectInterface::objectName() const {
     return m_name;
+}
+
+QString
+ObjectInterface::objectID() const {
+    return m_ID;
 }
 
 QString
@@ -333,7 +339,7 @@ ObjectInterface::privateData(QPointer<Caller> caller,
 void
 ObjectInterface::detachObject() {
     qInfo().noquote()
-        << QString("Object(%1),disconnected,disconnected").arg(m_name);
+        << QString("Object(%1),disconnected,disconnected").arg(m_ID);
     m_dataServer->close();
     m_dataServer->deleteLater();
     // m_ctrlSocket->disconnectFromServer();
@@ -417,6 +423,8 @@ ObjectInterface::newCaller() {
                     caller->m_callerApp = callJsonDoc["callerApp"].toString();
                     caller->m_callerObject =
                         callJsonDoc["callerObject"].toString();
+                    caller->m_callerObjectID =
+                        callJsonDoc["callerObjectID"].toString();
                     caller->m_callerGrp = callJsonDoc["callerGrp"].toString();
 
                     if (caller->m_callType == NS_BGMRPC::CALL_INTERNAL_NOBLOCK)
@@ -431,7 +439,7 @@ ObjectInterface::newCaller() {
 
             if (!m_methods[methodName])
                 caller->returnError(mID, NS_BGMRPC::ERR_NOMETHOD,
-                                    m_name + '.' + methodName);
+                                    m_ID + '.' + methodName);
             else {
                 caller->m_calleeMethod = methodName;
                 exec(mID, caller, methodName, args);
@@ -571,7 +579,7 @@ ObjectInterface::on_thread_call(bool block, qint64 callerID,
         qWarning() << QString(
                           "Object(%1),localCall-checkObject,Can't request "
                           "check object(%2)")
-                          .arg(m_name)
+                          .arg(m_ID)
                           .arg(object);
         emit thread_signal_return(QVariant());
         return;
@@ -582,7 +590,7 @@ ObjectInterface::on_thread_call(bool block, qint64 callerID,
                           "Object(%1),localCall-checkObject,"
                           "(Call local method)The requested "
                           "object(%2) does not exist")
-                          .arg(m_name)
+                          .arg(m_ID)
                           .arg(object);
         emit thread_signal_return(QVariant());
         return;
@@ -594,6 +602,7 @@ ObjectInterface::on_thread_call(bool block, qint64 callerID,
     callVariant["args"] = args;
     callVariant["callerApp"] = m_appName;
     callVariant["callerObject"] = m_name;
+    callVariant["callerObjectID"] = m_ID;
     callVariant["callerGrp"] = m_grp;
     callVariant["callerID"] = callerID;
     callVariant["callType"] =
@@ -727,7 +736,7 @@ ObjectInterface::exec(const QString& mID, QPointer<Caller> caller,
         if (!caller.isNull() && verification(caller, methodName, args)) {
             qInfo().noquote() << QString("Caller(%1),call,Calling %2.%3(%4)")
                                      .arg(caller->m_ID)
-                                     .arg(m_name)
+                                     .arg(m_ID)
                                      .arg(methodName)
                                      .arg(mID);
             QVariant ret = m_methods[methodName](this, caller, args);
@@ -735,7 +744,7 @@ ObjectInterface::exec(const QString& mID, QPointer<Caller> caller,
             if (!caller.isNull()) {
                 qInfo().noquote()
                     << QString("Obeject(%1),called,%2(%3) has been Called")
-                           .arg(m_name)
+                           .arg(m_ID)
                            .arg(methodName)
                            .arg(mID);
                 emit caller->returnData(mID, ret);
@@ -743,17 +752,17 @@ ObjectInterface::exec(const QString& mID, QPointer<Caller> caller,
         } else if (!caller.isNull()) {
             emit caller->emitSignal("ERROR_ACCESS", { methodName });
             emit caller->returnError(mID, NS_BGMRPC::ERR_ACCESS,
-                                     m_name + '.' + methodName);
+                                     m_ID + '.' + methodName);
             emit caller->returnData(mID, QVariant());
             qWarning().noquote()
                 << QString("Object(%1),access,Not allow(%2) call %1.%3")
-                       .arg(m_name)
+                       .arg(m_ID)
                        .arg(caller->m_ID)
                        .arg(mID);
         } else
             qWarning().noquote()
                 << QString("(%1.%2),call,Caller may have disconnected")
-                       .arg(m_name)
+                       .arg(m_ID)
                        .arg(methodName);
     });
 

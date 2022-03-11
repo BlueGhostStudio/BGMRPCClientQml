@@ -20,6 +20,7 @@ class JsCaller : public QObject {
     Q_PROPERTY(bool __ISINTERNALCALL__ READ isInternalCall)
     Q_PROPERTY(QString __APP__ READ app)
     Q_PROPERTY(QString __OBJECT__ READ object)
+    Q_PROPERTY(QString __OBJECTID__ READ objectID)
     Q_PROPERTY(QString __GRP__ READ grp)
 public:
     explicit JsCaller(QPointer<Caller> caller, QObject* parent = nullptr);
@@ -61,6 +62,7 @@ public:
     Q_INVOKABLE bool isInternalCall() const;
     Q_INVOKABLE QString app() const;
     Q_INVOKABLE QString object() const;
+    Q_INVOKABLE QString objectID() const;
     Q_INVOKABLE QString grp() const;
 
     QPointer<Caller> caller() const;
@@ -78,6 +80,7 @@ class JsJSObj : public QObject {
     Q_OBJECT
 
     Q_PROPERTY(QString __NAME__ READ objectName)
+    Q_PROPERTY(QString __OBJID__ READ objectID)
     Q_PROPERTY(QString __PATH_APP__ READ appPath)
     Q_PROPERTY(QString __PATH_DATA__ READ dataPath)
     Q_PROPERTY(QString __PATH_MODULES__ READ modulesPath)
@@ -92,6 +95,7 @@ public:
      * \brief 获取当前对象名称
      */
     QString objectName() const;
+    QString objectID() const;
     QString appName() const;
     QString grp() const;
 
