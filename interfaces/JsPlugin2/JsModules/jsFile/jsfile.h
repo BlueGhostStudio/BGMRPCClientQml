@@ -16,6 +16,12 @@ public:
     Q_INVOKABLE bool removeFile(const QString& fileName);
     Q_INVOKABLE bool writeFile(const QString& fileName, const QByteArray& data);
     Q_INVOKABLE QByteArray readFile(const QString& fileName);
+
+    Q_INVOKABLE bool copy(const QString& fileName, const QString& newFileName);
+    Q_INVOKABLE bool remove(const QString& fileName);
+    Q_INVOKABLE bool rename(const QString& fileName,
+                            const QString& newFileName);
+    Q_INVOKABLE bool mkpath(const QString& path);
 };
 
 class JsFileFactory : public JsObjFactory {

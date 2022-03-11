@@ -1,6 +1,7 @@
 #include "jsfile.h"
 
 #include <QDebug>
+#include <QDir>
 #include <QFile>
 
 JsFile::JsFile(QObject* parent) : QObject(parent) {}
@@ -35,6 +36,26 @@ JsFile::readFile(const QString& fileName) {
         return data;
     } else
         return QByteArray();
+}
+
+bool
+JsFile::copy(const QString& fileName, const QString& newFileName) {
+    return QFile::copy(fileName, newFileName);
+}
+
+bool
+JsFile::remove(const QString& fileName) {
+    return QFile::remove(fileName);
+}
+
+bool
+JsFile::rename(const QString& fileName, const QString& newFileName) {
+    return QFile::rename(fileName, newFileName);
+}
+
+bool
+JsFile::mkpath(const QString& path) {
+    return QDir().mkpath(path);
 }
 
 JsFileFactory::JsFileFactory(QObject* parent) : JsObjFactory(parent, false) {}
