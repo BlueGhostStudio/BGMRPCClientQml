@@ -51,7 +51,7 @@ JsEngine::loadJsFile(const QString& jsFileName) {
         } else {
             registerMethods();
 
-            m_PWD = QFileInfo(jsFileName).path() + '/';
+            m_PWD = QFileInfo(jsFileName).absolutePath() + '/';
             QJSValue jsObj = m_jsEngine->newQObject(new JsJSObj(this));
             m_jsEngine->globalObject().setProperty("JS", jsObj);
             /*m_jsEngine->globalObject().setProperty("path_app", m_appPath);
@@ -84,7 +84,8 @@ JsEngine::modulesPath() const {
 
 QString
 JsEngine::PWD() const {
-    return QDir::currentPath();
+    // return QDir::currentPath();
+    return m_PWD;
 }
 
 void
