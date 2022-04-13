@@ -128,7 +128,7 @@ JsEngine::loadModule(const QString& module) {
 
     if (!m_loadedModules.contains(module)) m_loadedModules.append(module);
 
-    bool ok = __loadModule(m_PWD + '/' + module) ||
+    bool ok = __loadModule(m_PWD + module) ||
               __loadModule(m_jsModulesPath + '/' + module);
     /*if (!__loadModule(m_appPath + '/' + module))
         ok = __loadModule(m_jsModulesPath + '/' + module);
