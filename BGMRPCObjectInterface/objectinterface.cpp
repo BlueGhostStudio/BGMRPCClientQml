@@ -324,7 +324,10 @@ ObjectInterface::setPrivateData(QPointer<Caller> caller, const QString& name,
     quint64 cliID = caller->m_ID;
     if (!m_privateDatas.contains(cliID)) m_privateDatas[cliID] = QVariantMap();
 
-    m_privateDatas[cliID][name] = data;
+    if (data.isNull()) {
+        m_privateDatas[cliID].remove(name);
+    } else
+        m_privateDatas[cliID][name] = data;
 }
 
 QVariant
