@@ -108,7 +108,7 @@ BGMRPC::setPort(quint16 port) {
 }
 
 ObjectPlug*
-BGMRPC::objectCtrl(const QString& name) {
+BGMRPC::objectCtrl(const QString& name) const {
     return m_objects[name];
 }
 
@@ -282,7 +282,7 @@ BGMRPC::newClient() {
 }
 
 QByteArray
-BGMRPC::listObjects() {
+BGMRPC::listObjects() const {
     QByteArray listData;
     bool begin = true;
     foreach (QString objName, m_objects.keys()) {
@@ -331,7 +331,7 @@ BGMRPC::registerObject(ObjectPlug* ctrl, const QByteArray& name) {
 }
 
 bool
-BGMRPC::checkObject(const QByteArray& name) {
+BGMRPC::checkObject(const QByteArray& name) const {
     return m_objects.contains(name);
 }
 

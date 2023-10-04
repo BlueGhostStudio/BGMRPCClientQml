@@ -22,7 +22,7 @@ public:
     bool start(/*ip, port*/);
     void setAddress(const QHostAddress& address);
     void setPort(quint16 port);
-    ObjectPlug* objectCtrl(const QString& name);
+    ObjectPlug* objectCtrl(const QString& name) const;
 
     void initial(const QString& file);
 
@@ -36,12 +36,12 @@ public slots:
     void newClient();
 
 private:
-    QByteArray listObjects();
+    QByteArray listObjects() const;
     void stopServer();
     bool detachObject(const QByteArray& name);
     void removeObject(const QByteArray& name);
     bool registerObject(ObjectPlug* ctrl, const QByteArray& name);
-    bool checkObject(const QByteArray& name);
+    bool checkObject(const QByteArray& name) const;
     QByteArray getConfig(quint8 cnf);
     QByteArray getSetting(const QByteArray& key);
 
