@@ -17,7 +17,7 @@ include(../cmake/BGSQml.cmake)
 
 message(${BGS_QML_IMPORT_PATH})
 
-qt_add_qml_module(
+qt6_add_qml_module(
   BGMRPCClientQml
   URI
   BGStudio.BGMRPC
