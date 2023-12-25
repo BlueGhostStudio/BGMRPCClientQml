@@ -12,7 +12,35 @@ splitLocalSocketFragment(QLocalSocket* socket,
                          std::function<void(const QByteArray&)> callback) {
     int lenLen = sizeof(quint64);
     bool end = false;
+
+    quint64 len = 0;
+    quint64 readLen = 0;
+    QByteArray readData;
+
+    if (socket->property("fragment").isValid()) {
+        len = socket->property("dataLen").toULongLong();
+        readData = socket->property("fragment").toByteArray();
+        readLen = readData.length();
+    }
     while (socket->bytesAvailable()) {
+        if (len == 0)
+            len = bytes2int<quint64>(socket->read(lenLen));
+
+        readData += socket->read(len - readLen);
+        readLen = readData.length();
+
+        if (readLen == len) {
+            callback(readData);
+            readData.clear();
+            len = 0;
+            readLen = 0;
+            end = true;
+        }
+    }
+
+    socket->setProperty("dataLen", len == 0 ? QVariant() : len);
+    socket->setProperty("fragment", len == 0 ? QVariant() : readData);
+    /*while (socket->bytesAvailable()) {
         quint64 len = 0;
         quint64 readLen = 0;
         QByteArray readData;
@@ -37,7 +65,7 @@ splitLocalSocketFragment(QLocalSocket* socket,
             socket->setProperty("dataLen", QVariant());
             end = true;
         }
-    }
+    }*/
 
     return end;
 }

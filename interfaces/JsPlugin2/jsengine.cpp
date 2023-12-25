@@ -19,12 +19,12 @@ JsEngine::JsEngine(QObject* parent)
 QVariant
 JsEngine::callJs(const QString& name, QPointer<Caller> caller,
                  const QVariantList& args) {
+    QMutexLocker locker(&m_mutex);
     QJSValue method = m_jsEngine->globalObject().property(name);
     if (method.isCallable()) {
         QJSValueList jsArgs;
         jsArgs << m_jsEngine->newQObject(new JsCaller(caller));
-        foreach (QVariant a, args)
-            jsArgs << m_jsEngine->toScriptValue(a);
+        foreach (QVariant a, args) jsArgs << m_jsEngine->toScriptValue(a);
 
         return method.call(jsArgs).toVariant();
     } else
@@ -240,7 +240,7 @@ JsEngine::registerMethods() {
 
 void
 JsEngine::registerMethod(const QString& methodName) {
-    m_methods[methodName] = std::bind(
+    /*m_methods[methodName] = std::bind(
         [&](const QString& name, ObjectInterface* oif, QPointer<Caller> caller,
             const QVariantList& args) -> QVariant {
             if (caller.isNull()) return QVariant();
@@ -253,7 +253,10 @@ JsEngine::registerMethod(const QString& methodName) {
             return qobject_cast<JsEngine*>(oif)->callJs(name, caller, args);
         },
         methodName, std::placeholders::_1, std::placeholders::_2,
-        std::placeholders::_3);
+        std::placeholders::_3);*/
+    m_methods[methodName] =
+        std::bind(&JsEngine::callJs, this, methodName, std::placeholders::_1,
+                  std::placeholders::_2);
 }
 
 bool

@@ -742,7 +742,7 @@ ObjectInterface::exec(const QString& mID, QPointer<Caller> caller,
                                      .arg(m_ID)
                                      .arg(methodName)
                                      .arg(mID);
-            QVariant ret = m_methods[methodName](this, caller, args);
+            QVariant ret = m_methods[methodName](caller, args);//m_methods[methodName](this, caller, args);
 
             if (!caller.isNull()) {
                 qInfo().noquote()

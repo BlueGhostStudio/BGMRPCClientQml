@@ -15,19 +15,18 @@
 
 #include "ObjectInterface_global.h"
 
-#define REG_METHOD(OBJIF, METHOD)                            \
-    [](ObjectInterface* obj, QPointer<Caller> cli,           \
-       const QVariantList& args) -> QVariant {               \
-        return qobject_cast<OBJIF*>(obj)->METHOD(cli, args); \
-    }
+#define REG_METHOD(methodName, memberMethod) \
+    m_methods[methodName] = std::bind(       \
+        memberMethod, this, std::placeholders::_1, std::placeholders::_1);
 
 namespace NS_BGMRPCObjectInterface {
 
 class Caller;
 class ObjectInterface;
 
-typedef QVariant (*T_METHOD)(ObjectInterface*, QPointer<Caller>,
-                             const QVariantList&);
+/*typedef QVariant (*T_METHOD)(ObjectInterface*, QPointer<Caller>,
+                             const QVariantList&);*/
+using T_METHOD = std::function<QVariant(QPointer<Caller>, const QVariantList&)>;
 
 class OBJECTINTERFACE_EXPORT ObjectInterface : public QObject {
     Q_OBJECT
@@ -173,9 +172,11 @@ protected:
     QByteArray m_appName;
     QByteArray m_grp;
     //    QMap<QString, T_METHOD> m_methods;
-    QMap<QString, std::function<QVariant(ObjectInterface*, QPointer<Caller>,
+
+    /*QMap<QString, std::function<QVariant(ObjectInterface*, QPointer<Caller>,
                                          const QVariantList&)>>
-        m_methods;
+        m_methods;*/
+    QMap<QString, T_METHOD> m_methods;
     QMap<quint64, QPointer<Caller>> m_relatedCaller;
 
     typedef QVariantMap t_priData;
