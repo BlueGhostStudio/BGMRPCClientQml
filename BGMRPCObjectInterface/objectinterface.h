@@ -15,11 +15,11 @@
 
 #include "ObjectInterface_global.h"
 
+namespace NS_BGMRPCObjectInterface {
+
 #define REG_METHOD(methodName, memberMethod) \
     m_methods[methodName] = std::bind(       \
-        memberMethod, this, std::placeholders::_1, std::placeholders::_1);
-
-namespace NS_BGMRPCObjectInterface {
+        memberMethod, this, std::placeholders::_1, std::placeholders::_2);
 
 class Caller;
 class ObjectInterface;
