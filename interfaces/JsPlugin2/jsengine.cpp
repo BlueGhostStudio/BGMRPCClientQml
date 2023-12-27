@@ -34,6 +34,7 @@ JsEngine::callJs(const QString& name, QPointer<Caller> caller,
 
 bool
 JsEngine::loadJsFile(const QString& jsFileName) {
+    qInfo().noquote() << "load Js Script" << jsFileName;
     QFile jsFile(jsFileName);
     if (jsFile.open(QIODevice::ReadOnly)) {
         delete m_jsEngine;
@@ -42,10 +43,11 @@ JsEngine::loadJsFile(const QString& jsFileName) {
         QJSValue result = m_jsEngine->evaluate(jsFile.readAll(), jsFileName);
 
         if (result.isError()) {
-            qDebug() << QString("%1,%2: %3")
-                            .arg(result.property("fileName").toString())
-                            .arg(result.property("lineNumber").toInt())
-                            .arg(result.toString());
+            qCritical().noquote()
+                << QString("%1,%2: %3")
+                       .arg(result.property("fileName").toString())
+                       .arg(result.property("lineNumber").toInt())
+                       .arg(result.toString());
 
             return false;
         } else {
@@ -74,7 +76,7 @@ JsEngine::loadJsFile(const QString& jsFileName) {
             return true;
         }
     } else
-        return true;
+        return false;
 }
 
 QString
@@ -190,10 +192,9 @@ JsEngine::variant2JsValue(const QVariant& var) {
     }
 }
 
-void
+bool
 JsEngine::initial(int argc, char** argv) {
     ObjectInterface::initial(argc, argv);
-
     QString rootPath = getSettings(*m_objectPlug, NS_BGMRPC::CNF_PATH_ROOT);
     QString installDir = getSettings(*m_objectPlug, "path/installDir");
 
@@ -214,7 +215,9 @@ JsEngine::initial(int argc, char** argv) {
         }
     }
 
-    loadJsFile(jsFile);
+    bool loadJsFileOk = loadJsFile(m_appPath + '/' + jsFile);
+
+    return loadJsFileOk;
 }
 
 void
@@ -240,20 +243,6 @@ JsEngine::registerMethods() {
 
 void
 JsEngine::registerMethod(const QString& methodName) {
-    /*m_methods[methodName] = std::bind(
-        [&](const QString& name, ObjectInterface* oif, QPointer<Caller> caller,
-            const QVariantList& args) -> QVariant {
-            if (caller.isNull()) return QVariant();
-            QMutexLocker locker(&m_mutex);
-
-            // qDebug() <<
-            // m_jsEngine->globalObject().property(name).isCallable();
-
-            //            return QVariant();
-            return qobject_cast<JsEngine*>(oif)->callJs(name, caller, args);
-        },
-        methodName, std::placeholders::_1, std::placeholders::_2,
-        std::placeholders::_3);*/
     m_methods[methodName] =
         std::bind(&JsEngine::callJs, this, methodName, std::placeholders::_1,
                   std::placeholders::_2);

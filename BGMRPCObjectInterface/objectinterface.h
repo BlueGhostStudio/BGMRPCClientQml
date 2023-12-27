@@ -155,7 +155,7 @@ private slots:
                         const QString& method, const QVariantList& args);
 
 protected:
-    virtual void initial(int, char**);
+    virtual bool initial(int, char**);
     virtual bool verification(QPointer<Caller> caller, const QString& method,
                               const QVariantList& args);
     virtual void exec(const QString& mID, QPointer<Caller> caller,
@@ -183,8 +183,6 @@ protected:
     QMap<quint64, t_priData> m_privateDatas;
 };
 
-QByteArray refObjName(const QByteArray& grp, const QByteArray& app,
-                      const QByteArray& name, bool noAppPrefix = false);
 }  // namespace NS_BGMRPCObjectInterface
 
 #endif  // OBJECTINTERFACE_H

@@ -17,6 +17,8 @@ bool splitLocalSocketFragment(QLocalSocket* socket,
 
 QByteArray getSettings(QLocalSocket& ctrlSocket, NS_BGMRPC::Config cnf);
 QByteArray getSettings(QLocalSocket& ctrlSocket, const QByteArray& key);
+QByteArray genObjectName(const QByteArray& grp, const QByteArray& app,
+                         const QByteArray& name, bool noAppPrefix);
 
 void initialLogMessage(quint8 mf = 0x1f);
 

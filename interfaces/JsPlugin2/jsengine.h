@@ -25,7 +25,7 @@ public:
     QString PWD() const;
 
 protected:
-    void initial(int argc, char** argv) override;
+    bool initial(int argc, char** argv) override;
 
     void registerMethods() override;
     void registerMethod(const QString& methodName);

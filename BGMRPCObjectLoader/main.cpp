@@ -3,8 +3,6 @@
 #include <grp.h>
 #include <objectinterface.h>
 #include <pwd.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -122,8 +120,6 @@ main(int argc, char* argv[]) {
 
         bool ok = false;
 
-        qDebug() << getSettings(ctrlSocket, "access/user")
-                 << getSettings(ctrlSocket, "access/group");
         QByteArray userName = getSettings(ctrlSocket, "access/user");
         if (userName.isEmpty()) userName = "nobody";
         QByteArray groupName = getSettings(ctrlSocket, "access/group");

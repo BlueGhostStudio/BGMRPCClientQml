@@ -77,74 +77,31 @@ bool
 ObjectInterface::setup(const QByteArray& appName, const QByteArray& name,
                        const QByteArray& grp, int argc, char** argv,
                        bool noAppPrefix) {
-    // if (!objPlug) return false;
-    QByteArray objID =
-        refObjName(grp, appName, name,
-                   noAppPrefix);  // grp.isEmpty() ? name : grp + "::" + name;
+    QByteArray objID = genObjectName(grp, appName, name, noAppPrefix);
 
     m_objectPlug = new QLocalSocket;
     m_objectPlug->connectToServer(BGMRPCObjectSocket);
     if (m_objectPlug->waitForConnected(-1)) {
-        QByteArray data(1, (quint8)NS_BGMRPC::CTRL_REGISTER);
-        data.append(objID);
-        m_objectPlug->write(data);
-        // m_objectPlug->waitForBytesWritten(-1);
-        if (m_objectPlug->waitForReadyRead() &&
-            (quint8)m_objectPlug->readAll()[0])
-            qInfo().noquote()
-                << QString("Object(%1) plug to BGMRPC OK").arg(objID);
-        else {
+        QByteArray checkObj(1, (quint8)NS_BGMRPC::CTRL_CHECKOBJECT);
+        checkObj.append(objID);
+        m_objectPlug->write(checkObj);
+        if (!m_objectPlug->waitForBytesWritten() ||
+            !m_objectPlug->waitForReadyRead()) {
             qWarning().noquote()
-                << QString(
-                       "An object named \"%1\" already exists on the BGMRPC")
-                       .arg(objID);
-
+                << QString("CheckObject(%1), Can't request").arg(objID);
+            return false;
+        } else if ((quint8)(m_objectPlug->readAll()[0])) {
+            qWarning().noquote() << QString(
+                                        "An object named \"%1\" already "
+                                        "exists on the BGMRPC")
+                                        .arg(objID);
             return false;
         }
-    } else {
-        delete m_objectPlug;
 
-        qWarning().noquote()
-            << QString("Object(%1) connect to BGMRPC FAIL").arg(objID);
-
-        return false;
-    }
-
-    // m_ctrlSocket = new QLocalSocket();
-    m_dataServer = new QLocalServer(this);
-    m_dataServer->setSocketOptions(QLocalServer::WorldAccessOption);
-
-    QObject::connect(m_dataServer, &QLocalServer::newConnection, this,
-                     &ObjectInterface::newCaller);
-
-    QObject::connect(this, &ObjectInterface::thread_signal_call, this,
-                     &ObjectInterface::on_thread_call);
-
-    QObject::connect(m_objectPlug, &QLocalSocket::disconnected, this, [&]() {
-        detachObject();
-
-        QCoreApplication::quit();
-    });
-
-    /*m_ctrlSocket->connectToServer(BGMRPCObjectCtrlSocket);
-    if (m_ctrlSocket->waitForConnected(-1))
-        qInfo().noquote() << QString("Object Control connect to BGMRPC OK");
-    else {
-        qWarning().noquote()
-            << QString("Object Control connect to BGMRPC FAIL");
-        detachObject();
-        return false;
-    }*/
-
-    QString dataServerName = BGMRPCObjPrefix + objID;
-
-    if (m_dataServer->listen(dataServerName)) {
         m_name = name;
         m_ID = objID;
         m_grp = grp;
         m_appName = appName;
-        qInfo().noquote()
-            << QString("Object(%1),registerObject,ready").arg(m_ID);
 
         QByteArray rootPath =
             getSettings(*m_objectPlug, NS_BGMRPC::CNF_PATH_ROOT);
@@ -154,14 +111,59 @@ ObjectInterface::setup(const QByteArray& appName, const QByteArray& name,
         setAppPath(rootPath + "/apps/" + m_appName);
         setDataPath(dataPath);
 
-        initial(argc, argv);
+        if (!initial(argc, argv)) return false;
 
-        return true;
+        QString dataServerName = BGMRPCObjPrefix + m_ID;
+        m_dataServer = new QLocalServer(this);
+        if (m_dataServer->listen(dataServerName)) {
+            QByteArray data(1, (quint8)NS_BGMRPC::CTRL_REGISTER);
+            data.append(m_ID);
+            m_objectPlug->write(data);
+            if (!m_objectPlug->waitForBytesWritten() ||
+                !m_objectPlug->waitForReadyRead()) {
+                qWarning().noquote()
+                    << QString("Register Object(%1), Can't request").arg(m_ID);
+            } else if (!(quint8)m_objectPlug->readAll()[0]) {
+                qWarning().noquote() << QString(
+                                            "An object named \"%1\" already "
+                                            "exists on the BGMRPC")
+                                            .arg(m_ID);
+
+                return false;
+            } else
+                qInfo().noquote()
+                    << QString("Object(%1) plug to BGMRPC OK").arg(m_ID);
+
+            QObject::connect(m_dataServer, &QLocalServer::newConnection, this,
+                             &ObjectInterface::newCaller);
+
+            QObject::connect(this, &ObjectInterface::thread_signal_call, this,
+                             &ObjectInterface::on_thread_call);
+
+            QObject::connect(m_objectPlug, &QLocalSocket::disconnected, this,
+                             [&]() {
+                                 detachObject();
+
+                                 QCoreApplication::quit();
+                             });
+
+            qInfo().noquote()
+                << QString("Object(%1),registerObject,ready").arg(m_ID);
+
+            return true;
+        } else {
+            qWarning().noquote()
+                << QString("Object(%1)(%2),registerObject,Not ready")
+                       .arg(QString(m_ID), dataServerName);
+            // detachObject();
+
+            return false;
+        }
     } else {
+        delete m_objectPlug;
+
         qWarning().noquote()
-            << QString("Object(%1)(%2),registerObject,Not ready")
-                   .arg(QString(objID), dataServerName);
-        detachObject();
+            << QString("Object(%1) connect to BGMRPC FAIL").arg(objID);
 
         return false;
     }
@@ -354,64 +356,16 @@ ObjectInterface::detachObject() {
 
 void
 ObjectInterface::newCaller() {
-    qDebug() << "in ObjectInterface::newCaller";
     QLocalSocket* cliDataSocket = m_dataServer->nextPendingConnection();
     QPointer<Caller> caller = new Caller(this, cliDataSocket);
 
     QObject::connect(cliDataSocket, &QLocalSocket::readyRead, [=]() {
-        /*QByteArray data = cliDataSocket->readAll();
-        quint8 firstCh = (quint8)data[0];
-        if (firstCh == NS_BGMRPC::DATA_CLIENTID ||
-            firstCh == NS_BGMRPC::DATA_LOCALCALL_CLIENTID) {
-            quint64 id = bytes2int<quint64>(data.mid(1, sizeof(quint64)));
-            if (firstCh == NS_BGMRPC::DATA_LOCALCALL_CLIENTID)
-                caller->m_localCall = true;
-            caller->m_ID = id;
-            data = data.mid(sizeof(quint64) + 1);
-
-            qInfo().noquote()
-                << QString("Object(%1),calling,New caller(#%2) calling")
-                       .arg(m_name)
-                       .arg(caller->m_ID);
-
-            if (data.length() == 0) return;
-        } else if (firstCh == NS_BGMRPC::DATA_NONBLOCK_LOCALCALL) {
-            qInfo().noquote()
-                << QString("QObject(%1),localCalling,Other object calling")
-                       .arg(m_name);
-            caller->unsetDataSocket();
-            caller->m_localCall = true;
-            data = data.mid(1);
-
-            if (data.length() == 0) return;
-        }
-        splitData(data, [=](const QByteArray& dataFrame) {
-            // qDebug().noquote() << "-[dataFrame]->" << dataFrame;
-            QJsonDocument callJsonDoc = QJsonDocument::fromJson(dataFrame);
-
-            QString methodName = callJsonDoc["method"].toString();
-            QVariantList args = callJsonDoc["args"].toVariant().toList();
-            QString mID = callJsonDoc["mID"].toString("#");
-
-            if (!m_methods[methodName])
-                caller->returnError(mID, NS_BGMRPC::ERR_NOMETHOD,
-                                    m_name + '.' + methodName);
-            else {
-                caller->m_calleeMethod = methodName;
-                callMethod(mID, caller, methodName, args);
-            }
-        });*/
         auto f = [=](const QByteArray& dataFrame) {
-            // qDebug() << "-| dataFrame |-->" << dataFrame;
             QJsonDocument callJsonDoc = QJsonDocument::fromJson(dataFrame);
 
             QString methodName = callJsonDoc["method"].toString();
             QVariantList args = callJsonDoc["args"].toVariant().toList();
             QString mID = callJsonDoc["mID"].toString("#");
-
-            /*qDebug() << "--| caller ID |-->" <<
-               callJsonDoc["callerID"].toInt()
-                     << callJsonDoc["callType"].toInt();*/
 
             if (caller->m_callType == NS_BGMRPC::CALL_UNDEFINED) {
                 caller->m_callType =
@@ -421,8 +375,6 @@ ObjectInterface::newCaller() {
 
                 if (caller->m_callType == NS_BGMRPC::CALL_INTERNAL ||
                     caller->m_callType == NS_BGMRPC::CALL_INTERNAL_NOBLOCK) {
-                    qDebug() << "----------in ObjectInterface newCaller"
-                             << callJsonDoc["callerApp"].toString();
                     caller->m_callerApp = callJsonDoc["callerApp"].toString();
                     caller->m_callerObject =
                         callJsonDoc["callerObject"].toString();
@@ -449,116 +401,6 @@ ObjectInterface::newCaller() {
             }
         };
 
-        //        int lenLen = sizeof(quint64);
-
-        /*if (!cliDataSocket->property("fragment").isValid()) {
-            QByteArray readDataBuffer = cliDataSocket->readAll();*/
-        /*quint8 firstCh = (quint8)readDataBuffer[0];
-        if (firstCh == NS_BGMRPC::DATA_CLIENTID ||
-            firstCh == NS_BGMRPC::DATA_LOCALCALL_CLIENTID) {
-            quint64 id =
-                bytes2int<quint64>(readDataBuffer.mid(1, sizeof(quint64)));
-            if (firstCh == NS_BGMRPC::DATA_LOCALCALL_CLIENTID)
-                caller->m_localCall = true;
-            //                caller->m_ID = id;
-            readDataBuffer = readDataBuffer.mid(sizeof(quint64) + 1);
-
-            qInfo().noquote()
-                << QString("Object(%1),calling,New caller(#%2) calling")
-                       .arg(m_name)
-                       .arg(caller->m_ID);
-
-            if (readDataBuffer.length() == 0) return;
-        } else if (firstCh == NS_BGMRPC::DATA_NONBLOCK_LOCALCALL) {
-            qInfo().noquote()
-                << QString("QObject(%1),localCalling,Other object calling")
-                       .arg(m_name);
-            caller->unsetDataSocket();
-            caller->m_localCall = true;
-            readDataBuffer = readDataBuffer.mid(1);
-
-            if (readDataBuffer.length() == 0) return;
-        }*/
-        /*int i = 0;
-        while (i < readDataBuffer.length()) {
-            quint64 len = bytes2int<quint64>(readDataBuffer.mid(i, lenLen));
-            i += lenLen;
-
-            QByteArray readData = readDataBuffer.mid(i, len);
-            quint64 readedLen = readData.length();
-            i += readedLen;
-
-            if (readedLen < len) {
-                cliDataSocket->setProperty("fragment", readData);
-                cliDataSocket->setProperty("fragmentLen", len - readedLen);
-            } else {
-                qDebug() << "V--------------V" << caller->callerObject()
-                         << caller->callerGrp() << caller->m_ID;
-                f(readData);
-                qDebug() << "^-------------^" << caller->callerObject()
-                         << caller->callerGrp() << caller->m_ID;
-            }
-        }
-
-        return;
-    } else {
-        quint64 len = cliDataSocket->property("fragmentLen").toULongLong();
-        QByteArray readData = cliDataSocket->read(len);
-        quint64 readedLen = readData.length();
-
-        readData =
-            cliDataSocket->property("fragment").toByteArray() + readData;
-
-        if (readedLen < len) {
-            cliDataSocket->setProperty("fragment", readData);
-            cliDataSocket->setProperty("fragmentLen", len - readedLen);
-
-            return;
-        } else {
-            f(readData);
-            cliDataSocket->setProperty("fragment", QVariant());
-            cliDataSocket->setProperty("fragmentLen", QVariant());
-        }
-    }
-
-    while (cliDataSocket->bytesAvailable() > 0) {
-        QByteArray readData = cliDataSocket->read(lenLen);
-
-        quint64 len = bytes2int<quint64>(readData);
-
-        readData = cliDataSocket->read(len);
-        quint64 readedLen = readData.length();
-        if (readedLen < len) {
-            cliDataSocket->setProperty("fragment", readData);
-            cliDataSocket->setProperty("fragmentLen", len - readedLen);
-        } else
-            f(readData);
-    }*/
-        /*while (cliDataSocket->bytesAvailable()) {
-            quint64 len = 0;
-            quint64 readLen = 0;
-            QByteArray readData;
-            if (!cliDataSocket->property("fragment").isValid()) {
-                len = bytes2int<quint64>(cliDataSocket->read(lenLen));
-                cliDataSocket->setProperty("dataLen", len);
-            } else {
-                len = cliDataSocket->property("dataLen").toULongLong();
-                readData = cliDataSocket->property("fragment").toByteArray();
-                readLen = readData.length();
-            }
-
-            readData += cliDataSocket->read(len - readLen);
-            readLen = readData.length();
-
-            if (readLen < len) {
-                cliDataSocket->setProperty("fragment", readData);
-                //                break;
-            } else {
-                f(readData);
-                cliDataSocket->setProperty("fragment", QVariant());
-                cliDataSocket->setProperty("dataLen", QVariant());
-            }
-        }*/
         splitLocalSocketFragment(cliDataSocket, f);
     });
 
@@ -722,8 +564,10 @@ callData.append(
         localCallSocket->deleteLater();
 }
 
-void
-ObjectInterface::initial(int /*argc*/, char** /*argv*/) {}
+bool
+ObjectInterface::initial(int /*argc*/, char** /*argv*/) {
+    return true;
+}
 
 bool
 ObjectInterface::verification(QPointer<Caller> /*caller*/,
@@ -742,7 +586,8 @@ ObjectInterface::exec(const QString& mID, QPointer<Caller> caller,
                                      .arg(m_ID)
                                      .arg(methodName)
                                      .arg(mID);
-            QVariant ret = m_methods[methodName](caller, args);//m_methods[methodName](this, caller, args);
+            QVariant ret = m_methods[methodName](
+                caller, args);  // m_methods[methodName](this, caller, args);
 
             if (!caller.isNull()) {
                 qInfo().noquote()
@@ -773,21 +618,4 @@ ObjectInterface::exec(const QString& mID, QPointer<Caller> caller,
                      &QThread::deleteLater);
 
     callThread->start();
-}
-
-QByteArray
-NS_BGMRPCObjectInterface::refObjName(const QByteArray& grp,
-                                     const QByteArray& app,
-                                     const QByteArray& name, bool noAppPrefix) {
-    QByteArray _name;
-    if (!noAppPrefix) _name = app + "::";
-    if (!grp.isEmpty()) _name = grp + "::" + _name;
-
-    // if (!grp.isEmpty()) _name = grp + "::";
-    // if (!app.isEmpty()) _name += app + "::";
-    // NOTE call("grp::app::obj::method", arg1, arg2)
-
-    _name += name;
-
-    return _name;
 }

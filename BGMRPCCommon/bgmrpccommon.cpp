@@ -23,8 +23,7 @@ splitLocalSocketFragment(QLocalSocket* socket,
         readLen = readData.length();
     }
     while (socket->bytesAvailable()) {
-        if (len == 0)
-            len = bytes2int<quint64>(socket->read(lenLen));
+        if (len == 0) len = bytes2int<quint64>(socket->read(lenLen));
 
         readData += socket->read(len - readLen);
         readLen = readData.length();
@@ -137,4 +136,15 @@ initialLogMessage(quint8 mf) {
             break;
         }
     });
+}
+
+QByteArray
+genObjectName(const QByteArray& grp, const QByteArray& app,
+              const QByteArray& name, bool noAppPrefix) {
+    if (noAppPrefix)
+        return name;
+    else if (!grp.isEmpty())
+        return grp + "::" + app + "::" + name;
+    else
+        return (!app.isEmpty() ? app + "::" : "") + name;
 }
