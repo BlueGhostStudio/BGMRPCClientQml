@@ -7,6 +7,12 @@ QByteArray BGMRPCServerCtrlSocket = "BGMRPC_CTRL";
 // QByteArray BGMRPCObjectCtrlSocket = "BGMRPC_OBJ_CTRL";
 QByteArray BGMRPCObjectSocket = "BGMRPC_OBJSOCKET";
 
+#ifdef DEFAULT_ETC_DIR
+QString defaultEtcDir = DEFAULT_ETC_DIR;
+#else
+QString defaultEtcDir = "/usr/share/BGStudio/BGMRPC/etc";
+#endif
+
 bool
 splitLocalSocketFragment(QLocalSocket* socket,
                          std::function<void(const QByteArray&)> callback) {

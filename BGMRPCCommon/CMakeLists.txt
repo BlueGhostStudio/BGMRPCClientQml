@@ -7,6 +7,9 @@ project(
 
 include(../cmake/BGMRPC.cmake)
 
+add_definitions(
+  -DDEFAULT_ETC_DIR="${BGMRPC_REMOTE}/${CMAKE_INSTALL_DATADIR}/etc")
+
 find_package(
   QT NAMES Qt6 Qt5
   COMPONENTS Core Network
@@ -17,9 +20,9 @@ find_package(
   REQUIRED)
 
 if(QT_VERSION_MAJOR EQUAL 5)
-    set(LIB_OUTPUT_NAME "BGMRPCCommon2-qt5")
+  set(LIB_OUTPUT_NAME "BGMRPCCommon2-qt5")
 else()
-    set(LIB_OUTPUT_NAME "BGMRPCCommon2")
+  set(LIB_OUTPUT_NAME "BGMRPCCommon2")
 endif()
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)

@@ -11,6 +11,7 @@ extern QByteArray BGMRPCObjPrefix;
 extern QByteArray BGMRPCServerCtrlSocket;
 // extern QByteArray BGMRPCObjectCtrlSocket;
 extern QByteArray BGMRPCObjectSocket;
+extern QString defaultEtcDir;
 
 bool splitLocalSocketFragment(QLocalSocket* socket,
                               std::function<void(const QByteArray&)> callback);
