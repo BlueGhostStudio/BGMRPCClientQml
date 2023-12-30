@@ -1,11 +1,13 @@
 cmake_minimum_required(VERSION 3.18)
 
-include(../cmake/BGMRPC.cmake)
+include(../cmake/VERSION.cmake)
 
 project(
   BGMRPCCommon
   LANGUAGES CXX
   VERSION ${BGMRPC_VERSION})
+
+include(../cmake/BGMRPC.cmake)
 
 add_definitions(
   -DDEFAULT_ETC_DIR="${BGMRPC_REMOTE}/${CMAKE_INSTALL_DATADIR}/etc")

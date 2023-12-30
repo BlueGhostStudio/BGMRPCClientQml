@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.18)
 
-include(../cmake/BGMRPC.cmake)
+include(../cmake/VERSION.cmake)
 
 project(BGMRPCClientQml VERSION ${BGMRPC_VERSION})
+
+include(../cmake/BGMRPC.cmake)
 
 find_package(
   QT NAMES Qt6 Qt5

@@ -1,11 +1,13 @@
 cmake_minimum_required(VERSION 3.18)
 
-include(../cmake/BGMRPC.cmake)
+include(../cmake/VERSION.cmake)
 
 project(
   BGMRPCCtrl
   LANGUAGES CXX
   VERSION ${BGMRPC_VERSION})
+
+include(../cmake/BGMRPC.cmake)
 
 find_package(
   QT NAMES Qt6 Qt5
@@ -39,7 +41,7 @@ include_directories(${BGMRPCCommon_includeDir})
 
 target_link_libraries(
   BGMRPCCtrl PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Network
-                     BGMRPCCommon.${BGMRPC_VERSION_MAJOR})
+                     BGMRPCCommon)
 
 install(
   TARGETS BGMRPCCtrl

@@ -1,11 +1,13 @@
 cmake_minimum_required(VERSION 3.18)
 
-include(../cmake/BGMRPC.cmake)
+include(../cmake/VERSION.cmake)
 
 project(
   BGMRPCObjectInterface
   LANGUAGES CXX
   VERSION ${BGMRPC_VERSION})
+
+include(../cmake/BGMRPC.cmake)
 
 find_package(
   QT NAMES Qt6 Qt5
@@ -46,9 +48,8 @@ set_target_properties(
              INSTALL_RPATH "${BGMRPC_REMOTE}/${CMAKE_INSTALL_LIBDIR}")
 
 target_link_libraries(
-  BGMRPCObjectInterface
-  PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Network
-          BGMRPCCommon.${BGMRPC_VERSION_MAJOR})
+  BGMRPCObjectInterface PRIVATE Qt${QT_VERSION_MAJOR}::Core
+                                Qt${QT_VERSION_MAJOR}::Network BGMRPCCommon)
 
 install(TARGETS BGMRPCObjectInterface
         LIBRARY DESTINATION ${BGMRPC_REMOTE}/${CMAKE_INSTALL_LIBDIR}
