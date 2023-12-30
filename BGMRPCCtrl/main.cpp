@@ -313,10 +313,53 @@ processAppJson(
 }
 
 bool
+genArgs(const QJsonObject& IFTypes, const QJsonObject& jsoObj,
+        QStringList& args) {
+    if (IFTypes.isEmpty()) return false;
+
+    const QString& IFName(jsoObj["IF"].toString(""));
+    if (IFName.isEmpty() || !IFTypes.contains(IFName)) return false;
+
+    QJsonObject jsoIFType = IFTypes[IFName].toObject();
+
+    QJsonObject::const_iterator it;
+    bool resetIF = false;
+    for (it = jsoObj.constBegin(); it != jsoObj.constEnd(); ++it) {
+        if (!jsoIFType.contains(it.key())) continue;
+
+        if (it.key() == "IF") {
+            args << "-i" << jsoIFType["IF"].toString();
+            resetIF = true;
+        }  else {
+            QJsonObject jsoOpt = jsoIFType[it.key()].toObject();
+
+            if (jsoOpt["hasArg"].toBool(false)) {
+                QString value = it.value().toString("");
+                if (!value.isEmpty())
+                    args << jsoOpt["opt"].toString() << it.value().toString();
+            } else if (it.value().toBool(false))
+                args << jsoOpt["opt"].toString();
+        }
+    }
+
+    return resetIF;
+}
+
+bool
 runApp(const QString& app, const QString& grp) {
     if (!serverRunning) {
         qWarning().noquote() << "BGMRPC,listObjects,Server not run";
         return false;
+    }
+
+    QJsonObject IFTypes;
+    QString etcDir = getSettings(ctrlSocket, NS_BGMRPC::CNF_PATH_ETC);
+    QString IFTypesFileName = etcDir + "/IF_types.json";
+    if (QFile::exists(IFTypesFileName)) {
+        QFile IFTypesFile(IFTypesFileName);
+        if (IFTypesFile.open(QIODevice::ReadOnly)) {
+            IFTypes = QJsonDocument::fromJson(IFTypesFile.readAll()).object();
+        }
     }
 
     qInfo().noquote() << "Starting " + app + " ...";
@@ -330,76 +373,28 @@ runApp(const QString& app, const QString& grp) {
             runApp(relApp, relAppGrp);
             return true;
         },
-        [app](const QString& grp, const QString& objName, bool noprefix,
-              const QJsonObject& jsoObj) -> bool {
+        [app, IFTypes](const QString& grp, const QString& objName,
+                       bool noprefix, const QJsonObject& jsoObj) -> bool {
             QString interface = jsoObj["IF"].toString("");
             if (interface.isEmpty()) return false;
 
-            QStringList args({ "-n", objName, "-I", interface, "-a", app });
+            QStringList args({ "-n", objName, "-a", app });
+
+            if (!genArgs(IFTypes, jsoObj, args)) args << "-i" << interface;
+
             if (noprefix) args << "-A";
+
             if (!grp.isEmpty()) args << "-g" << grp;
+
             args << QProcess::splitCommand(jsoObj["args"].toString(""));
 
             return createObject(genObjectName(grp.toLatin1(), app.toLatin1(),
                                               objName.toLatin1(), noprefix),
                                 args);
+
+            return true;
         },
         true);
-
-    /*QByteArray rootPath = getSettings(ctrlSocket, NS_BGMRPC::CNF_PATH_ROOT);
-    if (rootPath.isEmpty()) return false;
-
-    QDir appDir(rootPath + "/apps/" + app);
-    if (!appDir.exists() || !appDir.exists("app.json")) return false;
-
-    QFile appJsonFile(appDir.filePath("app.json"));
-    if (!appJsonFile.open(QIODevice::ReadOnly)) return false;
-
-    qInfo().noquote() << "Starting " + app + " ...";
-
-    QByteArray jsonData = appJsonFile.readAll();
-    QJsonDocument appJson = QJsonDocument::fromJson(jsonData);
-    appJsonFile.close();
-
-    QString group = grp.isEmpty() ? appJson["grp"].toString("") : grp;
-
-    if (!iteratorRelApps(group, appJson["required-apps"].toArray({}),
-                         [](const QString& relApp, const QString& relAppGrp,
-                            const QJsonValue&) -> bool {
-                             return runApp(relApp, relAppGrp);
-                         }))
-        return false;
-
-    iteratorRelApps(group, appJson["optional-apps"].toArray({}),
-                    [](const QString& relApp, const QString& relAppGrp,
-                       const QJsonValue&) -> bool {
-                        runApp(relApp, relAppGrp);
-                        return true;
-                    });
-
-    QJsonArray jaObjs = appJson["objs"].toArray({});
-    foreach (const QJsonValue& jvObj, jaObjs) {
-        QJsonObject joObj = jvObj.toObject({});
-
-        QString objName = joObj["obj"].toString("");
-        if (objName.isEmpty()) continue;
-
-        QString interface = joObj["IF"].toString("");
-        if (interface.isEmpty()) return false;
-
-        bool noprefix = joObj["noprefix"].toBool(false);
-
-        QStringList createObjArgs(
-            { "-n", objName, "-I", interface, "-a", app });
-        if (noprefix) createObjArgs << "-A";
-        if (!group.isEmpty()) createObjArgs << "-g" << group;
-        createObjArgs << QProcess::splitCommand(joObj["args"].toString(""));
-
-        if (!createObject(genObjectName(group.toLatin1(), app.toLatin1(),
-                                        objName.toLatin1(), noprefix),
-                          createObjArgs))
-            return false;
-    }*/
 
     qDebug().noquote() << "\n\n";
 

@@ -23,6 +23,8 @@ find_package(
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 
+set(CMAKE_EXECUTABLE_SUFFIX "")
+
 add_executable(
   BGMRPCd
   bgmrpc.h
