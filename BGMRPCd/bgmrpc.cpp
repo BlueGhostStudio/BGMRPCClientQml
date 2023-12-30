@@ -323,6 +323,13 @@ BGMRPC::getConfig(quint8 cnf) {
             .toString()
             .replace(QRegularExpression("^~"), QDir::homePath())
             .toUtf8();
+    case CNF_PATH_ETC:
+        return m_settings
+        ->value("path/etc",
+                m_defaultSettings.value("path/etc", rootPath + "/etc"))
+        .toString()
+            .replace(QRegularExpression("^~"), QDir::homePath())
+            .toUtf8();
     case CNF_PATH_INTERFACES:
         return m_settings
             ->value("path/interfaces",

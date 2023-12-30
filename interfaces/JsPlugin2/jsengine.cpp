@@ -197,8 +197,9 @@ JsEngine::initial(int argc, char** argv) {
     ObjectInterface::initial(argc, argv);
     QString rootPath = getSettings(*m_objectPlug, NS_BGMRPC::CNF_PATH_ROOT);
     QString installDir = getSettings(*m_objectPlug, "path/installDir");
+    QString etcDir = getSettings(*m_objectPlug, NS_BGMRPC::CNF_PATH_ETC);
 
-    QSettings JSMSettings(rootPath + "/etc/JsModules.conf",
+    QSettings JSMSettings(etcDir + "/JsModules.conf",
                           QSettings::IniFormat);
     m_jsModulesPath =
         JSMSettings.value("path", installDir + "/JsModules.conf").toString();

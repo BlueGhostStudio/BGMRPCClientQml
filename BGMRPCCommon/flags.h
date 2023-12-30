@@ -15,7 +15,13 @@ enum Ctrl {
     CTRL_CHECKOBJECT,
     CTRL_LISTOBJECTS
 };
-enum Config { CNF_PATH_ROOT, CNF_PATH_BIN, CNF_PATH_INTERFACES, CNF_PATH_LOGS };
+enum Config {
+    CNF_PATH_ROOT,
+    CNF_PATH_BIN,
+    CNF_PATH_ETC,
+    CNF_PATH_INTERFACES,
+    CNF_PATH_LOGS
+};
 
 enum Data {
     DATA_ERROR = 0,
