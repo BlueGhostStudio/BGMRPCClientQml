@@ -47,6 +47,7 @@ private:
 
 private:
     QSettings* m_settings;
+    QSettings m_defaultSettings;
 
     QLocalServer* m_serverCtrlServer;
     // QLocalServer* m_objectCtrlServer;

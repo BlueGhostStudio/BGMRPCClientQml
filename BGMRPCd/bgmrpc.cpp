@@ -1,7 +1,6 @@
 #include "bgmrpc.h"
 
 #include <bgmrpccommon.h>
-#include <stdlib.h>
 
 #include <QDebug>
 #include <QLocalSocket>
@@ -14,10 +13,8 @@
 
 using namespace NS_BGMRPC;
 
-BGMRPC::BGMRPC(QObject* parent) : QObject(parent) {
-    // m_objectCtrlServer = new QLocalServer(this);
-    // m_objectCtrlServer->setSocketOptions(QLocalServer::WorldAccessOption);
-
+BGMRPC::BGMRPC(QObject* parent)
+    : m_defaultSettings(defaultEtcDir + "/BGMRPC.conf"), QObject(parent) {
     m_serverCtrlServer = new QLocalServer(this);
     m_serverCtrlServer->setSocketOptions(QLocalServer::UserAccessOption);
 
@@ -37,51 +34,9 @@ BGMRPC::start() {
 
         QObject::connect(
             m_serverCtrlServer, &QLocalServer::newConnection, this, [=]() {
-                //            ObjectCtrl* objCtrl = new ObjectCtrl(
-                //                this,
-                //                m_serverCtrlServer->nextPendingConnection());
                 ServerCtrl* serCtrl = new ServerCtrl(
                     this, m_serverCtrlServer->nextPendingConnection());
-
-                /*QObject::connect(objCtrl,
-                &ObjectCtrl::registerObject, this,
-                                 &BGMRPC::ctrl_registerObject);
-
-                QObject::connect(objCtrl, &ObjectCtrl::checkObject,
-                this, &BGMRPC::ctrl_checkObject);
-
-                QObject::connect(objCtrl, &ObjectCtrl::getConfig,
-                this, &BGMRPC::ctrl_getConfig);
-
-                QObject::connect(objCtrl, &ObjectCtrl::getSetting,
-                this, &BGMRPC::ctrl_getSetting);
-
-                QObject::connect(objCtrl,
-                &ObjectCtrl::detachObject, this,
-                                 &BGMRPC::ctrl_detachObject);
-                QObject::connect(objCtrl, &ObjectCtrl::listObjects,
-                this, &BGMRPC::ctrl_listObjects);
-
-                QObject::connect(
-                    objCtrl, &ObjectCtrl::removeObject, [&](const
-                QString& name) { qInfo().noquote()
-                            <<
-                QString("Object(%1),removeObject,Disconnected")
-                                   .arg(name);
-                        m_objects.remove(name);
-                    });
-
-                QObject::connect(objCtrl, &ObjectCtrl::stopServer,
-                []() { qInfo() << "BGMRPC,stopServer,Stoped";
-                    qApp->quit();
-                });*/
             });
-
-        /*QObject::connect(
-            m_objectCtrlServer, &QLocalServer::newConnection, this, [=]() {
-                CtrlBase* objCtrl = new CtrlBase(
-                    this, m_objectCtrlServer->nextPendingConnection());
-            });*/
 
         QObject::connect(
             m_objectSocketServer, &QLocalServer::newConnection, this, [=]() {
@@ -119,15 +74,26 @@ BGMRPC::initial(const QString& file) {
     else
         m_settings = new QSettings(file, QSettings::IniFormat);
 
-    QString ip = m_settings->value("server/ip").toString();
+    QString ip =
+        m_settings->value("server/ip", m_defaultSettings.value("server/ip"))
+            .toString();
     m_address = !ip.isEmpty() ? QHostAddress(ip) : QHostAddress::Any;
-    m_port = m_settings->value("server/port", 8000).toInt();
+    m_port =
+        m_settings
+            ->value("server/port", m_defaultSettings.value("server/port", 8000))
+            .toInt();
 
     bool ssl = false;
     QString ssl_certificate =
-        m_settings->value("server/ssl_certificate").toString();
+        m_settings
+            ->value("server/ssl_certificate",
+                    m_defaultSettings.value("server/ssl_certificate"))
+            .toString();
     QString ssl_certificate_key =
-        m_settings->value("server/ssl_certificate_key").toString();
+        m_settings
+            ->value("server/ssl_certificate_key",
+                    m_defaultSettings.value("server/ssl_certificate_key"))
+            .toString();
     if (!ssl_certificate.isEmpty() && !ssl_certificate_key.isEmpty()) {
         ssl_certificate =
             ssl_certificate.replace(QRegularExpression("^~"), QDir::homePath());
@@ -338,7 +304,9 @@ BGMRPC::checkObject(const QByteArray& name) const {
 QByteArray
 BGMRPC::getConfig(quint8 cnf) {
     QByteArray rootPath =
-        m_settings->value("path/root", QDir::homePath())
+        m_settings
+            ->value("path/root",
+                    m_defaultSettings.value("path/root", QDir::homePath()))
             .toString()
             .replace(QRegularExpression("^~"), QDir::homePath())
             .toUtf8();
@@ -348,17 +316,24 @@ BGMRPC::getConfig(quint8 cnf) {
     case CNF_PATH_ROOT:
         return rootPath;
     case CNF_PATH_BIN:
-        return m_settings->value("path/bin", rootPath + "/bin")
+        return m_settings
+            ->value("path/bin",
+                    m_defaultSettings.value("path/bin", rootPath + "/bin"))
             .toString()
             .replace(QRegularExpression("^~"), QDir::homePath())
             .toUtf8();
     case CNF_PATH_INTERFACES:
-        return m_settings->value("path/interfaces", rootPath + "/interfaces")
+        return m_settings
+            ->value("path/interfaces",
+                    m_defaultSettings.value("path/interfaces",
+                                            rootPath + "/interfaces"))
             .toString()
             .replace(QRegularExpression("^~"), QDir::homePath())
             .toUtf8();
     case CNF_PATH_LOGS:
-        return m_settings->value("path/logs", rootPath + "/logs")
+        return m_settings
+            ->value("path/logs",
+                    m_defaultSettings.value("path/log", rootPath + "/logs"))
             .toString()
             .replace(QRegularExpression("^~"), QDir::homePath())
             .toUtf8();
@@ -368,5 +343,6 @@ BGMRPC::getConfig(quint8 cnf) {
 
 QByteArray
 BGMRPC::getSetting(const QByteArray& key) {
-    return m_settings->value(key, "").toByteArray();
+    return m_settings->value(key, m_defaultSettings.value(key, ""))
+        .toByteArray();
 }
