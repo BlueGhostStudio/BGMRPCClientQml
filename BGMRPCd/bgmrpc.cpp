@@ -14,7 +14,8 @@
 using namespace NS_BGMRPC;
 
 BGMRPC::BGMRPC(QObject* parent)
-    : m_defaultSettings(defaultEtcDir + "/BGMRPC.conf"), QObject(parent) {
+    : m_defaultSettings(defaultEtcDir + "/BGMRPC.conf", QSettings::IniFormat),
+      QObject(parent) {
     m_serverCtrlServer = new QLocalServer(this);
     m_serverCtrlServer->setSocketOptions(QLocalServer::UserAccessOption);
 

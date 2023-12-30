@@ -22,6 +22,8 @@ startServer(int argc, char* argv[]) {
     }
 
     QSettings* settings;
+    QSettings defaultSettings(defaultEtcDir + "/BGMRPC.conf",
+                              QSettings::IniFormat);
     //    QString startCmd;
     QStringList args;
     QString rootPath;
@@ -37,13 +39,23 @@ startServer(int argc, char* argv[]) {
         settings = new QSettings();
     }
 
-    rootPath = settings->value("path/root").toString();
+    rootPath = settings
+                   ->value("path/root",
+                           defaultSettings.value("path/root", QDir::homePath()))
+                   .toString();
     rootPath.replace(QRegularExpression("^~"), QDir::homePath());
-    logPath = settings->value("path/logs", rootPath + "/logs").toString() +
+    logPath = settings
+                  ->value("path/logs", defaultSettings.value(
+                                           "path/logs", rootPath + "/logs"))
+                  .toString() +
               "/BGMRPC.log";
     logPath.replace(QRegularExpression("^~"), QDir::homePath());
-    binPath = settings->value("path/bin", rootPath + "/bin").toString();
-    binPath.replace(QRegularExpression("^~"), QDir::homePath());
+    binPath = settings
+                  ->value("path/bin",
+                          defaultSettings.value("path/bin", rootPath + "/bin"))
+                  .toString();
+
+    qDebug() << rootPath << logPath << binPath;
 
     if (qgetenv("BGMRPCDebug") != "1") {
         BGMRPCProcess.setStandardOutputFile(logPath /*, QIODevice::Append*/);
