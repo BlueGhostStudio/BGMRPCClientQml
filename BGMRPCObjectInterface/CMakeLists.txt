@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.18)
 
+include(../cmake/BGMRPC.cmake)
+
 project(
   BGMRPCObjectInterface
   LANGUAGES CXX
-  VERSION 1.0.0)
-
-include(../cmake/BGMRPC.cmake)
+  VERSION ${BGMRPC_VERSION})
 
 find_package(
   QT NAMES Qt6 Qt5
@@ -17,9 +17,9 @@ find_package(
   REQUIRED)
 
 if(QT_VERSION_MAJOR EQUAL 5)
-    set(LIB_OUTPUT_NAME "BGMRPCObjectInterface2-qt5")
+  set(LIB_OUTPUT_NAME "BGMRPCObjectInterface2-qt5")
 else()
-    set(LIB_OUTPUT_NAME "BGMRPCObjectInterface2")
+  set(LIB_OUTPUT_NAME "BGMRPCObjectInterface2")
 endif()
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -46,8 +46,9 @@ set_target_properties(
              INSTALL_RPATH "${BGMRPC_REMOTE}/${CMAKE_INSTALL_LIBDIR}")
 
 target_link_libraries(
-  BGMRPCObjectInterface PRIVATE Qt${QT_VERSION_MAJOR}::Core
-                                Qt${QT_VERSION_MAJOR}::Network BGMRPCCommon)
+  BGMRPCObjectInterface
+  PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Network
+          BGMRPCCommon.${BGMRPC_VERSION_MAJOR})
 
 install(TARGETS BGMRPCObjectInterface
         LIBRARY DESTINATION ${BGMRPC_REMOTE}/${CMAKE_INSTALL_LIBDIR}
@@ -58,6 +59,7 @@ install(
   LIBRARY DESTINATION ${BGMRPC_REMOTE}/${CMAKE_INSTALL_LIBDIR}
           COMPONENT BGMRPC_remote_dev
           EXCLUDE_FROM_ALL
-  PUBLIC_HEADER DESTINATION ${BGMRPC_REMOTE}/${CMAKE_INSTALL_INCLUDEDIR}
-                COMPONENT BGMRPC_remote_dev
-                EXCLUDE_FROM_ALL)
+  PUBLIC_HEADER
+    DESTINATION ${BGMRPC_REMOTE}/${CMAKE_INSTALL_INCLUDEDIR}
+    COMPONENT BGMRPC_remote_dev
+    EXCLUDE_FROM_ALL)

@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.18)
 
+include(../cmake/BGMRPC.cmake)
+
 project(
   BGMRPCd
   LANGUAGES CXX
-  VERSION 1.0.0)
-
-include(../cmake/BGMRPC.cmake)
+  VERSION ${BGMRPC_VERSION})
 
 find_package(
   QT NAMES Qt6 Qt5
@@ -35,7 +35,9 @@ add_executable(
 
 set_target_properties(
   BGMRPCd
-  PROPERTIES OUTPUT_NAME BGMRPCd
+  PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR}
+             VERSION ${PROJECT_VERSION}
+             OUTPUT_NAME BGMRPCd
              INSTALL_RPATH_USE_LINK_PATH ON
              INSTALL_RPATH "${BGMRPC_REMOTE}/${CMAKE_INSTALL_LIBDIR}")
 
@@ -43,7 +45,7 @@ include_directories(${BGMRPCCommon_includeDir})
 
 target_link_libraries(
   BGMRPCd PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::WebSockets
-                  BGMRPCCommon)
+                  BGMRPCCommon.${BGMRPC_VERSION_MAJOR})
 
 install(TARGETS BGMRPCd
         RUNTIME DESTINATION ${BGMRPC_REMOTE}/${CMAKE_INSTALL_BINDIR}

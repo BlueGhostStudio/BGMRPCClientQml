@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.18)
 
+include(../../cmake/BGMRPC.cmake)
+
 project(
   JsPlugin2
   LANGUAGES CXX
-  VERSION 1.0.0)
-
-include(../../cmake/BGMRPC.cmake)
+  VERSION ${BGMRPC_VERSION})
 
 find_package(
   QT NAMES Qt6 Qt5
@@ -32,16 +32,19 @@ target_sources(
           ${CMAKE_CURRENT_LIST_DIR}/jsobjs.h)
 set_target_properties(
   JsPlugin2
-  PROPERTIES #SOVERSION ${PROJECT_VERSION_MAJOR}
-             #VERSION ${PROJECT_VERSION}
+  PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR}
+             VERSION ${PROJECT_VERSION}
              OUTPUT_NAME JsPlugin2
              INSTALL_RPATH_USE_LINK_PATH ON
              INSTALL_RPATH "${BGMRPC_REMOTE}/${CMAKE_INSTALL_LIBDIR}")
 
 target_link_libraries(
   JsPlugin2
-  PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Network
-          Qt${QT_VERSION_MAJOR}::Qml BGMRPCObjectInterface BGMRPCCommon)
+  PRIVATE Qt${QT_VERSION_MAJOR}::Core
+          Qt${QT_VERSION_MAJOR}::Network
+          Qt${QT_VERSION_MAJOR}::Qml
+          BGMRPCObjectInterface.${BGMRPC_VERSION_MAJOR}
+          BGMRPCCommon.${BGMRPC_VERSION_MAJOR})
 
 install(TARGETS JsPlugin2 LIBRARY DESTINATION ${BGMRPC_REMOTE}/interfaces
                                   COMPONENT BGMRPC_remote_interface_JsPlugin2)

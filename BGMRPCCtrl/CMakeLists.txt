@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.18)
 
+include(../cmake/BGMRPC.cmake)
+
 project(
   BGMRPCCtrl
   LANGUAGES CXX
-  VERSION 1.0.0)
-
-include(../cmake/BGMRPC.cmake)
+  VERSION ${BGMRPC_VERSION})
 
 find_package(
   QT NAMES Qt6 Qt5
@@ -29,7 +29,9 @@ add_executable(BGMRPCCtrl main.cpp)
 
 set_target_properties(
   BGMRPCCtrl
-  PROPERTIES OUTPUT_NAME ${RUNTIME_OUTPUT_NAME}
+  PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR}
+             VERSION ${PROJECT_VERSION}
+             OUTPUT_NAME ${RUNTIME_OUTPUT_NAME}
              INSTALL_RPATH_USE_LINK_PATH ON
              INSTALL_RPATH "${BGMRPC_REMOTE}/${CMAKE_INSTALL_LIBDIR}")
 
@@ -37,7 +39,7 @@ include_directories(${BGMRPCCommon_includeDir})
 
 target_link_libraries(
   BGMRPCCtrl PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Network
-                     BGMRPCCommon)
+                     BGMRPCCommon.${BGMRPC_VERSION_MAJOR})
 
 install(
   TARGETS BGMRPCCtrl

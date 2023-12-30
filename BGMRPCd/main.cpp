@@ -10,8 +10,6 @@ int
 main(int argc, char* argv[]) {
     QCoreApplication::setSetuidAllowed(true);
 
-    qDebug() << "---------default_etc_dir------------------" << defaultEtcDir;
-
     initialLogMessage();
     QCoreApplication a(argc, argv);
 
