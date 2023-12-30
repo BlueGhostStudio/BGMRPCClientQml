@@ -14,7 +14,11 @@ main(int argc, char* argv[]) {
     QCoreApplication a(argc, argv);
 
     a.setApplicationName("BGMRPC");
-    a.setApplicationVersion("2.0.0");
+#ifdef VERSION
+    a.setApplicationVersion(VERSION);
+#else
+    a.setApplicationVersion("1.0.0");
+#endif
     a.setOrganizationName("BlueGhost Studio");
     a.setOrganizationDomain("bgstudio.org");
 

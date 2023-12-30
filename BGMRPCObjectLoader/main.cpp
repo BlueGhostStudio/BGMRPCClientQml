@@ -67,6 +67,15 @@ main(int argc, char* argv[]) {
 
     QCoreApplication a(argc, argv);
 
+    a.setApplicationName("BGMRPC ObjectLoader");
+#ifdef VERSION
+    a.setApplicationVersion(VERSION);
+#else
+    a.setApplicationVersion("1.0.0");
+#endif
+    a.setOrganizationName("BlueGhost Studio");
+    a.setOrganizationDomain("bgstudio.org");
+
     QByteArray remoteObjectName;
     QString libName;
     QByteArray appGroup;

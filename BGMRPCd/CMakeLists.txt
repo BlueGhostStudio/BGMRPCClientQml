@@ -9,6 +9,8 @@ project(
 
 include(../cmake/BGMRPC.cmake)
 
+add_definitions(-DVERSION="${BGMRPC_VERSION}")
+
 find_package(
   QT NAMES Qt6 Qt5
   COMPONENTS Core WebSockets

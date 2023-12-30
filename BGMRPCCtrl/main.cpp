@@ -433,8 +433,18 @@ main(int argc, char* argv[]) {
 
     QCoreApplication a(argc, argv);
 
+    a.setApplicationName("BGMRPC Ctrl");
+#ifdef VERSION
+    a.setApplicationVersion(VERSION);
+#else
+    a.setApplicationVersion("1.0.0");
+#endif
+    a.setOrganizationName("BlueGhost Studio");
+    a.setOrganizationDomain("bgstudio.org");
+
     QString usage =
-        "commands: start, stop, createObject, detachObject, listObjects";
+        "commands: start, stop, createObject, detachObject, "
+        "listObjects, listApps, runApp, stopApp";
 
     if (argc < 2) {
         qWarning().noquote() << usage;
