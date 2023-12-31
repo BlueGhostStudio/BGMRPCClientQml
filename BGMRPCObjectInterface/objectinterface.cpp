@@ -100,7 +100,7 @@ ObjectInterface::setup(const QByteArray& appName, const QByteArray& name,
 
         m_name = name;
         m_ID = objID;
-        m_grp = grp;
+        m_grp = noAppPrefix ? "" : grp;
         m_appName = appName;
 
         QByteArray rootPath =

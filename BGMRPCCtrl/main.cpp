@@ -328,7 +328,7 @@ genArgs(const QJsonObject& IFTypes, const QJsonObject& jsoObj,
         if (!jsoIFType.contains(it.key())) continue;
 
         if (it.key() == "IF") {
-            args << "-i" << jsoIFType["IF"].toString();
+            args << "-I" << jsoIFType["IF"].toString();
             resetIF = true;
         }  else {
             QJsonObject jsoOpt = jsoIFType[it.key()].toObject();
@@ -338,7 +338,7 @@ genArgs(const QJsonObject& IFTypes, const QJsonObject& jsoObj,
                 if (!value.isEmpty())
                     args << jsoOpt["opt"].toString() << it.value().toString();
             } else if (it.value().toBool(false))
-                args << jsoOpt["opt"].toString();
+                args.prepend(jsoOpt["opt"].toString());
         }
     }
 
@@ -380,13 +380,17 @@ runApp(const QString& app, const QString& grp) {
 
             QStringList args({ "-n", objName, "-a", app });
 
-            if (!genArgs(IFTypes, jsoObj, args)) args << "-i" << interface;
-
             if (noprefix) args << "-A";
 
             if (!grp.isEmpty()) args << "-g" << grp;
 
             args << QProcess::splitCommand(jsoObj["args"].toString(""));
+
+            QStringList IFTypeArgs;
+
+            if (!genArgs(IFTypes, jsoObj, IFTypeArgs))
+                args << "-I" << interface;
+            if (!IFTypeArgs.isEmpty()) args << IFTypeArgs;
 
             return createObject(genObjectName(grp.toLatin1(), app.toLatin1(),
                                               objName.toLatin1(), noprefix),
