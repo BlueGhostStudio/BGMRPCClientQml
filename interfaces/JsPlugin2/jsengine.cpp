@@ -216,6 +216,8 @@ JsEngine::initial(int argc, char** argv) {
         }
     }
 
+    qDebug() << "----------------" << m_appPath << jsFile;
+
     bool loadJsFileOk = loadJsFile(m_appPath + '/' + jsFile);
 
     return loadJsFileOk;

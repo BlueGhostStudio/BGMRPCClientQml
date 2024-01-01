@@ -31,21 +31,21 @@ ObjectInterface::ObjectInterface(QObject* parent) : QObject(parent) {
 }
 
 void
-ObjectInterface::setAppPath(const QByteArray& path) {
+ObjectInterface::setAppPath(const QString& path) {
     m_appPath = path;
 }
 
-QByteArray
+QString
 ObjectInterface::appPath() const {
     return m_appPath;
 }
 
 void
-ObjectInterface::setDataPath(const QByteArray& path) {
+ObjectInterface::setDataPath(const QString& path) {
     m_dataPath = path;
 }
 
-QByteArray
+QString
 ObjectInterface::dataPath() const {
     return m_dataPath;
 }
@@ -103,12 +103,12 @@ ObjectInterface::setup(const QByteArray& appName, const QByteArray& name,
         m_grp = noAppPrefix ? "" : grp;
         m_appName = appName;
 
-        QByteArray rootPath =
+        QString rootPath =
             getSettings(*m_objectPlug, NS_BGMRPC::CNF_PATH_ROOT);
-        QByteArray dataPath = rootPath + "/data/" +
+        QString dataPath = rootPath + "/data/" +
                               (m_grp.isEmpty() ? "default" : m_grp) + '/' +
-                              m_appName;
-        setAppPath(rootPath + "/apps/" + m_appName);
+                              m_appName.section("::", 0, 0);
+        setAppPath(rootPath + "/apps/" + m_appName.section("::", -1, -1));
         setDataPath(dataPath);
 
         if (!initial(argc, argv)) return false;
@@ -117,7 +117,7 @@ ObjectInterface::setup(const QByteArray& appName, const QByteArray& name,
         m_dataServer = new QLocalServer(this);
         if (m_dataServer->listen(dataServerName)) {
             QByteArray data(1, (quint8)NS_BGMRPC::CTRL_REGISTER);
-            data.append(m_ID);
+            data.append(m_ID.toLatin1());
             m_objectPlug->write(data);
             if (!m_objectPlug->waitForBytesWritten() ||
                 !m_objectPlug->waitForReadyRead()) {

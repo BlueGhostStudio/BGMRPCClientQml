@@ -33,10 +33,10 @@ class OBJECTINTERFACE_EXPORT ObjectInterface : public QObject {
 public:
     ObjectInterface(QObject* parent = nullptr);
 
-    void setAppPath(const QByteArray& path);
-    QByteArray appPath() const;
-    void setDataPath(const QByteArray& path);
-    QByteArray dataPath() const;
+    void setAppPath(const QString& path);
+    QString appPath() const;
+    void setDataPath(const QString& path);
+    QString dataPath() const;
 
     //! \name 初始化和对象属性
     //! @{
@@ -165,12 +165,12 @@ protected:
 protected:
     QLocalSocket* m_objectPlug;
     QLocalServer* m_dataServer;
-    QByteArray m_appPath;
-    QByteArray m_dataPath;
-    QByteArray m_name;
-    QByteArray m_ID;
-    QByteArray m_appName;
-    QByteArray m_grp;
+    QString m_appPath;
+    QString m_dataPath;
+    QString m_name;
+    QString m_ID;
+    QString m_appName;
+    QString m_grp;
     //    QMap<QString, T_METHOD> m_methods;
 
     /*QMap<QString, std::function<QVariant(ObjectInterface*, QPointer<Caller>,
