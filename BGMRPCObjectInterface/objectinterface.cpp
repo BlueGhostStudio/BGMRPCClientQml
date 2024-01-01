@@ -566,6 +566,7 @@ callData.append(
 
 bool
 ObjectInterface::initial(int /*argc*/, char** /*argv*/) {
+    registerMethods();
     return true;
 }
 

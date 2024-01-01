@@ -7,9 +7,10 @@ find_package(
   COMPONENTS Core Network Qml
   REQUIRED)
 
-if (QT_VERSION_MAJOR EQUAL 5)
-    add_subdirectory(PythonInterface)
+if(QT_VERSION_MAJOR EQUAL 5)
+  add_subdirectory(PythonInterface)
 elseif(QT_VERSION_MAJOR EQUAL 6)
-    add_subdirectory(JsPlugin2)
-    add_subdirectory(BGCMS)
+  add_subdirectory(JsPlugin2)
+  add_subdirectory(BGCMS)
+  add_subdirectory(Graphviz)
 endif()

@@ -159,7 +159,6 @@ createObject(int argc, char* argv[]) {
     QByteArray objName = genObjectName(group, app, argv[2], noAppPrefix);
 
     QStringList args;
-    args << "-n" << argv[2] << "-I" << argv[3];
     for (int i = 4; i < argc; i++) args << argv[i];
 
     return createObject(objName, args);

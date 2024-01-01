@@ -56,18 +56,9 @@ JsEngine::loadJsFile(const QString& jsFileName) {
             m_PWD = QFileInfo(jsFileName).absolutePath() + '/';
             QJSValue jsObj = m_jsEngine->newQObject(new JsJSObj(this));
             m_jsEngine->globalObject().setProperty("JS", jsObj);
-            /*m_jsEngine->globalObject().setProperty("path_app", m_appPath);
-            m_jsEngine->globalObject().setProperty("path_data", m_dataPath);
-            m_jsEngine->globalObject().setProperty("path_modules",
-                                                   m_jsModulePath);
-            m_jsEngine->globalObject().setProperty("PWD",
-            QDir::currentPath());*/
 
             m_jsVerificationFun =
                 m_jsEngine->globalObject().property("verification");
-            /*if (m_jsVerificationFun.isUndefined())
-                m_jsVerificationFun =
-                    m_jsEngine->globalObject().property("clientIdentify");*/
 
             QJSValue jsConstructor =
                 m_jsEngine->globalObject().property("constructor");
@@ -194,7 +185,6 @@ JsEngine::variant2JsValue(const QVariant& var) {
 
 bool
 JsEngine::initial(int argc, char** argv) {
-    ObjectInterface::initial(argc, argv);
     QString rootPath = getSettings(*m_objectPlug, NS_BGMRPC::CNF_PATH_ROOT);
     QString installDir = getSettings(*m_objectPlug, "path/installDir");
     QString etcDir = getSettings(*m_objectPlug, NS_BGMRPC::CNF_PATH_ETC);
@@ -215,8 +205,6 @@ JsEngine::initial(int argc, char** argv) {
             break;
         }
     }
-
-    qDebug() << "----------------" << m_appPath << jsFile;
 
     bool loadJsFileOk = loadJsFile(m_appPath + '/' + jsFile);
 
