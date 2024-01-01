@@ -330,7 +330,7 @@ genArgs(const QJsonObject& IFTypes, const QJsonObject& jsoObj,
         if (it.key() == "IF") {
             args << "-I" << jsoIFType["IF"].toString();
             resetIF = true;
-        }  else {
+        } else {
             QJsonObject jsoOpt = jsoIFType[it.key()].toObject();
 
             if (jsoOpt["hasArg"].toBool(false)) {
@@ -346,7 +346,8 @@ genArgs(const QJsonObject& IFTypes, const QJsonObject& jsoObj,
 }
 
 bool
-runApp(const QString& app, const QString& grp) {
+runApp(const QString& app, const QString& grp,
+       const QString& pApp = QString()) {
     if (!serverRunning) {
         qWarning().noquote() << "BGMRPC,listObjects,Server not run";
         return false;
@@ -366,25 +367,36 @@ runApp(const QString& app, const QString& grp) {
 
     processAppJson(
         app, grp,
-        [](const QString& relApp, const QString& relAppGrp,
-           const QJsonValue&) -> bool { return runApp(relApp, relAppGrp); },
-        [](const QString& relApp, const QString& relAppGrp,
+        [app](const QString& relApp, const QString& relAppGrp,
+           const QJsonValue&) -> bool { return runApp(relApp, relAppGrp, app); },
+        [app](const QString& relApp, const QString& relAppGrp,
            const QJsonValue&) -> bool {
-            runApp(relApp, relAppGrp);
+            runApp(relApp, relAppGrp, app);
             return true;
         },
-        [app, IFTypes](const QString& grp, const QString& objName,
+        [app, IFTypes, pApp](const QString& grp, const QString& objName,
                        bool noprefix, const QJsonObject& jsoObj) -> bool {
             QString interface = jsoObj["IF"].toString("");
             if (interface.isEmpty()) return false;
 
-            QStringList args({ "-n", objName, "-a", app });
+            // QStringList args({ "-n", objName, "-a", app });
+            QStringList args;
 
-            if (noprefix) args << "-A";
+            args << "-n" << objName;
+
+            if (noprefix) {
+                args << "-a" << app;
+                args << "-A";
+            } else if (pApp.isEmpty())
+                args << "-a" << app;
+            else
+                args << "-a" << pApp + "::" + app;
 
             if (!grp.isEmpty()) args << "-g" << grp;
 
             args << QProcess::splitCommand(jsoObj["args"].toString(""));
+
+            qDebug() << args;
 
             QStringList IFTypeArgs;
 
