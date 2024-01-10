@@ -14,7 +14,7 @@ public:
     JsByteArray(bool hold = false, QObject* parent = nullptr);
     JsByteArray(const QByteArray& data, bool hold = false,
                 QObject* parent = nullptr);
-    ~JsByteArray() { qDebug() << "-- destroy --"; }
+    ~JsByteArray() {}
 
     Q_INVOKABLE int size() const;
     Q_INVOKABLE char at(int i) const;

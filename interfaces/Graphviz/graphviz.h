@@ -10,7 +10,7 @@ class GRAPHVIZ_EXPORT Graphviz : public ObjectInterface {
 public:
     Graphviz(QObject* parent = nullptr);
 
-    QVariant render(QPointer<Caller> caller, const QVariantList& args);
+    QVariant render(QPointer<Caller> caller, const QByteArray& data);
 
 protected:
     void registerMethods() override;

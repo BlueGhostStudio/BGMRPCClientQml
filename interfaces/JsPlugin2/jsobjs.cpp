@@ -264,7 +264,6 @@ JsJSObj::containsRelClient(const QJSValue& caller) const {
 
 QJSValue
 JsJSObj::findRelClient(const QJSValue& callback, bool autoDel) const {
-    qDebug() << "---------------in findRelClient-----------";
     if (!callback.isCallable()) return QJSValue();
 
     QJSEngine* engine = qjsEngine(this);

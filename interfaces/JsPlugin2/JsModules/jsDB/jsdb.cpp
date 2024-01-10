@@ -59,7 +59,6 @@ JsDB::exec(const QString& stm, const QJSValue& bind) const {
         QJSValueIterator it(bind);
         while (it.hasNext()) {
             it.next();
-            qDebug() << it.value().toVariant();
             query.bindValue(it.name(), it.value().toVariant());
         }
     }
@@ -112,6 +111,5 @@ JsDBFactory::constructor(const QVariant&) const {
 
 void
 initialModule(QJSEngine* engine) {
-    qDebug() << "Load jsDB Module";
     registerJsType<JsDBFactory>("JsDB", *engine);
 }

@@ -94,17 +94,16 @@ Client::connectObject(const QString& mID, const QString& objName) {
                                       .arg(objName);
             });
 
-            QObject::connect(relSocket, &QLocalSocket::disconnected, [=]() {
-                m_relatedObjectSockets.remove(objName);
-                relSocket->deleteLater();
-            });
+            QObject::connect(relSocket, &QLocalSocket::disconnected, this,
+                             [=]() {
+                                 m_relatedObjectSockets.remove(objName);
+                                 relSocket->deleteLater();
+                             });
 
-            QObject::connect(relSocket, &QLocalSocket::readyRead, [=]() {
-                splitLocalSocketFragment(relSocket,
-                                         [=](const QByteArray& readData) {
-                                             qDebug() << "in client";
-                                             returnData(readData);
-                                         });
+            QObject::connect(relSocket, &QLocalSocket::readyRead, this, [=]() {
+                splitLocalSocketFragment(
+                    relSocket,
+                    [=](const QByteArray& readData) { returnData(readData); });
                 /*int lenLen = sizeof(quint64);
                 if (relSocket->property("fragment").isValid()) {
                     quint64 len =

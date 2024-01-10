@@ -62,12 +62,10 @@ JsFileFactory::JsFileFactory(QObject* parent) : JsObjFactory(parent, false) {}
 
 QObject*
 JsFileFactory::constructor(const QVariant&) const {
-    qDebug() << "new file obj";
     return new JsFile();
 }
 
 void
 initialModule(QJSEngine* engine) {
-    qDebug() << "Load jsFile Module";
     registerJsType<JsFileFactory>("JsFile", *engine);
 }

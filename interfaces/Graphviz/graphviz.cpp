@@ -1,28 +1,26 @@
 #include "graphviz.h"
 
 #include <QProcess>
+//#include "mthdAdaptIF.h"
 
 Graphviz::Graphviz(QObject* parent) : ObjectInterface(parent) {}
 
 QVariant
-Graphviz::render(QPointer<Caller> caller, const QVariantList& args) {
+Graphviz::render(QPointer<Caller> caller, const QByteArray& data) {
     QMutex mutex;
     QMutexLocker locker(&mutex);
 
-    if (!args[0].canConvert<QByteArray>())
-        return QVariantMap(
-            { { "ok", false }, { "error", "Parameter type error" } });
+    QByteArray dotInput(data);
 
-    QByteArray dotInput(args[0].toByteArray());
-
-    QProcess dotProc(this);
+    QProcess dotProc;
     dotProc.start("dot", { "-T", "svg" });
 
-    if (!dotProc.waitForStarted(1000))
-        return QVariantMap({ { "ok", false },
-                             { "error",
-                               "The process cannot start, possibly because "
-                               "Graphviz is not installed." } });
+    if (!dotProc.waitForStarted(1000)) {
+        return QVariantMap{ { "ok", false },
+                            { "error",
+                              "The process cannot start, possibly because "
+                              "Graphviz is not installed." } };
+    }
 
     dotProc.write(dotInput);
     dotProc.closeWriteChannel();
@@ -53,8 +51,10 @@ Graphviz::render(QPointer<Caller> caller, const QVariantList& args) {
 
 void
 Graphviz::registerMethods() {
-    REG_METHOD("render", &Graphviz::render);
-    qDebug() << "methods" << m_methods.keys();
+    //REG_METHOD("render", &Graphviz::render);
+    //qDebug() << "methods" << m_methods.keys();
+    //m_methods["render"] = AdapIF(this, &Graphviz::render, ARG<QByteArray>());
+    RM("render", &Graphviz::render, ARG<QByteArray>());
 }
 
 ObjectInterface*

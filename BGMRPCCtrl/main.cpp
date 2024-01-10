@@ -55,8 +55,6 @@ startServer(int argc, char* argv[]) {
                           defaultSettings.value("path/bin", rootPath + "/bin"))
                   .toString();
 
-    qDebug() << rootPath << logPath << binPath;
-
     if (qgetenv("BGMRPCDebug") != "1") {
         BGMRPCProcess.setStandardOutputFile(logPath /*, QIODevice::Append*/);
         BGMRPCProcess.setStandardErrorFile(logPath /*, QIODevice::Append*/);
@@ -121,7 +119,8 @@ createObject(const QByteArray& name, const QStringList& args) {
     QThread::msleep(1000);
     ok = checkObject(name);
 
-    qInfo().noquote() << "CreateObject " << (ok ? "ok" : "fail");
+    qInfo().noquote() << "CreateObject"
+                      << "(" + name + ")" << (ok ? "ok" : "fail");
 
     return ok;
 }
@@ -367,14 +366,16 @@ runApp(const QString& app, const QString& grp,
     processAppJson(
         app, grp,
         [app](const QString& relApp, const QString& relAppGrp,
-           const QJsonValue&) -> bool { return runApp(relApp, relAppGrp, app); },
+              const QJsonValue&) -> bool {
+            return runApp(relApp, relAppGrp, app);
+        },
         [app](const QString& relApp, const QString& relAppGrp,
-           const QJsonValue&) -> bool {
+              const QJsonValue&) -> bool {
             runApp(relApp, relAppGrp, app);
             return true;
         },
         [app, IFTypes, pApp](const QString& grp, const QString& objName,
-                       bool noprefix, const QJsonObject& jsoObj) -> bool {
+                             bool noprefix, const QJsonObject& jsoObj) -> bool {
             QString interface = jsoObj["IF"].toString("");
             if (interface.isEmpty()) return false;
 
@@ -383,19 +384,19 @@ runApp(const QString& app, const QString& grp,
 
             args << "-n" << objName;
 
+            QString fullAppName;  //= pApp.isEmpty() ? app : pApp + "::" + app;
+
             if (noprefix) {
-                args << "-a" << app;
+                fullAppName = app;
                 args << "-A";
-            } else if (pApp.isEmpty())
-                args << "-a" << app;
-            else
-                args << "-a" << pApp + "::" + app;
+            } else
+                fullAppName = pApp.isEmpty() ? app : pApp + "::" + app;
+
+            args << "-a" << fullAppName;
 
             if (!grp.isEmpty()) args << "-g" << grp;
 
             args << QProcess::splitCommand(jsoObj["args"].toString(""));
-
-            qDebug() << args;
 
             QStringList IFTypeArgs;
 
@@ -403,9 +404,10 @@ runApp(const QString& app, const QString& grp,
                 args << "-I" << interface;
             if (!IFTypeArgs.isEmpty()) args << IFTypeArgs;
 
-            return createObject(genObjectName(grp.toLatin1(), app.toLatin1(),
-                                              objName.toLatin1(), noprefix),
-                                args);
+            return createObject(
+                genObjectName(grp.toLatin1(), fullAppName.toLatin1(),
+                              objName.toLatin1(), noprefix),
+                args);
 
             return true;
         },
@@ -417,7 +419,8 @@ runApp(const QString& app, const QString& grp,
 }
 
 bool
-stopApp(const QString& app, const QString& grp) {
+stopApp(const QString& app, const QString& grp,
+        const QString& pApp = QString()) {
     if (!serverRunning) {
         qWarning().noquote() << "BGMRPC, listObjects, Server not run";
         return false;
@@ -425,20 +428,23 @@ stopApp(const QString& app, const QString& grp) {
 
     qInfo().noquote() << "Stopping " + app + " ...";
 
-    auto stopRelApps = [](const QString& relApp, const QString& relAppGrp,
+    QString fullAppName = pApp.isEmpty() ? app : pApp + "::" + app;
+
+    auto stopRelApps = [fullAppName](const QString& relApp, const QString& relAppGrp,
                           const QJsonValue& jsvRelApp) -> bool {
         if (!jsvRelApp.isObject() ||
-            !jsvRelApp.toObject({})["skip-stop"].toBool(false))
-            stopApp(relApp, relAppGrp);
+            !jsvRelApp.toObject({})["skip-stop"].toBool(false)) {
+            stopApp(relApp, relAppGrp, fullAppName);
+        }
 
         return true;
     };
 
     processAppJson(
         app, grp, stopRelApps, stopRelApps,
-        [app](const QString& grp, const QString& objName, bool noprefix,
+        [fullAppName](const QString& grp, const QString& objName, bool noprefix,
               const QJsonObject& jsoObj) -> bool {
-            detachObject(genObjectName(grp.toLatin1(), app.toLatin1(),
+            detachObject(genObjectName(grp.toLatin1(), fullAppName.toLatin1(),
                                        objName.toLatin1(), noprefix));
             return true;
         },

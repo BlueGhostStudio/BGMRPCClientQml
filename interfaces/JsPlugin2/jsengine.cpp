@@ -185,9 +185,9 @@ JsEngine::variant2JsValue(const QVariant& var) {
 
 bool
 JsEngine::initial(int argc, char** argv) {
-    QString rootPath = getSettings(*m_objectPlug, NS_BGMRPC::CNF_PATH_ROOT);
-    QString installDir = getSettings(*m_objectPlug, "path/installDir");
-    QString etcDir = getSettings(*m_objectPlug, NS_BGMRPC::CNF_PATH_ETC);
+    QString rootPath = getSettings(*m_objectConnecter, NS_BGMRPC::CNF_PATH_ROOT);
+    QString installDir = getSettings(*m_objectConnecter, "path/installDir");
+    QString etcDir = getSettings(*m_objectConnecter, NS_BGMRPC::CNF_PATH_ETC);
 
     QSettings JSMSettings(etcDir + "/JsModules.conf",
                           QSettings::IniFormat);

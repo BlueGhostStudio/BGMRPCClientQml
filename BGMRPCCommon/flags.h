@@ -37,7 +37,12 @@ enum Call {
     CALL_INTERNAL_NOBLOCK = 2
 };
 
-enum Error { ERR_NOOBJ = 0, ERR_NOMETHOD = 1, ERR_ACCESS };
+enum Error {
+    ERR_NOOBJ = 0,
+    ERR_NOMETHOD = 1,
+    ERR_INVALID_ARGUMENT,
+    ERR_ACCESS
+};
 }  // namespace NS_BGMRPC
 
 #endif  // FLAGS_H

@@ -1,188 +1,128 @@
 #ifndef OBJECTINTERFACE_H
 #define OBJECTINTERFACE_H
 
-#include <caller.h>
-
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QJsonValue>
 #include <QLocalServer>
 #include <QLocalSocket>
+#include <QMap>
+#include <QMutex>
 #include <QObject>
-#include <QPointer>
 #include <functional>
 
 #include "ObjectInterface_global.h"
+#include "mthdAdaptIF.h"
 
 namespace NS_BGMRPCObjectInterface {
 
-#define REG_METHOD(methodName, memberMethod) \
-    m_methods[methodName] = std::bind(       \
-        memberMethod, this, std::placeholders::_1, std::placeholders::_2);
-
 class Caller;
-class ObjectInterface;
-
-/*typedef QVariant (*T_METHOD)(ObjectInterface*, QPointer<Caller>,
-                             const QVariantList&);*/
 using T_METHOD = std::function<QVariant(QPointer<Caller>, const QVariantList&)>;
 
 class OBJECTINTERFACE_EXPORT ObjectInterface : public QObject {
     Q_OBJECT
 public:
-    ObjectInterface(QObject* parent = nullptr);
+    explicit ObjectInterface(QObject* parent = nullptr);
+    ~ObjectInterface();
 
     void setAppPath(const QString& path);
     QString appPath() const;
+
     void setDataPath(const QString& path);
     QString dataPath() const;
 
-    //! \name 初始化和对象属性
-    //! @{
-    /*!
-     * \brief 注册对象
-     * \param 对象明
-     * \return 返回成功与否
-     */
-    /*bool registerObject(const QByteArray& appName, const QByteArray& name,
-                        const QByteArray& grp = QByteArray());*/
-    /*static QLocalSocket* plugIntoBGMRPC(const QByteArray& group,
-                                        const QByteArray& app,
-                                        const QByteArray& name);*/
-
-    bool setup(const QByteArray& appName, const QByteArray& name,
-               const QByteArray& grp = QByteArray(), int argc = 0,
-               char** argv = nullptr, bool noAppPrefix = false);
-    /*!
-     * \brief 获取当前对象名
-     * \return 当前对象名
-     */
     QString objectName() const;
     QString objectID() const;
     QString group() const;
     QString appName() const;
-    //! @}
 
-    //! \name 关联调用者(客户端)
-    //! @{
-    /*!
-     * \brief 增加关联调用者
-     * \param 调用者
-     */
+    bool setup(const QByteArray& appName, const QByteArray& name,
+               const QByteArray& grp = QByteArray(), int argc = 0,
+               char** argv = nullptr, bool noAppPrefix = false);
+
+    QVariant call(bool block, QPointer<Caller> caller, const QString& obj,
+                  const QString& method, const QVariantList& args);
+    QVariant call(QPointer<Caller> caller, const QString& obj,
+                  const QString& method, const QVariantList& args);
+    QVariant call(const QString& obj, const QString& method,
+                  const QVariantList& args);
+    void callNonblock(const QString& obj, const QString& method,
+                      const QVariantList& args);
+
     void addRelatedCaller(QPointer<Caller> caller);
-    /*!
-     * \brief 删除关联调用者
-     * \param 调用者
-     * \return
-     */
     bool removeRelatedCaller(QPointer<Caller> caller);
-    /*!
-     * \brief 查找当前调用者
-     * \param 回调函数，若查找成功此回调函数返回 true
-     * \return 返回查找到的关联调用者，若无调用者则返回空
-     */
     QPointer<Caller> findRelatedCaller(
         std::function<bool(QPointer<Caller>)> callback);
-    //! @}
 
-    //! \name 向关联调用者广播信号
-    //! @{
-    /*!
-     * \brief emitSignal
-     * \param signal
-     * \param args
-     */
     void emitSignal(const QString& signal, const QVariant& args);
-    //! @}
 
-    //! \name 调用远端内部其他对象方法
-    //! @{
-    /*!
-     * \brief callLocalMethod
-     * \param caller
-     * \param object
-     * \param method
-     * \param args
-     * \return
-     */
-    QVariant call(QPointer<Caller> caller, const QString& object,
-                  const QString& method, const QVariantList& args);
-    /*! \overload */
-    QVariant call(const QString& object, const QString& method,
-                  const QVariantList& args);
-    /*void callLocalMethodNonblock(QPointer<Caller> caller, const QString&
-       object, const QString& method, const QVariantList& args);*/
-    void callNonblock(const QString& object, const QString& method,
-                      const QVariantList& args);
-    //! @}
-
-    //! \name 调用者的私有对象数据
-    //! @{
-    /*!
-     * \brief setPrivateData
-     * \param caller
-     * \param name
-     * \param data
-     */
     void setPrivateData(QPointer<Caller> caller, const QString& name,
                         const QVariant& data);
-    /*!
-     * \brief privateData
-     * \param caller
-     * \param name
-     * \return
-     */
-    QVariant privateData(QPointer<Caller> caller, const QString& name) const;
-    //! @}
-
-signals:
-    //    void objectDisconnected();
-    void callerExisted(QPointer<NS_BGMRPCObjectInterface::Caller>);
-    void relatedCallerExited(QPointer<NS_BGMRPCObjectInterface::Caller>);
-
-    void thread_signal_call(bool block, qint64 callerID, const QString& object,
-                            const QString& method, const QVariantList& args);
-    void thread_signal_return(const QVariant&);
+    QVariant privateData(QPointer<Caller> caller, const QString& name);
 
 public slots:
     void detachObject();
 
 private slots:
-    //    void callMethod();
     void newCaller();
-    void on_thread_call(bool block, qint64 callerID, const QString& object,
-                        const QString& method, const QVariantList& args);
+
+signals:
+    void callerExited(QPointer<Caller>);
+    void relatedCallerExited(QPointer<Caller>);
 
 protected:
     virtual bool initial(int, char**);
-    virtual bool verification(QPointer<Caller> caller, const QString& method,
-                              const QVariantList& args);
+    virtual bool verification(QPointer<Caller>, const QString&,
+                              const QVariantList&);
     virtual void exec(const QString& mID, QPointer<Caller> caller,
-                      const QString& methodName, const QVariantList& args);
+                      const QString& method, const QVariantList& args);
     virtual void registerMethods() = 0;
 
+    /*
+     *  RM: Register Method
+     * RMV: RMV: Register Method with Variable arguments. "V" signifies Variable
+     * parameters stored in the argument list.
+     */
+    template <typename T, typename... Args, typename First, typename... Rest>
+    void RM(const QString& method, QVariant (T::*funPtr)(Args...),
+            const First& first, const Rest&... rest) {
+        QStringList params;
+        genParamInfo(params, first, rest...);
+        m_IFDict[method] = method + "(" + params.join(", ") + ")";
+        m_methods[method] =
+            AdapIF(static_cast<T*>(this), funPtr, first, rest...);
+    }
+    template <typename T, typename... Args>
+    void RM(const QString& method, QVariant (T::*funPtr)(Args...)) {
+        m_IFDict[method] = method + "()";
+        m_methods[method] = AdapIF(static_cast<T*>(this), funPtr);
+    }
+    template <typename T>
+    void RMV(const QString& methodName,
+             QVariant (T::*memberMethod)(const QPointer<Caller>,
+                                         const QVariantList&)) {
+        m_IFDict[methodName] = methodName + "(arg0, arg1, ...)";
+        m_methods[methodName] =
+            std::bind(memberMethod, static_cast<T*>(this),
+                      std::placeholders::_1, std::placeholders::_2);
+    }
+
 protected:
-    QLocalSocket* m_objectPlug;
-    QLocalServer* m_dataServer;
     QString m_appPath;
     QString m_dataPath;
     QString m_name;
     QString m_ID;
     QString m_appName;
     QString m_grp;
-    //    QMap<QString, T_METHOD> m_methods;
 
-    /*QMap<QString, std::function<QVariant(ObjectInterface*, QPointer<Caller>,
-                                         const QVariantList&)>>
-        m_methods;*/
+    QMutex m_objMutex;
+
     QMap<QString, T_METHOD> m_methods;
-    QMap<quint64, QPointer<Caller>> m_relatedCaller;
+    QMap<QString, QString> m_IFDict;
 
-    typedef QVariantMap t_priData;
-    QMap<quint64, t_priData> m_privateDatas;
+    QMap<quint64, QPointer<Caller>> m_relatedCaller;
+    QMap<quint64, QVariantMap> m_privateDatas;
+
+    QLocalServer* m_dataServer = nullptr;
+    QLocalSocket* m_objectConnecter = nullptr;
 };
 
 }  // namespace NS_BGMRPCObjectInterface
-
 #endif  // OBJECTINTERFACE_H

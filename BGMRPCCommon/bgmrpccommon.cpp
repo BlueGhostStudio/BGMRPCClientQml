@@ -154,3 +154,10 @@ genObjectName(const QByteArray& grp, const QByteArray& app,
     else
         return (!app.isEmpty() ? app + "::" : "") + name;
 }
+
+bool
+checkObject(QLocalSocket* ctrlSocket, const QString& objName) {
+    return ctrlCommand<bool>(
+        ctrlSocket, (quint8)NS_BGMRPC::CTRL_CHECKOBJECT, objName.toLatin1(),
+        [](const QByteArray& data) -> bool { return (quint8)data[0]; });
+}

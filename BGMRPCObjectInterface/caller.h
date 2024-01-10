@@ -6,7 +6,9 @@
 #include <QLocalSocket>
 #include <QObject>
 namespace NS_BGMRPCObjectInterface {
+
 class ObjectInterface;
+
 class Caller : public QObject {
     Q_OBJECT
 public:
@@ -24,7 +26,7 @@ public:
     //    void setID(quint64 id);
 
 signals:
-    void clientExited();
+    void clientExited(qint64 id);
     void returnData(const QString& mID, const QVariant& data);
     void emitSignal(const QString& signal, const QVariant& args);
     void returnError(const QString& mID, quint8 errNo, const QString& errStr);

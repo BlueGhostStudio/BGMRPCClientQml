@@ -36,14 +36,15 @@ target_sources(
           ${CMAKE_CURRENT_LIST_DIR}/caller.cpp
           ${CMAKE_CURRENT_LIST_DIR}/objectinterface.cpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/caller.h
-         ${CMAKE_CURRENT_LIST_DIR}/objectinterface.h)
+         ${CMAKE_CURRENT_LIST_DIR}/objectinterface.h
+         ${CMAKE_CURRENT_LIST_DIR}/mthdAdaptIF.h)
 
 set_target_properties(
   BGMRPCObjectInterface
   PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR}
              VERSION ${PROJECT_VERSION}
              OUTPUT_NAME ${LIB_OUTPUT_NAME}
-             PUBLIC_HEADER "caller.h;objectinterface.h"
+             PUBLIC_HEADER "caller.h;objectinterface.h;mthdAdaptIF.h"
              INSTALL_RPATH_USE_LINK_PATH ON
              INSTALL_RPATH "${BGMRPC_REMOTE}/${CMAKE_INSTALL_LIBDIR}")
 

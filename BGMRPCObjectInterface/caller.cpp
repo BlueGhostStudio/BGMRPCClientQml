@@ -15,14 +15,14 @@ Caller::Caller(ObjectInterface* callee, QLocalSocket* socket, QObject* parent)
     m_exited = false;
     m_callType = NS_BGMRPC::CALL_UNDEFINED;
 
-    QObject::connect(m_dataSocket, &QLocalSocket::disconnected, [=]() {
+    QObject::connect(m_dataSocket, &QLocalSocket::disconnected, this, [=]() {
         m_exited = true;
         deleteLater();
     });
     QObject::connect(m_dataSocket, &QLocalSocket::disconnected, m_dataSocket,
                      &QLocalSocket::deleteLater);
-    QObject::connect(m_dataSocket, &QLocalSocket::disconnected,
-                     [=]() { clientExited(); });
+    QObject::connect(m_dataSocket, &QLocalSocket::disconnected, this,
+                     [=]() { emit clientExited(m_ID); });
 
     QObject::connect(this, &Caller::emitSignal, this, &Caller::onEmitSignal);
     QObject::connect(this, &Caller::returnData, this, &Caller::onReturnData);
@@ -147,6 +147,9 @@ Caller::onReturnError(const QString& mID, quint8 errNO, const QString& errStr) {
         errJsonObj["error"] =
             QString("This client is not allowed to call the %1 method")
                 .arg(errStr);
+        break;
+    case NS_BGMRPC::ERR_INVALID_ARGUMENT:
+        errJsonObj["error"] = errStr;
         break;
     }
 
