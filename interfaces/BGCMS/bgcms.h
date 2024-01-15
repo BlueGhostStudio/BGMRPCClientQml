@@ -30,8 +30,8 @@ protected:
     void insertAttrs(QVariantMap& map) const;
 
 protected:
-    bool m_ok;
-    QString m_error;
+    bool m_ok = false;
+    QString m_error{ "null node" };
     QVariantMap m_attributes;
 };
 
@@ -82,6 +82,8 @@ public:
     // interfaces
     QString getCallerToken(QPointer<Caller> caller);
 
+    QVariant info(QPointer<Caller> caller);
+
     QVariant join(QPointer<Caller> caller);
 
     QVariant node(QPointer<Caller> caller, const QVariantList& args);
@@ -112,9 +114,8 @@ public:
 
 private: /* --------------- node(token, ...) -------------------- */
     t_retNode node(const QString& token, const QVariantList& args);
-    t_retNode node(const QString& token,  // by id
-                   int id);
-    t_retNode node(const QString& token,  // by pnode/name
+    t_retNode node(const QString& token, int id);  // by id
+    t_retNode node(const QString& token,           // by pnode/name
                    QVariant pNodeId, const QString& name, bool ref = true);
     t_retNode node(const QString& token,  // by path(relative path)
                    const QString& path, const t_retNode& pNode = {});
@@ -127,7 +128,7 @@ private: /* --------------- node(token, ...) -------------------- */
 
     /* ------------------- common ---------------------*/
     QVariantList getRows(QSqlQuery& query);
-    t_retNode rowData(const QSqlRecord& record) ;
+    t_retNode rowData(const QSqlRecord& record);
 
     QVariantMap updateStatementFragments(  // clang-format off
         const QStringList& fields, QVariantMap data,
@@ -162,5 +163,9 @@ protected:
         "`private`, `date`, `mdate`, `seq` "
     };
 };
+
+extern "C" {
+NS_BGMRPCObjectInterface::ObjectInterface* create(int, char**);
+}
 
 #endif  // BGCMS_H

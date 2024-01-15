@@ -4,6 +4,7 @@
 #include <mthdAdaptIF.h>
 
 #include "caller.h"
+#include <QSqlError>
 
 using namespace NS_BGMRPCObjectInterface;
 
@@ -148,6 +149,14 @@ BGCMS::getCallerToken(QPointer<Caller> caller) {
 }
 
 QVariant
+BGCMS::info(QPointer<Caller> caller) {
+    QStringList methodsInfo;
+    foreach (const QString& method, m_IFDict) methodsInfo.append(method);
+
+    return methodsInfo;
+}
+
+QVariant
 BGCMS::join(QPointer<Caller> caller) {
     addRelatedCaller(caller);
 
@@ -199,14 +208,14 @@ BGCMS::list(QPointer<Caller> caller, const QVariant& pNode, int filter,
             QVariantMap query) {
     QString token = getCallerToken(caller);
 
-    t_retNode retPNode = node(caller, { pNode }).toMap();
+    t_retNode retPNode = node(token, { pNode });
 
     if (!retPNode.ok())
         return t_retList("no exists parent node");
-    else if (retPNode["type"] != 'D')
+    else if (retPNode["type"] != "D")
         return t_retList("the node is not directory node");
 
-    query["pid"] = retPNode.pID();
+    query["pid"] = retPNode.ID();
 
     return search(caller, token, query, filter);
 }
@@ -240,9 +249,7 @@ BGCMS::newNode(QPointer<Caller> caller, const QVariant& dir,
                                                  { "seq", -1 } },
                                                data, nullptr);
 
-    QMutexLocker locker(&m_BGCMSMutex);
-
-    QSqlQuery query;
+    QSqlQuery query(m_db);
     query.prepare(R"sql(
 INSERT INTO `VDIR` ()sql" +
                   stf["fstm"].toString() + ") VALUES (" +
@@ -253,7 +260,12 @@ INSERT INTO `VDIR` ()sql" +
     for (it = bindValues.begin(); it != bindValues.end(); ++it)
         query.bindValue(it.key(), it.value());
 
-    if (query.exec()) {
+    bool ok;
+    {
+        QMutexLocker locker(&m_BGCMSMutex);
+        ok = query.exec();
+    }
+    if (ok) {
         t_retNode newNode = node(token, dirNode.ID(), data["name"].toString());
         emitSignal("nodeCreated", QVariantList{ dirNode });
 
@@ -311,8 +323,9 @@ BGCMS::updateNode(QPointer<Caller> caller, const QVariant& target,
 
     bindValues[":I"] = targetNID;
 
-    QMutexLocker locker(&m_BGCMSMutex);
-    QSqlQuery query;
+    // QMutexLocker locker(&m_BGCMSMutex);
+    QSqlQuery query(m_db);
+
     query.prepare(R"sql(
 UPDATE `VDIR` set )sql" +
                   stf["stm"].toString() + R"sql(
@@ -322,7 +335,13 @@ WHERE `id`=:I)sql");
     for (it = bindValues.begin(); it != bindValues.end(); ++it)
         query.bindValue(it.key(), it.value());
 
-    if (query.exec()) {
+    bool ok;
+    {
+        QMutexLocker locker(&m_BGCMSMutex);
+        ok = query.exec();
+    }
+
+    if (ok) {
         t_retNode updatedNode = node(token, targetNID.toInt());
         if (data.contains("content"))
             emitSignal("contentUpdated",
@@ -359,16 +378,20 @@ BGCMS::removeNode(QPointer<Caller> caller, const QVariant& target) {
         if (targetNode["own"] != token && targetNode["own"] != "BGCMS")
             return t_retNode("permission denied");
 
-        QMutexLocker locker(&m_BGCMSMutex);
-        QSqlQuery query;
+        QSqlQuery query(m_db);
         query.prepare(R"sql(
 DELETE FROM `VDIR` WHERE `id`=:I)sql");
         query.bindValue(":I", targetNode.nID());
 
-        if (query.exec()) {
+        bool ok;
+        {
+            QMutexLocker locker(&m_BGCMSMutex);
+            ok = query.exec();
+        }
+        if (ok) {
             emitSignal("nodeRemoved", { targetNode.nID() });
             if (targetNode["type"] == "R")
-                caller->emitSignal(
+                emit caller->emitSignal(
                     "resourceNodeRemoved",
                     QVariantList{ targetNode.ID(), targetNode["contentType"],
                                   targetNode["content"] });
@@ -421,20 +444,19 @@ BGCMS::copyNode(QPointer<Caller> caller, const QVariant& source,
 
                 checkTarget = node(token, { checkTarget.pID() });
             }
-        } else
-            srcName = "_copy_" +
-                      QString::number(QRandomGenerator::global()->generate());
-    }
+        }
+    } else
+        srcName = "_copy_" +
+                  QString::number(QRandomGenerator::global()->generate());
 
-    QMutexLocker locker(&m_BGCMSMutex);
-    QSqlQuery query;
+    QSqlQuery query(m_db);
     query.prepare(QString(R"sql(
 INSERT INTO `VDIR`
     (`pid`, `name`, `type`, `title`,
      `content`, `contentType`, `own`,
      `private`, `hide`, `extData`)
 SELECT :P AS `pid`, :N AS `name`, %1, `title`,
-       %2, $3, `own`, `private`, `hide`,
+       %2, %3, `own`, `private`, `hide`,
        %4
 FROM `VDIR`
 WHERE `id`=:I)sql")
@@ -446,8 +468,13 @@ WHERE `id`=:I)sql")
     query.bindValue(":N", srcName);
     query.bindValue(":I", srcNID);
 
-    if (query.exec()) {
-        t_retNode newNode = node(token, targetID, srcName);
+    bool ok;
+    {
+        QMutexLocker locker(&m_BGCMSMutex);
+        ok = query.exec();
+    }
+    if (ok) {
+        t_retNode newNode = node(token, targetID, srcName, false);
         emitSignal("nodeCopied", QVariantList{ newNode });
 
         if (srcNode["type"] == "D") {
@@ -463,7 +490,7 @@ WHERE `id`=:I)sql")
 
         return newNode;
     } else
-        return t_retNode("sql error");
+        return t_retNode("sql error - " + query.lastError().text());
 }
 
 QVariant
@@ -503,7 +530,35 @@ BGCMS::nodePath(QPointer<Caller> caller, const QVariant& node) {
 
 t_retNode
 BGCMS::node(const QString& token, const QVariantList& args) {
+    // return t_retNode{ QVariantMap{ { "token", token }, { "args", args } } };
     if (args.length() == 1) {
+        QVariant vNode = args[0];
+        if (vNode.isNull())
+            return t_retNode(m_rootNode);
+        else if (vNode.typeId() == QMetaType::QString)
+            return node(token, vNode.toString());
+        else if (isNumber(vNode))
+            return node(token, vNode.toInt());
+        else
+            return t_retNode("type error");
+    } else if (args.length() > 1) {
+        t_retNode pNode = node(token, QVariantList{ args[0] });
+        if (!pNode.ok())
+            return t_retNode("parent node not exists");
+        else {
+            QVariant vNode = args[1];
+            QString name_path = vNode.toString();
+
+            if (isNumber(vNode))
+                return node(token, vNode.toInt());
+            else if (name_path.contains('/'))
+                return node(token, name_path, pNode);
+            else
+                return node(token, pNode.ID(), name_path, false);
+        }
+    } else
+        return t_retNode("arguments count fail");
+    /*if (args.length() == 1) {
         QVariant vNode = args[0];
         if (vNode.isNull())
             return t_retNode(m_rootNode);
@@ -529,24 +584,27 @@ BGCMS::node(const QString& token, const QVariantList& args) {
                 return node(token, pNode.ID(), name, false);
         }
     } else
-        return t_retNode("arguments count fail");
+        return t_retNode("arguments count fail");*/
 }
 
 /* by m_id */
 t_retNode
 BGCMS::node(const QString& token, int id) {
-    QMutexLocker locker(&m_BGCMSMutex);
+    QSqlQuery query(m_db);
 
-    QSqlQuery query;
     query.prepare(R"sql(
 SELECT *
-FROM VDIR
-WHERE `id`=:I AND (`own`=:T OR `private`=0))sql");
+FROM `VDIR`
+WHERE `id`=:I)sql");
     query.bindValue(":I", id);
-    query.bindValue(":T", token);
 
-    if (query.exec() && query.size() > 0) {
-        query.first();
+    bool ok;
+    {
+        QMutexLocker locker(&m_BGCMSMutex);
+        ok = query.exec();
+    }
+
+    if (ok && query.first()) {
         t_retNode row = rowData(query.record());
 
         if (isNumber(row.ID()) && row.nID() < 0) row.setID(-row.nID());
@@ -562,9 +620,7 @@ BGCMS::node(const QString& token, QVariant pID, const QString& name, bool ref) {
     if (pID.metaType().id() == QMetaType::QString && pID.toString().isEmpty())
         pID = QVariant();
 
-    QMutexLocker locker(&m_BGCMSMutex);
-
-    QSqlQuery query;
+    QSqlQuery query(m_db);
 
     query.prepare(R"sql(
 SELECT *
@@ -575,8 +631,13 @@ WHERE IIF(:P IS NULL, `pid` IS NULL, `pid`=ABS(:P))
     query.bindValue(":N", name);
     query.bindValue(":T", token);
 
-    if (query.exec() && query.size() > 0) {
-        query.first();
+    bool ok;
+    {
+        QMutexLocker locker(&m_BGCMSMutex);
+        ok = query.exec();
+    }
+
+    if (ok && query.first()) {
         t_retNode row = rowData(query.record());
 
         if (isNumber(row.ID()) && row.nID() < 0)
@@ -620,7 +681,7 @@ BGCMS::search(QPointer<Caller> caller, const QString& token,
     }
 
     QString accountListJson =
-        call(caller, "account", "accountList", {}).toString();
+        call(caller, "account", "accountList", {}).toList()[0].toString();
 
     QString cond_stm = "";
     QString limit_stm = "";
@@ -651,23 +712,30 @@ BGCMS::search(QPointer<Caller> caller, const QString& token,
         }
     }
 
-    QMutexLocker locker(&m_BGCMSMutex);
-
-    QSqlQuery sqlQuery;
+    QSqlQuery sqlQuery(m_db);
     // clang-format off
-    sqlQuery.prepare(R"sql(
-SELECT )sql" + infoFields + R"sql(
-FROM `VDIR`
-WHERE (`own`=:T OR `private`=0) )sql" + cond_stm + " " + R"sql(
-ORDER BY IIF(`name`='..', 0, 1),
-         IIF(`type`='D', 0, 1),
-         IIF(`seq`=-1, 1, 0), `seq`, `date` DESC
-)sql" + limit_stm);  // clang-format on
+    QString queryStm =
+        "SELECT " + infoFields +
+        " FROM `VDIR` " +
+        "WHERE (`own`=:T OR `private`=0) " + cond_stm + " " +
+        "ORDER BY IIF(`name`='D', 0, 1), " +
+                 "IIF(`type`='D', 0, 1), " +
+                 "IIF(`seq`=-1, 1, 0), `seq`, `date` DESC " +
+        limit_stm;
+    // clang-format on
+    sqlQuery.prepare(queryStm);
+
     QVariantMap::iterator it;
     for (it = bindValues.begin(); it != bindValues.end(); ++it)
         sqlQuery.bindValue(it.key(), it.value());
 
-    if (sqlQuery.exec())
+    bool ok;
+    {
+        QMutexLocker locker(&m_BGCMSMutex);
+        ok = sqlQuery.exec();
+    }
+
+    if (ok)
         return getRows(sqlQuery);
     else
         return t_retList{ "sql error" };
@@ -690,14 +758,13 @@ BGCMS::refNode(const QString& token, const QVariantList& args) {
 }
 
 QVariantList
-BGCMS::getRows(QSqlQuery& query)  {
-    QMutexLocker locker(&m_BGCMSMutex);
-
-    if (query.isSelect() && query.first()) return QVariantList();
-
+BGCMS::getRows(QSqlQuery& query) {
     QVariantList rows;
-    while (query.next()) {
-        rows.append(rowData(query.record()));
+
+    if (query.isSelect()) {
+        while (query.next()) {
+            rows.append(rowData(query.record()));
+        }
     }
 
     return rows;
@@ -705,8 +772,6 @@ BGCMS::getRows(QSqlQuery& query)  {
 
 t_retNode
 BGCMS::rowData(const QSqlRecord& record) {
-    QMutexLocker locker(&m_BGCMSMutex);
-
     QVariantMap row;
     for (int i = 0; i < record.count(); ++i) {
         row[record.fieldName(i)] = record.value(i);
@@ -720,26 +785,25 @@ BGCMS::updateStatementFragments(
     std::function<QVariant(const QString&,
                            const QStringList&,  // clang-format off
                            const QVariantMap&)> special) {  // clang-format on
-    bool first = true;
+    // bool first = true;
     QString sStm = "";
     QVariantMap bindValues;
 
     foreach (const QString& fieldName, fields) {
-        if (!first)
-            sStm += ',';
-        else
-            first = false;
+        if (data.contains(fieldName)) {
+            if (!sStm.isEmpty()) sStm += ',';
 
-        QString bindFieldName = ":" + fieldName;
-        sStm += "`" + fieldName + "`=" + bindFieldName;
+            QString bindFieldName = ":" + fieldName;
+            sStm += "`" + fieldName + "`=" + bindFieldName;
 
-        QVariant spValue;
-        if (special) spValue = special(fieldName, fields, data);
+            QVariant spValue;
+            if (special) spValue = special(fieldName, fields, data);
 
-        if (spValue.isNull())
-            bindValues[bindFieldName] = data[fieldName];
-        else
-            bindValues[bindFieldName] = spValue;
+            if (spValue.isNull())
+                bindValues[bindFieldName] = data[fieldName];
+            else
+                bindValues[bindFieldName] = spValue;
+        }
     }
 
     return { { "stm", sStm }, { "bindValues", bindValues } };
@@ -755,13 +819,13 @@ BGCMS::insertStatementFragments(
     QString fStm;
     QString vStm;
     QVariantMap bindValues;
-    bool first = true;
 
     for (it = initData.constBegin(); it != initData.constEnd(); ++it) {
-        if (first) {
+        if (!fStm.isEmpty()) {
             fStm += ',';
             vStm += ',';
         }
+
         QString fieldName = it.key();
         QString bindFieldName = ':' + fieldName;
         fStm += '`' + fieldName + '`';
@@ -807,6 +871,8 @@ BGCMS::isNumber(const QVariant& data) const {
 bool
 BGCMS::initial(int, char**) {
     m_db.setDatabaseName(m_dataPath + "/cms.db");
+    qInfo() << "open database" << m_db.open();
+    qDebug() << "----->" << m_dataPath + "/cms.db";
 
     return ObjectInterface::initial(0, nullptr);
 }
@@ -815,27 +881,53 @@ using T_BGCMS_METHOD = QVariant (BGCMS::*)(QPointer<Caller>,
                                            const QVariantList&);
 void
 BGCMS::registerMethods() {
-
     // clang-format off
-    RM(       "join", &BGCMS::join);
-
-    RM(       "node", &BGCMS::node,        ARG<QVariantList>("args"));
-    RM(    "refNode", &BGCMS::refNode,     ARG<QVariantList>("args"));
-    RM(   "nodeInfo", &BGCMS::nodeInfo,    ARG<QVariantList>("args"));
-    RM("refNodeInfo", &BGCMS::refNodeInfo, ARG<QVariantList>("args"));
-    RM(     "exists", &BGCMS::exists,      ARG<QVariantList>("args"));
-
-    RM(     "search", &BGCMS::search,      ARG<QVariantMap>("query"), ARG<int>("filter", 0x03));
-    RM(       "list", &BGCMS::list,        ARG("basePath"), ARG<int>("filter", 0x03), ARG<QVariantMap>("query"));
-
-    RM(    "newNode", &BGCMS::newNode,     ARG("basePath"), ARG<QVariantMap>("data"));
-    RM( "updateNode", &BGCMS::updateNode,  ARG("node"), ARG<QVariantMap>("data"));
-    RM( "removeNode", &BGCMS::removeNode,  ARG("node"));
-
-    RM(   "copyNode", &BGCMS::copyNode,    ARG("node"), ARG("target"), ARG<bool>("ref").V(false));
-    RM("copyRefNode", &BGCMS::copyRefNode, ARG("node"), ARG("target"));
-    RM(   "moveNode", &BGCMS::moveNode,    ARG("node"), ARG<int>("target"));
-
-    RM(   "nodePath", &BGCMS::nodePath,    ARG("node"));
+// =====================================================================================
+    RM(         "info", &BGCMS::info);
+// -------------------------------------------------------------------------------------
+    RM(         "join", &BGCMS::join);
+// -------------------------------------------------------------------------------------
+    RMV(        "node", &BGCMS::node);
+// -------------------------------------------------------------------------------------
+    RMV(     "refNode", &BGCMS::refNode);
+// -------------------------------------------------------------------------------------
+    RMV(    "nodeInfo", &BGCMS::nodeInfo);
+// -------------------------------------------------------------------------------------
+    RMV( "refNodeInfo", &BGCMS::refNodeInfo);
+// =====================================================================================
+    RMV(      "exists", &BGCMS::exists);
+// -------------------------------------------------------------------------------------
+    RM(       "search", &BGCMS::search,     ARG<QVariantMap>("query"),
+                                            ARG<int>("filter", 0x03));
+// -------------------------------------------------------------------------------------
+    RM(         "list", &BGCMS::list,       ARG("basePath"),
+                                            ARG<int>("filter", 0x03),
+                                            ARG<QVariantMap>("query", QVariantMap{}));
+// -------------------------------------------------------------------------------------
+    RM(      "newNode", &BGCMS::newNode,    ARG("basePath"),
+                                            ARG<QVariantMap>("data"));
+// -------------------------------------------------------------------------------------
+    RM(   "updateNode", &BGCMS::updateNode, ARG("node"),
+                                            ARG<QVariantMap>("data"));
+// -------------------------------------------------------------------------------------
+    RM(   "removeNode", &BGCMS::removeNode, ARG("node"));
+// =====================================================================================
+    RM(     "copyNode", &BGCMS::copyNode,   ARG("node"),
+                                            ARG("target"),
+                                            ARG<bool>("ref", false));
+// -------------------------------------------------------------------------------------
+    RM( "copyRefNode", &BGCMS::copyRefNode, ARG("node"),
+                                            ARG("target"));
+// -------------------------------------------------------------------------------------
+    RM(    "moveNode", &BGCMS::moveNode,    ARG("node"),
+                                            ARG<int>("target"));
+// -------------------------------------------------------------------------------------
+    RM(    "nodePath", &BGCMS::nodePath,    ARG("node"));
+// =====================================================================================
     // clang-format on
+}
+
+ObjectInterface*
+create(int, char**) {
+    return new BGCMS;
 }
