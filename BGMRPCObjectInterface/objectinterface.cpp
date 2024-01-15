@@ -316,10 +316,13 @@ ObjectInterface::newCaller() {
             QVariantList args = callJsonDoc["args"].toVariant().toList();
             QString mID = callJsonDoc["mID"].toString("#");
 
-            if (!m_methods.contains(methodName))
-                emit callerPtr->returnError(m_ID, NS_BGMRPC::ERR_NOMETHOD,
+            if (!m_methods.contains(methodName)) {
+                qWarning().noquote() << "The \"" + m_ID +
+                                            "\" object does not have the \"" +
+                                            methodName + "\" method.";
+                emit callerPtr->returnError(mID, NS_BGMRPC::ERR_NOMETHOD,
                                             m_ID + '.' + methodName);
-            else {
+            } else {
                 if (callerPtr->m_callType == NS_BGMRPC::CALL_UNDEFINED) {
                     callerPtr->m_callType =
                         (NS_BGMRPC::Call)callJsonDoc["callType"].toInt();

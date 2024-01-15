@@ -21,8 +21,9 @@ Caller::Caller(ObjectInterface* callee, QLocalSocket* socket, QObject* parent)
     });
     QObject::connect(m_dataSocket, &QLocalSocket::disconnected, m_dataSocket,
                      &QLocalSocket::deleteLater);
-    QObject::connect(m_dataSocket, &QLocalSocket::disconnected, this,
-                     [=]() { emit clientExited(m_ID); });
+    QObject::connect(m_dataSocket, &QLocalSocket::disconnected, this, [=]() {
+        if (m_callType == NS_BGMRPC::CALL_REMOTE) emit clientExited(m_ID);
+    });
 
     QObject::connect(this, &Caller::emitSignal, this, &Caller::onEmitSignal);
     QObject::connect(this, &Caller::returnData, this, &Caller::onReturnData);
