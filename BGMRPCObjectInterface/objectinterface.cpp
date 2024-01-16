@@ -48,6 +48,16 @@ ObjectInterface::appName() const {
     return m_appName;
 }
 
+QVariant
+ObjectInterface::interface(QPointer<Caller>) {
+    QStringList methodsInfo;
+
+    foreach (const QString& method, m_IFDictIndex)
+        methodsInfo.append(m_IFDict[method]);
+
+    return methodsInfo;
+}
+
 bool
 ObjectInterface::setup(const QByteArray& appName, const QByteArray& name,
                        const QByteArray& grp, int argc, char** argv,
@@ -371,6 +381,7 @@ ObjectInterface::newCaller() {
 
 bool
 ObjectInterface::initial(int, char**) {
+    RM("interface", &ObjectInterface::interface);
     registerMethods();
 
     return true;

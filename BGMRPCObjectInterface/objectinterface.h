@@ -33,6 +33,8 @@ public:
     QString group() const;
     QString appName() const;
 
+    QVariant interface(QPointer<Caller>);
+
     bool setup(const QByteArray& appName, const QByteArray& name,
                const QByteArray& grp = QByteArray(), int argc = 0,
                char** argv = nullptr, bool noAppPrefix = false);
@@ -85,12 +87,14 @@ protected:
             const First& first, const Rest&... rest) {
         QStringList params;
         genParamInfo(params, first, rest...);
+        m_IFDictIndex.append(method);
         m_IFDict[method] = method + "(" + params.join(", ") + ")";
         m_methods[method] =
             AdapIF(static_cast<T*>(this), funPtr, first, rest...);
     }
     template <typename T, typename... Args>
     void RM(const QString& method, QVariant (T::*funPtr)(Args...)) {
+        m_IFDictIndex.append(method);
         m_IFDict[method] = method + "()";
         m_methods[method] = AdapIF(static_cast<T*>(this), funPtr);
     }
@@ -98,6 +102,7 @@ protected:
     void RMV(const QString& methodName,
              QVariant (T::*memberMethod)(const QPointer<Caller>,
                                          const QVariantList&)) {
+        m_IFDictIndex.append(methodName);
         m_IFDict[methodName] = methodName + "(arg0, arg1, ...)";
         m_methods[methodName] =
             std::bind(memberMethod, static_cast<T*>(this),
@@ -114,11 +119,12 @@ protected:
 
     QMutex m_objMutex;
 
-    QMap<QString, T_METHOD> m_methods;
-    QMap<QString, QString> m_IFDict;
+    QHash<QString, T_METHOD> m_methods;
+    QHash<QString, QString> m_IFDict;
+    QStringList m_IFDictIndex;
 
-    QMap<quint64, QPointer<Caller>> m_relatedCaller;
-    QMap<quint64, QVariantMap> m_privateDatas;
+    QHash<quint64, QPointer<Caller>> m_relatedCaller;
+    QHash<quint64, QVariantMap> m_privateDatas;
 
     QLocalServer* m_dataServer = nullptr;
     QLocalSocket* m_objectConnecter = nullptr;

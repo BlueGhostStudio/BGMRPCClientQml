@@ -148,13 +148,13 @@ BGCMS::getCallerToken(QPointer<Caller> caller) {
         .toString();
 }
 
-QVariant
+/*QVariant
 BGCMS::info(QPointer<Caller> caller) {
     QStringList methodsInfo;
     foreach (const QString& method, m_IFDict) methodsInfo.append(method);
 
     return methodsInfo;
-}
+}*/
 
 QVariant
 BGCMS::join(QPointer<Caller> caller) {
@@ -883,7 +883,7 @@ void
 BGCMS::registerMethods() {
     // clang-format off
 // =====================================================================================
-    RM(         "info", &BGCMS::info);
+//    RM(         "info", &BGCMS::info);
 // -------------------------------------------------------------------------------------
     RM(         "join", &BGCMS::join);
 // -------------------------------------------------------------------------------------

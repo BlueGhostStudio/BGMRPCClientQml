@@ -82,7 +82,7 @@ public:
     // interfaces
     QString getCallerToken(QPointer<Caller> caller);
 
-    QVariant info(QPointer<Caller> caller);
+    //QVariant info(QPointer<Caller> caller);
 
     QVariant join(QPointer<Caller> caller);
 
