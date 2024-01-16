@@ -54,7 +54,7 @@ Graphviz::registerMethods() {
     //REG_METHOD("render", &Graphviz::render);
     //qDebug() << "methods" << m_methods.keys();
     //m_methods["render"] = AdapIF(this, &Graphviz::render, ARG<QByteArray>());
-    RM("render", &Graphviz::render, ARG<QByteArray>());
+    RM("render", "Render Dot", &Graphviz::render, ARG<QByteArray>());
 }
 
 ObjectInterface*

@@ -33,7 +33,7 @@ public:
     QString group() const;
     QString appName() const;
 
-    QVariant interface(QPointer<Caller>);
+    QVariant interface(QPointer<Caller>, bool readable);
 
     bool setup(const QByteArray& appName, const QByteArray& name,
                const QByteArray& grp = QByteArray(), int argc = 0,
@@ -83,27 +83,29 @@ protected:
      * parameters stored in the argument list.
      */
     template <typename T, typename... Args, typename First, typename... Rest>
-    void RM(const QString& method, QVariant (T::*funPtr)(Args...),
-            const First& first, const Rest&... rest) {
+    void RM(const QString& method, const QString& desc,
+            QVariant (T::*funPtr)(Args...), const First& first,
+            const Rest&... rest) {
         QStringList params;
         genParamInfo(params, first, rest...);
         m_IFDictIndex.append(method);
-        m_IFDict[method] = method + "(" + params.join(", ") + ")";
+        m_IFDict[method] = { method + "(" + params.join(", ") + ")", desc };
         m_methods[method] =
             AdapIF(static_cast<T*>(this), funPtr, first, rest...);
     }
     template <typename T, typename... Args>
-    void RM(const QString& method, QVariant (T::*funPtr)(Args...)) {
+    void RM(const QString& method, const QString& desc,
+            QVariant (T::*funPtr)(Args...)) {
         m_IFDictIndex.append(method);
-        m_IFDict[method] = method + "()";
+        m_IFDict[method] = { method + "()", desc };
         m_methods[method] = AdapIF(static_cast<T*>(this), funPtr);
     }
     template <typename T>
-    void RMV(const QString& methodName,
+    void RMV(const QString& methodName, const QString& desc,
              QVariant (T::*memberMethod)(const QPointer<Caller>,
                                          const QVariantList&)) {
         m_IFDictIndex.append(methodName);
-        m_IFDict[methodName] = methodName + "(arg0, arg1, ...)";
+        m_IFDict[methodName] = { methodName + "(arg0, arg1, ...)", desc };
         m_methods[methodName] =
             std::bind(memberMethod, static_cast<T*>(this),
                       std::placeholders::_1, std::placeholders::_2);
@@ -120,7 +122,7 @@ protected:
     QMutex m_objMutex;
 
     QHash<QString, T_METHOD> m_methods;
-    QHash<QString, QString> m_IFDict;
+    QHash<QString, QStringList> m_IFDict;
     QStringList m_IFDictIndex;
 
     QHash<quint64, QPointer<Caller>> m_relatedCaller;

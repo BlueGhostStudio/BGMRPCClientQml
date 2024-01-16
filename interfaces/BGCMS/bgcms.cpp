@@ -883,46 +883,49 @@ void
 BGCMS::registerMethods() {
     // clang-format off
 // =====================================================================================
-//    RM(         "info", &BGCMS::info);
+    RM("join", "", &BGCMS::join);
 // -------------------------------------------------------------------------------------
-    RM(         "join", &BGCMS::join);
+    RMV("node", "Get node",
+        &BGCMS::node);
 // -------------------------------------------------------------------------------------
-    RMV(        "node", &BGCMS::node);
+    RMV("refNode", "Get reference node",
+        &BGCMS::refNode);
 // -------------------------------------------------------------------------------------
-    RMV(     "refNode", &BGCMS::refNode);
+    RMV("nodeInfo", "Get node info",
+        &BGCMS::nodeInfo);
 // -------------------------------------------------------------------------------------
-    RMV(    "nodeInfo", &BGCMS::nodeInfo);
-// -------------------------------------------------------------------------------------
-    RMV( "refNodeInfo", &BGCMS::refNodeInfo);
+    RMV("refNodeInfo", "Get reference node info",
+        &BGCMS::refNodeInfo);
 // =====================================================================================
-    RMV(      "exists", &BGCMS::exists);
+    RMV("exists", "Exists",
+        &BGCMS::exists);
 // -------------------------------------------------------------------------------------
-    RM(       "search", &BGCMS::search,     ARG<QVariantMap>("query"),
-                                            ARG<int>("filter", 0x03));
+     RM("search", "Search node",
+        &BGCMS::search, ARG<QVariantMap>("query"), ARG<int>("filter", 0x03));
 // -------------------------------------------------------------------------------------
-    RM(         "list", &BGCMS::list,       ARG("basePath"),
-                                            ARG<int>("filter", 0x03),
-                                            ARG<QVariantMap>("query", QVariantMap{}));
+     RM("list", "List nodes of the base path.",
+              &BGCMS::list, ARG("basePath"), ARG<int>("filter", 0x03), ARG<QVariantMap>("query", QVariantMap{}));
 // -------------------------------------------------------------------------------------
-    RM(      "newNode", &BGCMS::newNode,    ARG("basePath"),
-                                            ARG<QVariantMap>("data"));
+     RM("newNode", "Create new Node",
+           &BGCMS::newNode, ARG("basePath"), ARG<QVariantMap>("data"));
 // -------------------------------------------------------------------------------------
-    RM(   "updateNode", &BGCMS::updateNode, ARG("node"),
-                                            ARG<QVariantMap>("data"));
+     RM("updateNode", "Update node",
+        &BGCMS::updateNode, ARG("node"), ARG<QVariantMap>("data"));
 // -------------------------------------------------------------------------------------
-    RM(   "removeNode", &BGCMS::removeNode, ARG("node"));
+     RM("removeNode", "Remove node",
+        &BGCMS::removeNode, ARG("node"));
 // =====================================================================================
-    RM(     "copyNode", &BGCMS::copyNode,   ARG("node"),
-                                            ARG("target"),
-                                            ARG<bool>("ref", false));
+     RM("copyNode", "Copy node",
+          &BGCMS::copyNode, ARG("node"), ARG("target"), ARG<bool>("ref", false));
 // -------------------------------------------------------------------------------------
-    RM( "copyRefNode", &BGCMS::copyRefNode, ARG("node"),
-                                            ARG("target"));
+     RM("copyRefNode", "Copy reference node",
+       &BGCMS::copyRefNode, ARG("node"), ARG("target"));
 // -------------------------------------------------------------------------------------
-    RM(    "moveNode", &BGCMS::moveNode,    ARG("node"),
-                                            ARG<int>("target"));
+     RM("moveNode", "Move node to new",
+          &BGCMS::moveNode, ARG("node"), ARG<int>("target"));
 // -------------------------------------------------------------------------------------
-    RM(    "nodePath", &BGCMS::nodePath,    ARG("node"));
+     RM("nodePath", "Get node path",
+          &BGCMS::nodePath, ARG("node"));
 // =====================================================================================
     // clang-format on
 }

@@ -49,13 +49,29 @@ ObjectInterface::appName() const {
 }
 
 QVariant
-ObjectInterface::interface(QPointer<Caller>) {
-    QStringList methodsInfo;
+ObjectInterface::interface(QPointer<Caller>, bool readable) {
+    if (readable) {
+        QString methodsInfo;
 
-    foreach (const QString& method, m_IFDictIndex)
-        methodsInfo.append(m_IFDict[method]);
+        foreach (const QString& method, m_IFDictIndex) {
+            if (!methodsInfo.isEmpty())
+                methodsInfo.append("\n\n");
 
-    return methodsInfo;
+            QStringList mthdInfo = m_IFDict[method];
+            methodsInfo.append(mthdInfo[0]);
+            if (!mthdInfo[1].isEmpty())
+                methodsInfo.append("\n").append(mthdInfo[1]);
+        }
+
+        return methodsInfo;
+    } else {
+        QVariantList methodsInfo;
+
+        foreach (const QString& method, m_IFDictIndex)
+            methodsInfo.append(m_IFDict[method]);
+
+        return methodsInfo;
+    }
 }
 
 bool
@@ -381,7 +397,8 @@ ObjectInterface::newCaller() {
 
 bool
 ObjectInterface::initial(int, char**) {
-    RM("interface", &ObjectInterface::interface);
+    RM("interface", "Method list of the interface", &ObjectInterface::interface,
+       ARG<bool>("readable", true));
     registerMethods();
 
     return true;
@@ -416,7 +433,7 @@ ObjectInterface::exec(const QString& mID, QPointer<Caller> caller,
                 emit caller->emitSignal("ERROR_INVALID_ARGUMENT", { method });
                 emit caller->returnError(
                     mID, NS_BGMRPC::ERR_INVALID_ARGUMENT,
-                    QString("%1\n%2").arg(e.what()).arg(m_IFDict[method]));
+                    QString("%1\n%2").arg(e.what()).arg(m_IFDict[method][0]));
             };
         } else if (!caller.isNull()) {
             emit caller->emitSignal("ERROR_ACCESS", { method });
