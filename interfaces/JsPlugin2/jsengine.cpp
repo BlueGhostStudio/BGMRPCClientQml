@@ -51,7 +51,7 @@ JsEngine::loadJsFile(const QString& jsFileName) {
 
             return false;
         } else {
-            registerMethods();
+            // registerMethods();
 
             m_PWD = QFileInfo(jsFileName).absolutePath() + '/';
             QJSValue jsObj = m_jsEngine->newQObject(new JsJSObj(this));
@@ -185,12 +185,12 @@ JsEngine::variant2JsValue(const QVariant& var) {
 
 bool
 JsEngine::initial(int argc, char** argv) {
-    QString rootPath = getSettings(*m_objectConnecter, NS_BGMRPC::CNF_PATH_ROOT);
+    QString rootPath =
+        getSettings(*m_objectConnecter, NS_BGMRPC::CNF_PATH_ROOT);
     QString installDir = getSettings(*m_objectConnecter, "path/installDir");
     QString etcDir = getSettings(*m_objectConnecter, NS_BGMRPC::CNF_PATH_ETC);
 
-    QSettings JSMSettings(etcDir + "/JsModules.conf",
-                          QSettings::IniFormat);
+    QSettings JSMSettings(etcDir + "/JsModules.conf", QSettings::IniFormat);
     m_jsModulesPath =
         JSMSettings.value("path", installDir + "/JsModules.conf").toString();
 
@@ -208,7 +208,10 @@ JsEngine::initial(int argc, char** argv) {
 
     bool loadJsFileOk = loadJsFile(m_appPath + '/' + jsFile);
 
-    return loadJsFileOk;
+    if (loadJsFileOk)
+        return ObjectInterface::initial(argc, argv);
+    else
+        return false;
 }
 
 void
@@ -237,6 +240,8 @@ JsEngine::registerMethod(const QString& methodName) {
     m_methods[methodName] =
         std::bind(&JsEngine::callJs, this, methodName, std::placeholders::_1,
                   std::placeholders::_2);
+    m_IFDictIndex.append(methodName);
+    m_IFDict[methodName] = { methodName + "()", "" };
 }
 
 bool

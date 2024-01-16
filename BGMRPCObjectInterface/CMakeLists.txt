@@ -35,9 +35,11 @@ target_sources(
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/ObjectInterface_global.h
           ${CMAKE_CURRENT_LIST_DIR}/caller.cpp
           ${CMAKE_CURRENT_LIST_DIR}/objectinterface.cpp
+          ${CMAKE_CURRENT_LIST_DIR}/objctrlcmdcontroller.cpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/caller.h
          ${CMAKE_CURRENT_LIST_DIR}/objectinterface.h
-         ${CMAKE_CURRENT_LIST_DIR}/mthdAdaptIF.h)
+         ${CMAKE_CURRENT_LIST_DIR}/mthdAdaptIF.h
+         ${CMAKE_CURRENT_LIST_DIR}/objctrlcmdcontroller.h)
 
 set_target_properties(
   BGMRPCObjectInterface

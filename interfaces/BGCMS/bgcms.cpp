@@ -3,8 +3,9 @@
 #include <bgmrpccommon.h>
 #include <mthdAdaptIF.h>
 
-#include "caller.h"
 #include <QSqlError>
+
+#include "caller.h"
 
 using namespace NS_BGMRPCObjectInterface;
 
@@ -446,8 +447,8 @@ BGCMS::copyNode(QPointer<Caller> caller, const QVariant& source,
             }
         }
     } else
-        srcName = "_copy_" +
-                  QString::number(QRandomGenerator::global()->generate());
+        srcName =
+            "_copy_" + QString::number(QRandomGenerator::global()->generate());
 
     QSqlQuery query(m_db);
     query.prepare(QString(R"sql(
@@ -872,7 +873,6 @@ bool
 BGCMS::initial(int, char**) {
     m_db.setDatabaseName(m_dataPath + "/cms.db");
     qInfo() << "open database" << m_db.open();
-    qDebug() << "----->" << m_dataPath + "/cms.db";
 
     return ObjectInterface::initial(0, nullptr);
 }

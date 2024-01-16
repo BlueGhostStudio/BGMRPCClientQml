@@ -1,4 +1,5 @@
 #include "objectinterface.h"
+#include "objctrlcmdcontroller.h"
 
 #include <caller.h>
 
@@ -54,8 +55,7 @@ ObjectInterface::interface(QPointer<Caller>, bool readable) {
         QString methodsInfo;
 
         foreach (const QString& method, m_IFDictIndex) {
-            if (!methodsInfo.isEmpty())
-                methodsInfo.append("\n\n");
+            if (!methodsInfo.isEmpty()) methodsInfo.append("\n\n");
 
             QStringList mthdInfo = m_IFDict[method];
             methodsInfo.append(mthdInfo[0]);
@@ -163,6 +163,12 @@ ObjectInterface::setup(const QByteArray& appName, const QByteArray& name,
         qWarning().noquote() << e.what();
         return false;
     }
+}
+
+QByteArray
+ObjectInterface::objCtrlCmd(quint8 cmd, const QByteArray& arg) {
+    ObjCtrlCmdController objCtrl(this);
+    return objCtrl.ctrlCmd(cmd, arg);
 }
 
 QVariant
@@ -326,6 +332,15 @@ ObjectInterface::detachObject() {
     deleteLater();
 
     qInfo().noquote() << QString("Object(%1),disconnected").arg(m_ID);
+}
+
+void
+ObjectInterface::objCtrlCmdWork(quint8 cmd, const QByteArray& arg) {
+    QMutexLocker locker(&m_objMutex);
+
+    ctrlCommand<void>(m_objectConnecter, cmd, arg, [&](const QByteArray& data) {
+        emit objCtrlCmdReady(data);
+    });
 }
 
 void

@@ -39,6 +39,8 @@ public:
                const QByteArray& grp = QByteArray(), int argc = 0,
                char** argv = nullptr, bool noAppPrefix = false);
 
+    QByteArray objCtrlCmd(quint8 cmd, const QByteArray& arg);
+
     QVariant call(bool block, QPointer<Caller> caller, const QString& obj,
                   const QString& method, const QVariantList& args);
     QVariant call(QPointer<Caller> caller, const QString& obj,
@@ -61,6 +63,7 @@ public:
 
 public slots:
     void detachObject();
+    void objCtrlCmdWork(quint8 cmd, const QByteArray& arg);
 
 private slots:
     void newCaller();
@@ -68,6 +71,7 @@ private slots:
 signals:
     void callerExited(QPointer<Caller>);
     void relatedCallerExited(QPointer<Caller>);
+    void objCtrlCmdReady(const QByteArray& data);
 
 protected:
     virtual bool initial(int, char**);

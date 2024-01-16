@@ -79,14 +79,14 @@ private:
 class JsJSObj : public QObject {
     Q_OBJECT
 
-    Q_PROPERTY(QString __NAME__ READ objectName)
-    Q_PROPERTY(QString __OBJID__ READ objectID)
-    Q_PROPERTY(QString __PATH_APP__ READ appPath)
-    Q_PROPERTY(QString __PATH_DATA__ READ dataPath)
-    Q_PROPERTY(QString __PATH_MODULES__ READ modulesPath)
-    Q_PROPERTY(QString __PWD__ READ PWD)
-    Q_PROPERTY(QString __APP__ READ appName)
-    Q_PROPERTY(QString __GRP__ READ grp)
+    Q_PROPERTY(QString __NAME__ READ objectName CONSTANT)
+    Q_PROPERTY(QString __OBJID__ READ objectID CONSTANT)
+    Q_PROPERTY(QString __PATH_APP__ READ appPath CONSTANT)
+    Q_PROPERTY(QString __PATH_DATA__ READ dataPath CONSTANT)
+    Q_PROPERTY(QString __PATH_MODULES__ READ modulesPath CONSTANT)
+    Q_PROPERTY(QString __PWD__ READ PWD CONSTANT)
+    Q_PROPERTY(QString __APP__ READ appName CONSTANT)
+    Q_PROPERTY(QString __GRP__ READ grp CONSTANT)
 
 public:
     explicit JsJSObj(JsEngine* jsEngine, QObject* parent = nullptr);
@@ -119,6 +119,8 @@ public:
      * \param key 私有数据键名
      */
     QJSValue privateData(QPointer<Caller> caller, const QString& key) const;
+
+    Q_INVOKABLE QJSValue checkObject(const QString& obj);
 
     /*!
      * \overload

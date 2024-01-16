@@ -155,6 +155,12 @@ JsJSObj::privateData(QPointer<Caller> caller, const QString& key) const {
     return qjsEngine(this)->toScriptValue(m_jsEngine->privateData(caller, key));
 }
 
+QJSValue
+JsJSObj::checkObject(const QString& obj) {
+    return m_jsEngine->objCtrlCmd(NS_BGMRPC::CTRL_CHECKOBJECT,
+                                  obj.toLatin1())[0] == true;
+}
+
 void
 JsJSObj::setPrivateData(const QJSValue& caller, const QString& key,
                         const QJSValue& value) {
