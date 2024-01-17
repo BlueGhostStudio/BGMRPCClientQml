@@ -82,17 +82,18 @@ public:
     // interfaces
     QString getCallerToken(QPointer<Caller> caller);
 
-    //QVariant info(QPointer<Caller> caller);
+    // QVariant info(QPointer<Caller> caller);
 
     QVariant join(QPointer<Caller> caller);
-
-    QVariant testCheckObject(QPointer<Caller> caller, const QString& objName);
 
     QVariant node(QPointer<Caller> caller, const QVariantList& args);
     QVariant refNode(QPointer<Caller> caller, const QVariantList& args);
     QVariant nodeInfo(QPointer<Caller> caller, const QVariantList& args);
     QVariant refNodeInfo(QPointer<Caller> caller, const QVariantList& args);
     QVariant exists(QPointer<Caller> caller, const QVariantList& args);
+
+    QVariant CNode(QPointer<Caller> caller, const QVariantList& args);
+    QVariant CRefNode(QPointer<Caller> caller, const QVariantList& args);
 
     QVariant search(QPointer<Caller> caller, const QVariantMap& query,
                     int filter);

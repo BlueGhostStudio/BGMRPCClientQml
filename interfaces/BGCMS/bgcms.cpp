@@ -75,12 +75,14 @@ t_retNode::nPID() const {
 
 const QVariantMap
 t_retNode::toMap() const {
-    QVariantMap ret =
-        m_ok ? QVariantMap{ { "ok", true },
-                            { "id", m_node["id"] },
-                            { "node", m_node } }
-             : QVariantMap{ { "ok", false }, { "error", m_error } };
-    insertAttrs(ret);
+    QVariantMap ret;
+    if (m_ok) {
+        ret = QVariantMap{ { "ok", true },
+                           { "id", m_node["id"] },
+                           { "node", m_node } };
+        insertAttrs(ret);
+    } else
+        ret = QVariantMap{ { "ok", false }, { "error", m_error } };
 
     return ret;
 }
@@ -116,10 +118,13 @@ t_retList::t_retList(const QString& error) : t_retBase(error) {}
 
 const QVariantMap
 t_retList::toMap() const {
-    QVariantMap ret =
-        m_ok ? QVariantMap{ { "ok", true }, { "list", m_list } }
-             : QVariantMap{ { "ok", false }, { "error", m_error } };
-    insertAttrs(ret);
+    QVariantMap ret;
+    if (m_ok) {
+        ret = QVariantMap{ { "ok", true }, { "list", m_list } };
+        insertAttrs(ret);
+    } else
+        ret = QVariantMap{ { "ok", false }, { "error", m_error } };
+
     return ret;
 }
 
@@ -165,14 +170,6 @@ BGCMS::join(QPointer<Caller> caller) {
 }
 
 QVariant
-BGCMS::testCheckObject(QPointer<Caller> caller, const QString& objName) {
-    QByteArray data =
-        objCtrlCmd((quint8)NS_BGMRPC::CTRL_CHECKOBJECT, objName.toLatin1());
-
-    return data[0] ? "has account" : "no exists";
-}
-
-QVariant
 BGCMS::node(QPointer<Caller> caller, const QVariantList& args) {
     return node(getCallerToken(caller), args);
 }
@@ -208,6 +205,42 @@ BGCMS::exists(QPointer<Caller> caller, const QVariantList& args) {
 }
 
 QVariant
+BGCMS::CNode(QPointer<Caller> caller, const QVariantList& args) {
+    t_retNode theNode = node(getCallerToken(caller), args);
+
+    if (!theNode.ok()) return theNode;
+
+    QByteArray convertObj =
+        genObjectName(m_grp.toLatin1(), m_appName.toLatin1(),
+                      "convert_" + theNode["contentType"].toByteArray(), false);
+
+    if (objCtrlCmd((quint8)NS_BGMRPC::CTRL_CHECKOBJECT, convertObj)[0]) {
+        theNode.node() =
+            call(convertObj, "convert", { theNode.node() }).toList()[0].toMap();
+        return theNode;
+    } else
+        return theNode;
+}
+
+QVariant
+BGCMS::CRefNode(QPointer<Caller> caller, const QVariantList& args) {
+    t_retNode theNode = refNode(getCallerToken(caller), args);
+
+    if (!theNode.ok()) return theNode;
+
+    QByteArray convertObj =
+        genObjectName(m_grp.toLatin1(), m_appName.toLatin1(),
+                      "convert_" + theNode["contentType"].toByteArray(), false);
+
+    if (objCtrlCmd((quint8)NS_BGMRPC::CTRL_CHECKOBJECT, convertObj)[0]) {
+        theNode.node() =
+            call(convertObj, "convert", { theNode.node() }).toList()[0].toMap();
+        return theNode;
+    } else
+        return theNode;
+}
+
+QVariant
 BGCMS::search(QPointer<Caller> caller, const QVariantMap& query, int filter) {
     return search(caller, getCallerToken(caller), query, filter);
 }
@@ -226,7 +259,11 @@ BGCMS::list(QPointer<Caller> caller, const QVariant& pNode, int filter,
 
     query["pid"] = retPNode.ID();
 
-    return search(caller, token, query, filter);
+    t_retList listRet = search(caller, token, query, filter);
+    listRet.attr()["id"] = retPNode.ID();
+    listRet.attr()["path"] = nodePath(caller, retPNode.ID());
+
+    return listRet;
 }
 
 QVariant
@@ -276,7 +313,7 @@ INSERT INTO `VDIR` ()sql" +
     }
     if (ok) {
         t_retNode newNode = node(token, dirNode.ID(), data["name"].toString());
-        emitSignal("nodeCreated", QVariantList{ dirNode });
+        emitSignal("nodeCreated", QVariantList{ newNode });
 
         return newNode;
     } else
@@ -448,7 +485,8 @@ BGCMS::copyNode(QPointer<Caller> caller, const QVariant& source,
             while (checkTarget.ID().isValid()) {
                 if (checkTarget.ID() == srcNID)
                     return t_retNode(
-                        "The source node is a directory and cannot be copied "
+                        "The source node is a directory and cannot be "
+                        "copied "
                         "into itself or any of its subdirectories.");
 
                 checkTarget = node(token, { checkTarget.pID() });
@@ -534,12 +572,13 @@ BGCMS::nodePath(QPointer<Caller> caller, const QVariant& node) {
     titles.prepend("/");
     str = "/" + str;
 
-    return QVariantMap{ { "str", str }, { "ids", ids }, { "titles", ids } };
+    return QVariantMap{ { "str", str }, { "ids", ids }, { "titles", titles } };
 }
 
 t_retNode
 BGCMS::node(const QString& token, const QVariantList& args) {
-    // return t_retNode{ QVariantMap{ { "token", token }, { "args", args } } };
+    // return t_retNode{ QVariantMap{ { "token", token }, { "args", args } }
+    // };
     if (args.length() == 1) {
         QVariant vNode = args[0];
         if (vNode.isNull())
@@ -772,7 +811,7 @@ BGCMS::getRows(QSqlQuery& query) {
 
     if (query.isSelect()) {
         while (query.next()) {
-            rows.append(rowData(query.record()));
+            rows.append(rowData(query.record()).node());
         }
     }
 
@@ -892,9 +931,6 @@ void
 BGCMS::registerMethods() {
     // clang-format off
 // =====================================================================================
-    RM("testCheckObject", "",
-       &BGCMS::testCheckObject, ARG<QString>());
-// -------------------------------------------------------------------------------------
     RM("join", "", &BGCMS::join);
 // -------------------------------------------------------------------------------------
     RMV("node", "Get node",
@@ -908,18 +944,24 @@ BGCMS::registerMethods() {
 // -------------------------------------------------------------------------------------
     RMV("refNodeInfo", "Get reference node info",
         &BGCMS::refNodeInfo);
-// =====================================================================================
+// -------------------------------------------------------------------------------------
     RMV("exists", "Exists",
         &BGCMS::exists);
+// = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+    RMV("CNode", "Get node and cover",
+        &BGCMS::CNode);
 // -------------------------------------------------------------------------------------
+    RMV("CRefNode", "Get reference node and cover",
+        &BGCMS::CRefNode);
+// =====================================================================================
      RM("search", "Search node",
-        &BGCMS::search, ARG<QVariantMap>("query"), ARG<int>("filter", 0x03));
+        &BGCMS::search, ARG<QVariantMap>("query"), ARG<int>("filter", 0));
 // -------------------------------------------------------------------------------------
      RM("list", "List nodes of the base path.",
-              &BGCMS::list, ARG("basePath"), ARG<int>("filter", 0x03), ARG<QVariantMap>("query", QVariantMap{}));
+        &BGCMS::list, ARG("basePath"), ARG<int>("filter", 0), ARG<QVariantMap>("query", QVariantMap{}));
 // -------------------------------------------------------------------------------------
      RM("newNode", "Create new Node",
-           &BGCMS::newNode, ARG("basePath"), ARG<QVariantMap>("data"));
+        &BGCMS::newNode, ARG("basePath"), ARG<QVariantMap>("data"));
 // -------------------------------------------------------------------------------------
      RM("updateNode", "Update node",
         &BGCMS::updateNode, ARG("node"), ARG<QVariantMap>("data"));

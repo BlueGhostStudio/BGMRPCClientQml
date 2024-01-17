@@ -1,7 +1,8 @@
 #include "graphviz.h"
 
 #include <QProcess>
-//#include "mthdAdaptIF.h"
+#include <QRegularExpression>
+// #include "mthdAdaptIF.h"
 
 Graphviz::Graphviz(QObject* parent) : ObjectInterface(parent) {}
 
@@ -45,15 +46,24 @@ Graphviz::render(QPointer<Caller> caller, const QByteArray& data) {
               { "error",
                 dotProc.readAllStandardError() } });  // clang-format on
 
-    return QVariantMap(
-        { { "ok", true }, { "svg", dotProc.readAllStandardOutput() } });
+    QString svgOutput = dotProc.readAllStandardOutput();
+
+    QRegularExpression regex(R"RX((?<svg><svg[^>]*>.*</svg>))RX",
+                             QRegularExpression::DotMatchesEverythingOption);
+    QRegularExpressionMatch match = regex.match(svgOutput);
+
+    if (match.hasMatch())
+        return QVariantMap(
+            { { "ok", true }, { "svg", match.captured("svg") } });
+    else
+        return QVariantMap({ { "ok", false }, { "error", "No SVG content" } });
 }
 
 void
 Graphviz::registerMethods() {
-    //REG_METHOD("render", &Graphviz::render);
-    //qDebug() << "methods" << m_methods.keys();
-    //m_methods["render"] = AdapIF(this, &Graphviz::render, ARG<QByteArray>());
+    // REG_METHOD("render", &Graphviz::render);
+    // qDebug() << "methods" << m_methods.keys();
+    // m_methods["render"] = AdapIF(this, &Graphviz::render, ARG<QByteArray>());
     RM("render", "Render Dot", &Graphviz::render, ARG<QByteArray>());
 }
 
