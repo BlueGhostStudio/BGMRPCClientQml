@@ -8,7 +8,7 @@
 #include <QSslKey>
 
 #include "client.h"
-#include "objectplug.h"
+#include "objectctrl.h"
 #include "serverctrl.h"
 
 using namespace NS_BGMRPC;
@@ -35,14 +35,14 @@ BGMRPC::start() {
 
         QObject::connect(
             m_serverCtrlServer, &QLocalServer::newConnection, this, [=]() {
-                ServerCtrl* serCtrl = new ServerCtrl(
-                    this, m_serverCtrlServer->nextPendingConnection());
+                new ServerCtrl(this,
+                               m_serverCtrlServer->nextPendingConnection());
             });
 
         QObject::connect(
             m_objectSocketServer, &QLocalServer::newConnection, this, [=]() {
-                ObjectPlug* objPlug = new ObjectPlug(
-                    this, m_objectSocketServer->nextPendingConnection());
+                new ObjectCtrl(this,
+                               m_objectSocketServer->nextPendingConnection());
             });
 
         QObject::connect(m_BGMRPCServer, &QWebSocketServer::newConnection, this,
@@ -63,9 +63,14 @@ BGMRPC::setPort(quint16 port) {
     m_port = port;
 }
 
-ObjectPlug*
+/*ObjectPlug*
 BGMRPC::objectCtrl(const QString& name) const {
     return m_objects[name];
+}*/
+
+bool
+BGMRPC::checkObject(const QByteArray& name) const {
+    return m_objects.contains(name);
 }
 
 void
@@ -286,7 +291,7 @@ BGMRPC::removeObject(const QByteArray& name) {
 }
 
 bool
-BGMRPC::registerObject(ObjectPlug* ctrl, const QByteArray& name) {
+BGMRPC::registerObject(ObjectCtrl* ctrl, const QByteArray& name) {
     qInfo().noquote() << "BGMRPC,Register Object," << name;
     // m_objects[name] = ctrl;
     if (m_objects.contains(name))
@@ -295,11 +300,6 @@ BGMRPC::registerObject(ObjectPlug* ctrl, const QByteArray& name) {
         m_objects[name] = ctrl;
         return true;
     }
-}
-
-bool
-BGMRPC::checkObject(const QByteArray& name) const {
-    return m_objects.contains(name);
 }
 
 QByteArray
@@ -325,9 +325,9 @@ BGMRPC::getConfig(quint8 cnf) {
             .toUtf8();
     case CNF_PATH_ETC:
         return m_settings
-        ->value("path/etc",
-                m_defaultSettings.value("path/etc", rootPath + "/etc"))
-        .toString()
+            ->value("path/etc",
+                    m_defaultSettings.value("path/etc", rootPath + "/etc"))
+            .toString()
             .replace(QRegularExpression("^~"), QDir::homePath())
             .toUtf8();
     case CNF_PATH_INTERFACES:

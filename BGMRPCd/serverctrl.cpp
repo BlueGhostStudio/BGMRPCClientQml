@@ -18,22 +18,28 @@ ServerCtrl::ctrl(const QByteArray& data) {
             else
                 sendCtrlData(QByteArray('\x0', 1));*/
             if (m_BGMRPC->detachObject(data.mid(1)))
-                sendCtrlData(QByteArray(1, '\x1'));
+                // sendCtrlData(QByteArray(1, '\x1'));
+                m_ctrlSlot->write(QByteArray(1, '\x1'));
             else
-                sendCtrlData(QByteArray(1, '\x0'));
+                // sendCtrlData(QByteArray(1, '\x0'));
+                m_ctrlSlot->write(QByteArray(1, '\x0'));
             break;
         case NS_BGMRPC::CTRL_LISTOBJECTS: {
             QByteArray listData = m_BGMRPC->listObjects();
             if (listData.length() > 0)
-                sendCtrlData(listData);
+                // sendCtrlData(listData);
+                m_ctrlSlot->write(listData);
             else
-                sendCtrlData(QByteArray(1, '\x0'));
+                // sendCtrlData(QByteArray(1, '\x0'));
+                m_ctrlSlot->write(QByteArray(1, '\x0'));
         } break;
         case NS_BGMRPC::CTRL_CHECKOBJECT:
             if (m_BGMRPC->checkObject(data.mid(1)))
-                sendCtrlData(QByteArray(1, '\x1'));
+                // sendCtrlData(QByteArray(1, '\x1'));
+                m_ctrlSlot->write(QByteArray(1, '\x1'));
             else
-                sendCtrlData(QByteArray(1, '\x0'));
+                // sendCtrlData(QByteArray(1, '\x0'));
+                m_ctrlSlot->write(QByteArray(1, '\x0'));
             break;
         }
     }

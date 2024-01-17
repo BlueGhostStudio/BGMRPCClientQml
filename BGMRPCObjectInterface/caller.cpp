@@ -9,19 +9,19 @@ using namespace NS_BGMRPCObjectInterface;
 // quint64 Caller::m_totalID = 0;
 
 Caller::Caller(ObjectInterface* callee, QLocalSocket* socket, QObject* parent)
-    : QObject(parent), m_dataSocket(socket), m_callee(callee) {
+    : QObject(parent), m_cliDataSlot(socket), m_callee(callee) {
     //    m_localCall = false;
     m_ID = -1;
     m_exited = false;
     m_callType = NS_BGMRPC::CALL_UNDEFINED;
 
-    QObject::connect(m_dataSocket, &QLocalSocket::disconnected, this, [=]() {
+    QObject::connect(m_cliDataSlot, &QLocalSocket::disconnected, this, [=]() {
         m_exited = true;
         deleteLater();
     });
-    QObject::connect(m_dataSocket, &QLocalSocket::disconnected, m_dataSocket,
+    QObject::connect(m_cliDataSlot, &QLocalSocket::disconnected, m_cliDataSlot,
                      &QLocalSocket::deleteLater);
-    QObject::connect(m_dataSocket, &QLocalSocket::disconnected, this, [=]() {
+    QObject::connect(m_cliDataSlot, &QLocalSocket::disconnected, this, [=]() {
         if (m_callType == NS_BGMRPC::CALL_REMOTE) emit clientExited(m_ID);
     });
 
@@ -74,7 +74,7 @@ Caller::grp() const {
 
 void
 Caller::onReturnData(const QString& mID, const QVariant& data) {
-    if (!m_dataSocket) return;
+    if (!m_cliDataSlot) return;
 
     QJsonObject retJsonObj;
     retJsonObj["type"] = "return";
@@ -94,15 +94,15 @@ Caller::onReturnData(const QString& mID, const QVariant& data) {
                              .arg(m_calleeMethod)
                              .arg(retData.length());
 
-    m_dataSocket->write(int2bytes<quint64>(retData.length()) + retData);
-    m_dataSocket->flush();
+    m_cliDataSlot->write(int2bytes<quint64>(retData.length()) + retData);
+    m_cliDataSlot->flush();
 }
 
 void
 Caller::onEmitSignal(const QString& signal, const QVariant& args) {
     //    if (m_localCall || !m_dataSocket) return;
     if (m_callType == NS_BGMRPC::CALL_INTERNAL ||
-        m_callType == NS_BGMRPC::CALL_INTERNAL_NOBLOCK || !m_dataSocket)
+        m_callType == NS_BGMRPC::CALL_INTERNAL_NOBLOCK || !m_cliDataSlot)
         return;
 
     QJsonObject signalJsonObj;
@@ -124,13 +124,13 @@ Caller::onEmitSignal(const QString& signal, const QVariant& args) {
                .arg(signal)
                .arg(m_ID);
 
-    m_dataSocket->write(int2bytes<quint64>(signalData.length()) + signalData);
-    m_dataSocket->flush();
+    m_cliDataSlot->write(int2bytes<quint64>(signalData.length()) + signalData);
+    m_cliDataSlot->flush();
 }
 
 void
 Caller::onReturnError(const QString& mID, quint8 errNO, const QString& errStr) {
-    if (!m_dataSocket) return;
+    if (!m_cliDataSlot) return;
     //    QByteArray errData(2, '\x0');
     //    errData[0] = (quint8) NS_BGMRPC::DATA_ERROR;
     //    errData[1] = errNO;
@@ -158,14 +158,14 @@ Caller::onReturnError(const QString& mID, quint8 errNO, const QString& errStr) {
         QJsonDocument(errJsonObj).toJson(QJsonDocument::Compact);
 
     //    errData.append(errStr);
-    m_dataSocket->write(int2bytes<quint64>(errData.length()) + errData);
-    m_dataSocket->flush();
+    m_cliDataSlot->write(int2bytes<quint64>(errData.length()) + errData);
+    m_cliDataSlot->flush();
 }
 
 void
 Caller::unsetDataSocket() {
-    QObject::disconnect(m_dataSocket, &QLocalSocket::disconnected, 0, 0);
-    m_dataSocket->disconnectFromServer();
-    m_dataSocket->deleteLater();
-    m_dataSocket = nullptr;
+    QObject::disconnect(m_cliDataSlot, &QLocalSocket::disconnected, 0, 0);
+    m_cliDataSlot->disconnectFromServer();
+    m_cliDataSlot->deleteLater();
+    m_cliDataSlot = nullptr;
 }

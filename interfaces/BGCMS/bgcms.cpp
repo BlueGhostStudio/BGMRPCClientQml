@@ -165,6 +165,14 @@ BGCMS::join(QPointer<Caller> caller) {
 }
 
 QVariant
+BGCMS::testCheckObject(QPointer<Caller> caller, const QString& objName) {
+    QByteArray data =
+        objCtrlCmd((quint8)NS_BGMRPC::CTRL_CHECKOBJECT, objName.toLatin1());
+
+    return data[0] ? "has account" : "no exists";
+}
+
+QVariant
 BGCMS::node(QPointer<Caller> caller, const QVariantList& args) {
     return node(getCallerToken(caller), args);
 }
@@ -873,6 +881,7 @@ bool
 BGCMS::initial(int, char**) {
     m_db.setDatabaseName(m_dataPath + "/cms.db");
     qInfo() << "open database" << m_db.open();
+    qDebug() << "----->" << m_dataPath + "/cms.db";
 
     return ObjectInterface::initial(0, nullptr);
 }
@@ -883,6 +892,9 @@ void
 BGCMS::registerMethods() {
     // clang-format off
 // =====================================================================================
+    RM("testCheckObject", "",
+       &BGCMS::testCheckObject, ARG<QString>());
+// -------------------------------------------------------------------------------------
     RM("join", "", &BGCMS::join);
 // -------------------------------------------------------------------------------------
     RMV("node", "Get node",

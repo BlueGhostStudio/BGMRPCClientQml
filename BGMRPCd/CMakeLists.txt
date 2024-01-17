@@ -32,8 +32,8 @@ add_executable(
   client.h
   client.cpp
   main.cpp
-  objectplug.h
-  objectplug.cpp
+  objectctrl.h
+  objectctrl.cpp
   serverctrl.h
   serverctrl.cpp
   ctrlbase.h

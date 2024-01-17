@@ -86,6 +86,8 @@ public:
 
     QVariant join(QPointer<Caller> caller);
 
+    QVariant testCheckObject(QPointer<Caller> caller, const QString& objName);
+
     QVariant node(QPointer<Caller> caller, const QVariantList& args);
     QVariant refNode(QPointer<Caller> caller, const QVariantList& args);
     QVariant nodeInfo(QPointer<Caller> caller, const QVariantList& args);

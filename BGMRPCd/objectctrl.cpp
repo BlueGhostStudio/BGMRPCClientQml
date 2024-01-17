@@ -1,4 +1,4 @@
-#include "objectplug.h"
+#include "objectctrl.h"
 
 #include <bgmrpccommon.h>
 
@@ -68,10 +68,10 @@ ObjectCtrl::sendCtrlData(const QByteArray& data) {
     m_ctrlStroke->write(data);
 }*/
 
-ObjectPlug::ObjectPlug(BGMRPC* bgmrpc, QLocalSocket* socket, QObject* parent)
+ObjectCtrl::ObjectCtrl(BGMRPC* bgmrpc, QLocalSocket* socket, QObject* parent)
     : CtrlBase(bgmrpc, socket, parent) {
-    QObject::connect(m_ctrlSocket, &QLocalSocket::disconnected, this, [&]() {
-        m_ctrlSocket->deleteLater();
+    QObject::connect(m_ctrlSlot, &QLocalSocket::disconnected, this, [&]() {
+        m_ctrlSlot->deleteLater();
         deleteLater();
         if (!m_objectName.isEmpty()) m_BGMRPC->removeObject(m_objectName);
     });
@@ -88,7 +88,7 @@ ObjectCtrl::closeCtrlSocket() {
 }*/
 
 bool
-ObjectPlug::ctrl(const QByteArray& data) {
+ObjectCtrl::ctrl(const QByteArray& data) {
     if (!CtrlBase::ctrl(data)) {
         switch (data[0]) {
         case NS_BGMRPC::CTRL_REGISTER:
@@ -97,9 +97,11 @@ ObjectPlug::ctrl(const QByteArray& data) {
             if (m_BGMRPC->registerObject(
                     this,
                     m_objectName))  // FINISHED register object
-                sendCtrlData(QByteArray(1, '\x1'));
+                m_ctrlSlot->write(QByteArray(1, '\x1'));
+                //sendCtrlData(QByteArray(1, '\x1'));
             else
-                sendCtrlData(QByteArray(1, '\x0'));
+                m_ctrlSlot->write(QByteArray(1, '\x0'));
+                //sendCtrlData(QByteArray(1, '\x0'));
             break;
         }
 

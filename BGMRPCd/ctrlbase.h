@@ -16,7 +16,7 @@ public:
     explicit CtrlBase(BGMRPC* bgmrpc, QLocalSocket* socket,
                       QObject* parent = nullptr);
 
-    void sendCtrlData(const QByteArray& data);
+    //void sendCtrlData(const QByteArray& data);
     void closeCtrlSocket();
 
 signals:
@@ -26,7 +26,7 @@ protected:
 
 protected:
     BGMRPC* m_BGMRPC;
-    QLocalSocket* m_ctrlSocket;
+    QLocalSocket* m_ctrlSlot;
 };
 
 }  // namespace NS_BGMRPC

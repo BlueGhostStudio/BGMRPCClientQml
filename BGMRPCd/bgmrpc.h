@@ -11,7 +11,7 @@ namespace NS_BGMRPC {
 
 class CtrlBase;
 class ServerCtrl;
-class ObjectPlug;
+class ObjectCtrl;
 
 class BGMRPC : public QObject {
     Q_OBJECT
@@ -22,7 +22,9 @@ public:
     bool start(/*ip, port*/);
     void setAddress(const QHostAddress& address);
     void setPort(quint16 port);
-    ObjectPlug* objectCtrl(const QString& name) const;
+    //ObjectPlug* objectCtrl(const QString& name) const;
+
+    bool checkObject(const QByteArray& name) const;
 
     void initial(const QString& file);
 
@@ -40,8 +42,7 @@ private:
     void stopServer();
     bool detachObject(const QByteArray& name);
     void removeObject(const QByteArray& name);
-    bool registerObject(ObjectPlug* ctrl, const QByteArray& name);
-    bool checkObject(const QByteArray& name) const;
+    bool registerObject(ObjectCtrl* ctrl, const QByteArray& name);
     QByteArray getConfig(quint8 cnf);
     QByteArray getSetting(const QByteArray& key);
 
@@ -52,7 +53,7 @@ private:
     QLocalServer* m_serverCtrlServer;
     // QLocalServer* m_objectCtrlServer;
     QLocalServer* m_objectSocketServer;
-    QMap<QString, ObjectPlug*> m_objects;
+    QMap<QString, ObjectCtrl*> m_objects;
 
     QWebSocketServer* m_BGMRPCServer;
     QHostAddress m_address;
@@ -60,7 +61,7 @@ private:
 
     friend CtrlBase;
     friend ServerCtrl;
-    friend ObjectPlug;
+    friend ObjectCtrl;
 };
 
 }  // namespace NS_BGMRPC

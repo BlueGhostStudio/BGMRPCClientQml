@@ -47,11 +47,11 @@ private:
     friend BGMRPC;
 };*/
 
-class ObjectPlug : public CtrlBase {
+class ObjectCtrl : public CtrlBase {
     Q_OBJECT
 
 public:
-    explicit ObjectPlug(BGMRPC* bgmrpc, QLocalSocket* socket,
+    explicit ObjectCtrl(BGMRPC* bgmrpc, QLocalSocket* socket,
                         QObject* parent = nullptr);
 
     // QByteArray dataSocketName() const;

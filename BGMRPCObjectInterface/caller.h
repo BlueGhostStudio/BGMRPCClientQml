@@ -40,7 +40,7 @@ private:
     void unsetDataSocket();
 
 private:
-    QLocalSocket* m_dataSocket;
+    QLocalSocket* m_cliDataSlot;
     qint64 m_ID;
     //    bool m_localCall;
     bool m_exited;

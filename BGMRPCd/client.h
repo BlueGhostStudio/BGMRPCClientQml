@@ -27,7 +27,7 @@ signals:
 
 private: ///< private methods
     QLocalSocket* connectObject(const QString& mID, const QString& objName);
-    QLocalSocket* relatedObjectSocket(const QString& objName) const;
+    //QLocalSocket* dataConnecter(const QString& objName) const;
 
     bool requestCall(const QByteArray& data);
     void returnData(const QByteArray& data);
@@ -35,8 +35,8 @@ private: ///< private methods
 
 private:
     BGMRPC* m_BGMRPC;
-    QWebSocket* m_BGMRPCSocket;
-    QMap<QString, QLocalSocket*> m_relatedObjectSockets;
+    QWebSocket* m_BGMRPCCliSlot;
+    QMap<QString, QLocalSocket*> m_dataConnecters;
     quint64 m_ID;
 
     static quint64 m_totalID;
