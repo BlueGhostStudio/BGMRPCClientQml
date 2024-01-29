@@ -5,7 +5,7 @@
 #include <QRegularExpression>
 
 #include "bgmrpc.h"
-//#include "objectplug.h"
+// #include "objectplug.h"
 
 using namespace NS_BGMRPC;
 
@@ -21,8 +21,8 @@ Client::Client(BGMRPC* bgmrpc, QWebSocket* socket, QObject* parent)
         [=](const QString& message) { requestCall(message.toUtf8()); });
     QObject::connect(m_BGMRPCCliSlot, &QWebSocket::disconnected, this,
                      &Client::deleteLater);
-    QObject::connect(m_BGMRPCCliSlot, &QWebSocket::disconnected, m_BGMRPCCliSlot,
-                     &QWebSocket::deleteLater);
+    QObject::connect(m_BGMRPCCliSlot, &QWebSocket::disconnected,
+                     m_BGMRPCCliSlot, &QWebSocket::deleteLater);
 
     m_BGMRPCCliSlot->ping();
     QObject::connect(m_BGMRPCCliSlot, &QWebSocket::pong, [=]() {
@@ -49,32 +49,9 @@ Client::operator==(quint64 cliID) const {
 
 QLocalSocket*
 Client::connectObject(const QString& mID, const QString& objName) {
-    /*ObjectPlug* objCtrl = m_BGMRPC->objectCtrl(objName);
-    if (!objCtrl) {
-        QJsonObject errJsonObj;
-        errJsonObj["type"] = "error";
-        errJsonObj["errNo"] = ERR_NOOBJ;
-        errJsonObj["mID"] = mID;
-        errJsonObj["error"] =
-            QString("No exist object the name is %1").arg(objName);
-
-        returnData(QJsonDocument(errJsonObj).toJson(QJsonDocument::Compact));
-
-        //        returnError(ERR_NOOBJ, objName);
+    if (!m_BGMRPC->checkObject(objName.toLatin1()))
         return nullptr;
-    }*/
-    if (!m_BGMRPC->checkObject(objName.toLatin1())) {
-        QJsonObject errJsonObj;
-        errJsonObj["type"] = "error";
-        errJsonObj["errNo"] = ERR_NOOBJ;
-        errJsonObj["mID"] = mID;
-        errJsonObj["error"] =
-            QString("No exist object the name is %1").arg(objName);
-
-        returnData(QJsonDocument(errJsonObj).toJson(QJsonDocument::Compact));
-
-        return nullptr;
-    } else {
+    else {
         QLocalSocket* dataConnecter = new QLocalSocket(this);
         //        relSocket->setObjectName(objName);
         dataConnecter->connectToServer(BGMRPCObjPrefix + objName);
@@ -108,11 +85,13 @@ Client::connectObject(const QString& mID, const QString& objName) {
                                  dataConnecter->deleteLater();
                              });
 
-            QObject::connect(dataConnecter, &QLocalSocket::readyRead, this, [=]() {
-                splitLocalSocketFragment(
-                    dataConnecter,
-                    [=](const QByteArray& readData) { returnData(readData); });
-            });
+            QObject::connect(
+                dataConnecter, &QLocalSocket::readyRead, this, [=]() {
+                    splitLocalSocketFragment(dataConnecter,
+                                             [=](const QByteArray& readData) {
+                                                 returnData(readData);
+                                             });
+                });
 
             return dataConnecter;
         } else {
@@ -129,32 +108,35 @@ Client::dataConnecter(const QString& objName) const {
 
 bool
 Client::requestCall(const QByteArray& data) {
-    //    if (data[0] > 30) {
-    /*QJsonDocument jsonData = QJsonDocument::fromJson(data);
-    QString objName = jsonData["object"].toString();
-    QString mID = jsonData["mID"].toString();*/
-    QVariantMap callVariant = QJsonDocument::fromJson(data).toVariant().toMap();
+    QJsonObject jsoCall = QJsonDocument::fromJson(data).object();
 
-    QString objName = callVariant["object"].toString();
-    QString mID = callVariant["mID"].toString();
-    callVariant["callerID"] = m_ID;
-    callVariant["callType"] = CALL_REMOTE;
-
-    QByteArray callJson = QJsonDocument::fromVariant(callVariant).toJson();
-    /*QRegularExpression reObj(R"RX(^{[^{]*"object":\s*"([^\"]*)")RX");
-    QRegularExpressionMatch matchObj = reObj.match(data);
-
-    QRegularExpression reMID(R"RX(^{[^{]*"mID":\s*"([^\"]*))RX");
-    QRegularExpressionMatch matchMID = reMID.match(data);*/
+    QString objName = jsoCall["object"].toString();
+    QString mID = jsoCall["mID"].toString();
+    jsoCall["callerID"] = (qint64)m_ID;
+    jsoCall["callType"] = CALL_REMOTE;
 
     if (!objName.isEmpty()) {
         //        QString objName = matchObj.captured(1);
         //        QString mID = matchMID.captured(1);
-        QLocalSocket* dataConnecter = m_dataConnecters[objName];//this->dataConnecter(objName);
+        QLocalSocket* dataConnecter =
+            m_dataConnecters[objName];  // this->dataConnecter(objName);
         if (!dataConnecter) {
             dataConnecter = connectObject(mID, objName);
-            if (!dataConnecter) return false;
+            if (!dataConnecter) {
+                // TODO if (tryForwardCall
+                QJsonObject errJsonObj;
+                errJsonObj["type"] = "error";
+                errJsonObj["errNo"] = ERR_NOOBJ;
+                errJsonObj["mID"] = mID;
+                errJsonObj["error"] =
+                    QString("No exist object the name is %1").arg(objName);
+
+                returnData(
+                    QJsonDocument(errJsonObj).toJson(QJsonDocument::Compact));
+                return false;
+            }
         }
+        QByteArray callJson = QJsonDocument(jsoCall).toJson(QJsonDocument::Compact);
         dataConnecter->write(int2bytes<quint64>(callJson.length()) + callJson);
         // relSocket->waitForBytesWritten();
         // relSocket->flush();

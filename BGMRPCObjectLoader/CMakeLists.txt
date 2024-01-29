@@ -2,10 +2,7 @@ cmake_minimum_required(VERSION 3.18)
 
 include(../cmake/VERSION.cmake)
 
-project(
-  BGMRPCObjectLoader
-  LANGUAGES CXX
-  VERSION ${BGMRPC_VERSION})
+project(BGMRPCObjectLoader LANGUAGES CXX)
 
 include(../cmake/BGMRPC.cmake)
 
