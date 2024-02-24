@@ -187,12 +187,25 @@ bool
 JsEngine::initial(int argc, char** argv) {
     QString rootPath =
         getSettings(*m_objectConnecter, NS_BGMRPC::CNF_PATH_ROOT);
-    QString installDir = getSettings(*m_objectConnecter, "path/installDir");
+
+    QString installDir =
+#ifdef REMOTEPATH
+        REMOTEPATH;
+#else
+        QDir::homePath();
+#endif
+
     QString etcDir = getSettings(*m_objectConnecter, NS_BGMRPC::CNF_PATH_ETC);
 
-    QSettings JSMSettings(etcDir + "/JsModules.conf", QSettings::IniFormat);
+
+    QString JSMSettingsFileName("/JsModules.conf");
+    QString JSMSettingsFilePath(rootPath + JSMSettingsFileName);
+    if (!QFile::exists(JSMSettingsFilePath))
+        JSMSettingsFilePath = etcDir + JSMSettingsFileName;
+
+    QSettings JSMSettings(JSMSettingsFilePath, QSettings::IniFormat);
     m_jsModulesPath =
-        JSMSettings.value("path", installDir + "/JsModules.conf").toString();
+        JSMSettings.value("path", installDir + "/JsModules").toString();
 
     int opt = 0;
     optind = 0;

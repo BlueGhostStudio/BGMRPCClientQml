@@ -27,6 +27,7 @@ startServer(int argc, char* argv[]) {
     //    QString startCmd;
     QStringList args;
     QString rootPath;
+    QString optPath;
     QString logPath;
     QString binPath;
 
@@ -38,6 +39,13 @@ startServer(int argc, char* argv[]) {
     } else {
         settings = new QSettings();
     }
+
+    optPath =
+#ifdef REMOTEPATH
+        REMOTEPATH;
+#else
+        QDir::homePath();
+#endif
 
     rootPath = settings
                    ->value("path/root",
@@ -52,12 +60,12 @@ startServer(int argc, char* argv[]) {
     logPath.replace(QRegularExpression("^~"), QDir::homePath());
     binPath = settings
                   ->value("path/bin",
-                          defaultSettings.value("path/bin", rootPath + "/bin"))
+                          defaultSettings.value("path/bin", optPath + "/bin"))
                   .toString();
 
     if (qgetenv("BGMRPCDebug") != "1") {
-        BGMRPCProcess.setStandardOutputFile(logPath /*, QIODevice::Append*/);
-        BGMRPCProcess.setStandardErrorFile(logPath /*, QIODevice::Append*/);
+        BGMRPCProcess.setStandardOutputFile(logPath);
+        BGMRPCProcess.setStandardErrorFile(logPath);
     }
 
     BGMRPCProcess.setProgram(binPath + "/BGMRPCd");
@@ -352,14 +360,24 @@ runApp(const QString& app, const QString& grp,
     }
 
     QJsonObject IFTypes;
-    QString etcDir = getSettings(ctrlSocket, NS_BGMRPC::CNF_PATH_ETC);
-    QString IFTypesFileName = etcDir + "/IF_types.json";
-    if (QFile::exists(IFTypesFileName)) {
-        QFile IFTypesFile(IFTypesFileName);
-        if (IFTypesFile.open(QIODevice::ReadOnly)) {
-            IFTypes = QJsonDocument::fromJson(IFTypesFile.readAll()).object();
+
+    auto loadIFTypes = [&](const QByteArray& etcDir) -> bool {
+        QString IFTypesFileName = etcDir + "/IF_types.json";
+        bool ok = false;
+        if (QFile::exists(IFTypesFileName)) {
+            QFile IFTypesFile(IFTypesFileName);
+            if (IFTypesFile.open(QIODevice::ReadOnly)) {
+                QJsonDocument IFTypesDoc =
+                    QJsonDocument::fromJson(IFTypesFile.readAll());
+                ok = !IFTypesDoc.isNull();
+                if (ok) IFTypes = IFTypesDoc.object();
+            }
         }
-    }
+
+        return ok;
+    };
+    if (!loadIFTypes(getSettings(ctrlSocket, NS_BGMRPC::CNF_PATH_ETC)))
+        loadIFTypes(getSettings(ctrlSocket, NS_BGMRPC::CNF_PATH_ROOT) + "/etc");
 
     qInfo().noquote() << "Starting " + app + " ...";
 
@@ -430,8 +448,9 @@ stopApp(const QString& app, const QString& grp,
 
     QString fullAppName = pApp.isEmpty() ? app : pApp + "::" + app;
 
-    auto stopRelApps = [fullAppName](const QString& relApp, const QString& relAppGrp,
-                          const QJsonValue& jsvRelApp) -> bool {
+    auto stopRelApps = [fullAppName](const QString& relApp,
+                                     const QString& relAppGrp,
+                                     const QJsonValue& jsvRelApp) -> bool {
         if (!jsvRelApp.isObject() ||
             !jsvRelApp.toObject({})["skip-stop"].toBool(false)) {
             stopApp(relApp, relAppGrp, fullAppName);
@@ -443,7 +462,7 @@ stopApp(const QString& app, const QString& grp,
     processAppJson(
         app, grp, stopRelApps, stopRelApps,
         [fullAppName](const QString& grp, const QString& objName, bool noprefix,
-              const QJsonObject& jsoObj) -> bool {
+                      const QJsonObject& jsoObj) -> bool {
             detachObject(genObjectName(grp.toLatin1(), fullAppName.toLatin1(),
                                        objName.toLatin1(), noprefix));
             return true;
@@ -467,6 +486,7 @@ main(int argc, char* argv[]) {
 #else
     a.setApplicationVersion("1.0.0");
 #endif
+
     a.setOrganizationName("BlueGhost Studio");
     a.setOrganizationDomain("bgstudio.org");
 

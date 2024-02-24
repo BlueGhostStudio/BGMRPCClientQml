@@ -312,6 +312,13 @@ BGMRPC::getConfig(quint8 cnf) {
             .replace(QRegularExpression("^~"), QDir::homePath())
             .toUtf8();
 
+    QByteArray optPath =
+#ifdef REMOTEPATH
+        REMOTEPATH;
+#else
+        QDir::homePath().toUtf8();
+#endif
+
     QByteArray configData;
     switch (cnf) {
     case CNF_PATH_ROOT:
@@ -319,14 +326,14 @@ BGMRPC::getConfig(quint8 cnf) {
     case CNF_PATH_BIN:
         return m_settings
             ->value("path/bin",
-                    m_defaultSettings.value("path/bin", rootPath + "/bin"))
+                    m_defaultSettings.value("path/bin", optPath + "/bin"))
             .toString()
             .replace(QRegularExpression("^~"), QDir::homePath())
             .toUtf8();
     case CNF_PATH_ETC:
         return m_settings
             ->value("path/etc",
-                    m_defaultSettings.value("path/etc", rootPath + "/etc"))
+                    m_defaultSettings.value("path/etc", defaultEtcDir))
             .toString()
             .replace(QRegularExpression("^~"), QDir::homePath())
             .toUtf8();
@@ -334,7 +341,7 @@ BGMRPC::getConfig(quint8 cnf) {
         return m_settings
             ->value("path/interfaces",
                     m_defaultSettings.value("path/interfaces",
-                                            rootPath + "/interfaces"))
+                                            optPath + "/interfaces"))
             .toString()
             .replace(QRegularExpression("^~"), QDir::homePath())
             .toUtf8();
