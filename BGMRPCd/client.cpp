@@ -19,10 +19,22 @@ Client::Client(BGMRPC* bgmrpc, QWebSocket* socket, QObject* parent)
     QObject::connect(
         m_BGMRPCCliSlot, &QWebSocket::textMessageReceived,
         [=](const QString& message) { requestCall(message.toUtf8()); });
-    QObject::connect(m_BGMRPCCliSlot, &QWebSocket::disconnected, this,
-                     &Client::deleteLater);
-    QObject::connect(m_BGMRPCCliSlot, &QWebSocket::disconnected,
-                     m_BGMRPCCliSlot, &QWebSocket::deleteLater);
+
+    QObject::connect(m_BGMRPCCliSlot, &QWebSocket::disconnected, this, [&]() {
+        qInfo().noquote() << QString("Client(%1), disconnected").arg(m_ID);
+        QMap<QString, QLocalSocket*>::iterator it;
+        for (it = m_dataConnecters.begin(); it != m_dataConnecters.end();
+             ++it) {
+            qInfo().noquote()
+                << QString("Disconnect Related Object(%1)").arg(it.key());
+            it.value()->disconnectFromServer();
+            it.value()->deleteLater();
+        }
+        m_dataConnecters.clear();
+
+        m_BGMRPCCliSlot->deleteLater();
+        deleteLater();
+    });
 
     m_BGMRPCCliSlot->ping();
     QObject::connect(m_BGMRPCCliSlot, &QWebSocket::pong, [=]() {
@@ -33,7 +45,7 @@ Client::Client(BGMRPC* bgmrpc, QWebSocket* socket, QObject* parent)
     });
 }
 
-Client::~Client() { m_dataConnecters.clear(); }
+Client::~Client() {}
 
 bool
 Client::operator==(const Client* other) const {
@@ -58,33 +70,6 @@ Client::connectObject(const QString& mID, const QString& objName) {
         if (dataConnecter->waitForConnected()) {
             m_dataConnecters[objName] = dataConnecter;
 
-            QObject::connect(m_BGMRPCCliSlot, &QWebSocket::disconnected, [=]() {
-                // relSocket->disconnectFromServer();
-                qInfo().noquote() << QString(
-                                         "Client(%1),disconnected,"
-                                         "Disconnect from server")
-                                         .arg(m_ID);
-                if (m_dataConnecters.contains(objName)) {
-                    qInfo().noquote() << QString(
-                                             "Client(%1),eisconnected,"
-                                             "Disconnect object(%2)")
-                                             .arg(m_ID)
-                                             .arg(objName);
-                    m_dataConnecters[objName]->disconnectFromServer();
-                } else
-                    qWarning() << QString(
-                                      "Client(%1),disconnected,"
-                                      "related object(%2) may has crashed")
-                                      .arg(m_ID)
-                                      .arg(objName);
-            });
-
-            QObject::connect(dataConnecter, &QLocalSocket::disconnected, this,
-                             [=]() {
-                                 m_dataConnecters.remove(objName);
-                                 dataConnecter->deleteLater();
-                             });
-
             QObject::connect(
                 dataConnecter, &QLocalSocket::readyRead, this, [=]() {
                     splitLocalSocketFragment(dataConnecter,
@@ -101,11 +86,6 @@ Client::connectObject(const QString& mID, const QString& objName) {
     }
 }
 
-/*QLocalSocket*
-Client::dataConnecter(const QString& objName) const {
-    return m_dataConnecters[objName];
-}*/
-
 bool
 Client::requestCall(const QByteArray& data) {
     QJsonObject jsoCall = QJsonDocument::fromJson(data).object();
@@ -116,10 +96,10 @@ Client::requestCall(const QByteArray& data) {
     jsoCall["callType"] = CALL_REMOTE;
 
     if (!objName.isEmpty()) {
-        //        QString objName = matchObj.captured(1);
-        //        QString mID = matchMID.captured(1);
         QLocalSocket* dataConnecter =
-            m_dataConnecters[objName];  // this->dataConnecter(objName);
+            m_dataConnecters.contains(objName)
+                ? m_dataConnecters[objName]
+                : nullptr;  // this->dataConnecter(objName);
         if (!dataConnecter) {
             dataConnecter = connectObject(mID, objName);
             if (!dataConnecter) {
@@ -136,10 +116,11 @@ Client::requestCall(const QByteArray& data) {
                 return false;
             }
         }
-        QByteArray callJson = QJsonDocument(jsoCall).toJson(QJsonDocument::Compact);
+
+        QByteArray callJson =
+            QJsonDocument(jsoCall).toJson(QJsonDocument::Compact);
         dataConnecter->write(int2bytes<quint64>(callJson.length()) + callJson);
-        // relSocket->waitForBytesWritten();
-        // relSocket->flush();
+
         return true;
     } else
         return false;
@@ -149,26 +130,3 @@ void
 Client::returnData(const QByteArray& data) {
     m_BGMRPCCliSlot->sendTextMessage(data);
 }
-
-/*void Client::returnError(quint8 errNo, const QString& errStr)
-{
-    QJsonObject errJsonObj;
-    errJsonObj["type"] = "error";
-    errJsonObj["errno"] = errNo;
-    switch (errNo) {
-    case NS_BGMRPC::ERR_NOOBJ:
-        errJsonObj["info"] =
-            QString("The remote object [%1] does not exist").arg(errStr);
-        break;
-    case NS_BGMRPC::ERR_NOMETHOD:
-        errJsonObj["info"] = QString("%1 no found").arg(errStr);
-        break;
-    case NS_BGMRPC::ERR_ACCESS:
-        errJsonObj["info"] = QString("%1 not allow call").arg(errStr);
-        break;
-    }
-    //    errJsonObj["error"] = errStr;
-
-    m_BGMRPCSocket->sendTextMessage(
-        QJsonDocument(errJsonObj).toJson(QJsonDocument::Compact));
-}*/
