@@ -103,17 +103,27 @@ Client::requestCall(const QByteArray& data) {
         if (!dataConnecter) {
             dataConnecter = connectObject(mID, objName);
             if (!dataConnecter) {
-                // TODO if (tryForwardCall
-                QJsonObject errJsonObj;
-                errJsonObj["type"] = "error";
-                errJsonObj["errNo"] = ERR_NOOBJ;
-                errJsonObj["mID"] = mID;
-                errJsonObj["error"] =
-                    QString("No exist object the name is %1").arg(objName);
+                if (m_BGMRPC->checkObject("MissingObjectHandler")) {
+                    QJsonArray args{ jsoCall["object"], jsoCall["method"],
+                                     jsoCall["args"] };
+                    jsoCall["object"] = "MissingObjectHandler";
+                    jsoCall["method"] = "request";
+                    jsoCall["args"] = args;
 
-                returnData(
-                    QJsonDocument(errJsonObj).toJson(QJsonDocument::Compact));
-                return false;
+                    return requestCall(
+                        QJsonDocument(jsoCall).toJson(QJsonDocument::Compact));
+                } else {
+                    QJsonObject errJsonObj;
+                    errJsonObj["type"] = "error";
+                    errJsonObj["errNo"] = ERR_NOOBJ;
+                    errJsonObj["mID"] = mID;
+                    errJsonObj["error"] =
+                        QString("No exist object the name is %1").arg(objName);
+
+                    returnData(QJsonDocument(errJsonObj)
+                                   .toJson(QJsonDocument::Compact));
+                    return false;
+                }
             }
         }
 

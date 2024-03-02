@@ -14,6 +14,9 @@ bool serverRunning = false;
 QLocalSocket ctrlSocket;
 QString binPath;
 
+bool runApp(const QString& app, const QString& grp,
+            const QString& pApp = QString());
+
 void
 startServer(int argc, char* argv[]) {
     if (serverRunning) {
@@ -71,6 +74,13 @@ startServer(int argc, char* argv[]) {
     BGMRPCProcess.setProgram(binPath + "/BGMRPCd");
     BGMRPCProcess.setArguments(args);
     BGMRPCProcess.startDetached();
+
+    QThread::msleep(1000);
+
+    ctrlSocket.connectToServer(BGMRPCServerCtrlSocket);
+    if (ctrlSocket.waitForConnected(500)) serverRunning = true;
+
+    runApp("AutoStart", "", "");
 }
 
 void
@@ -352,10 +362,9 @@ genArgs(const QJsonObject& IFTypes, const QJsonObject& jsoObj,
 }
 
 bool
-runApp(const QString& app, const QString& grp,
-       const QString& pApp = QString()) {
+runApp(const QString& app, const QString& grp, const QString& pApp) {
     if (!serverRunning) {
-        qWarning().noquote() << "BGMRPC,listObjects,Server not run";
+        qWarning().noquote() << "BGMRPC, Server not run";
         return false;
     }
 

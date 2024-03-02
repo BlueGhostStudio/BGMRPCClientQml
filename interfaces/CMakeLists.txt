@@ -10,6 +10,7 @@ find_package(
 if(QT_VERSION_MAJOR EQUAL 5)
   add_subdirectory(PythonInterface)
 elseif(QT_VERSION_MAJOR EQUAL 6)
+  add_subdirectory(MissingObjectHandler)
   add_subdirectory(JsPlugin2)
   add_subdirectory(BGCMS)
   add_subdirectory(Graphviz)
