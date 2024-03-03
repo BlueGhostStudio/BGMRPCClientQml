@@ -70,6 +70,14 @@ Caller::grp() const {
     return m_callerGrp;
 }
 
+void
+Caller::unsetDataSocket() {
+    QObject::disconnect(m_cliDataSlot, &QLocalSocket::disconnected, 0, 0);
+    m_cliDataSlot->disconnectFromServer();
+    m_cliDataSlot->deleteLater();
+    m_cliDataSlot = nullptr;
+}
+
 // void Caller::setID(quint64 id) { m_ID = id; }
 
 void
@@ -82,9 +90,9 @@ Caller::onReturnData(const QString& mID, const QVariant& data) {
     QJsonValue retJsonValue = data.toJsonValue();
     if (retJsonValue.isArray())
         retJsonObj["values"] = retJsonValue;
-    else {
+    else
         retJsonObj["values"] = QJsonArray({ retJsonValue });
-    }
+
     QByteArray retData =
         QJsonDocument(retJsonObj).toJson(QJsonDocument::Compact);
 
@@ -160,12 +168,4 @@ Caller::onReturnError(const QString& mID, quint8 errNO, const QString& errStr) {
     //    errData.append(errStr);
     m_cliDataSlot->write(int2bytes<quint64>(errData.length()) + errData);
     m_cliDataSlot->flush();
-}
-
-void
-Caller::unsetDataSocket() {
-    QObject::disconnect(m_cliDataSlot, &QLocalSocket::disconnected, 0, 0);
-    m_cliDataSlot->disconnectFromServer();
-    m_cliDataSlot->deleteLater();
-    m_cliDataSlot = nullptr;
 }

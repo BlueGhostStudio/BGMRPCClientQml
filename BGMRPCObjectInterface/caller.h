@@ -25,6 +25,8 @@ public:
     QString grp() const;
     //    void setID(quint64 id);
 
+    void unsetDataSocket();
+
 signals:
     void clientExited(qint64 id);
     void returnData(const QString& mID, const QVariant& data);
@@ -37,7 +39,6 @@ private slots:
     void onReturnError(const QString& mID, quint8 errNo, const QString& errStr);
 
 private:
-    void unsetDataSocket();
 
 private:
     QLocalSocket* m_cliDataSlot;

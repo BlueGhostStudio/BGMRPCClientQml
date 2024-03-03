@@ -27,8 +27,10 @@ Client::Client(BGMRPC* bgmrpc, QWebSocket* socket, QObject* parent)
              ++it) {
             qInfo().noquote()
                 << QString("Disconnect Related Object(%1)").arg(it.key());
-            it.value()->disconnectFromServer();
-            it.value()->deleteLater();
+            QLocalSocket* dataConnecter = it.value();
+            QObject::disconnect(dataConnecter, nullptr, nullptr, nullptr);
+            dataConnecter->disconnectFromServer();
+            dataConnecter->deleteLater();
         }
         m_dataConnecters.clear();
 
@@ -77,6 +79,11 @@ Client::connectObject(const QString& mID, const QString& objName) {
                                                  returnData(readData);
                                              });
                 });
+            QObject::connect(dataConnecter, &QLocalSocket::disconnected, this,
+                             [=]() {
+                                 m_dataConnecters.remove(objName);
+                                 dataConnecter->deleteLater();
+                             });
 
             return dataConnecter;
         } else {
@@ -103,7 +110,7 @@ Client::requestCall(const QByteArray& data) {
         if (!dataConnecter) {
             dataConnecter = connectObject(mID, objName);
             if (!dataConnecter) {
-                if (m_BGMRPC->checkObject("MissingObjectHandler")) {
+                /*if (m_BGMRPC->checkObject("MissingObjectHandler")) {
                     QJsonArray args{ jsoCall["object"], jsoCall["method"],
                                      jsoCall["args"] };
                     jsoCall["object"] = "MissingObjectHandler";
@@ -112,7 +119,7 @@ Client::requestCall(const QByteArray& data) {
 
                     return requestCall(
                         QJsonDocument(jsoCall).toJson(QJsonDocument::Compact));
-                } else {
+                } else {*/
                     QJsonObject errJsonObj;
                     errJsonObj["type"] = "error";
                     errJsonObj["errNo"] = ERR_NOOBJ;
@@ -123,7 +130,7 @@ Client::requestCall(const QByteArray& data) {
                     returnData(QJsonDocument(errJsonObj)
                                    .toJson(QJsonDocument::Compact));
                     return false;
-                }
+                // }
             }
         }
 
