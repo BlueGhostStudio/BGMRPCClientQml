@@ -1,7 +1,8 @@
 #include "objectinterface.h"
-#include "objctrlcmdcontroller.h"
 
 #include <caller.h>
+
+#include "objctrlcmdcontroller.h"
 
 using namespace NS_BGMRPCObjectInterface;
 
@@ -430,40 +431,8 @@ void
 ObjectInterface::exec(const QString& mID, QPointer<Caller> caller,
                       const QString& method, const QVariantList& args) {
     QThread* callThread = QThread::create([=]() {
-        /*if (!caller.isNull() && verification(caller, method, args)) {
-            qInfo().noquote() << QString("Caller(%1), Calling %2.%3(%4)")
-                                     .arg(caller->m_ID)
-                                     .arg(m_ID)
-                                     .arg(method)
-                                     .arg(mID);
-            try {
-                QVariant ret = m_methods[method](caller, args);
-                if (!caller.isNull()) {
-                    qInfo().noquote()
-                        << QString("Object(%1), called, %2(%3) has been Called")
-                               .arg(m_ID)
-                               .arg(method)
-                               .arg(mID);
-                    emit caller->returnData(mID, ret);
-                }
-            } catch (std::exception& e) {
-                emit caller->emitSignal("ERROR_INVALID_ARGUMENT", { method });
-                emit caller->returnError(
-                    mID, NS_BGMRPC::ERR_INVALID_ARGUMENT,
-                    QString("%1\n%2").arg(e.what()).arg(m_IFDict[method][0]));
-            };
-        } else if (!caller.isNull()) {
-            emit caller->emitSignal("ERROR_ACCESS", { method });
-            emit caller->returnError(mID, NS_BGMRPC::ERR_ACCESS,
-                                     m_ID + '.' + method);
-            emit caller->returnData(mID, QVariant());
-            qWarning().noquote()
-                << QString("Object(%1), access, Not allow(%2) call %1.%3")
-                       .arg(m_ID)
-                       .arg(caller->m_ID)
-                       .arg(mID);
-        }*/
         if (!caller.isNull()) {
+            caller->callIncrement();
             if (verification(caller, method, args)) {
                 qInfo().noquote() << QString("Caller(%1), Calling %2.%3(%4)")
                                          .arg(caller->m_ID)
@@ -474,23 +443,26 @@ ObjectInterface::exec(const QString& mID, QPointer<Caller> caller,
                     QVariant ret = m_methods[method](caller, args);
                     if (!caller.isNull()) {
                         qInfo().noquote()
-                            << QString("Object(%1), called, %2(%3) has been Called")
+                            << QString(
+                                   "Object(%1), called, %2(%3) has been Called")
                                    .arg(m_ID)
                                    .arg(method)
                                    .arg(mID);
                         emit caller->returnData(mID, ret, method);
                     }
                 } catch (std::exception& e) {
-                    emit caller->emitSignal("ERROR_INVALID_ARGUMENT", { method });
+                    /*emit caller->emitSignal("ERROR_INVALID_ARGUMENT",
+                                            { method });*/
                     emit caller->returnError(
                         mID, NS_BGMRPC::ERR_INVALID_ARGUMENT,
-                        QString("%1\n%2").arg(e.what()).arg(m_IFDict[method][0]));
+                        QString("%1\n%2").arg(e.what()).arg(
+                            m_IFDict[method][0]));
                 };
             } else {
-                emit caller->emitSignal("ERROR_ACCESS", { method });
+                //emit caller->emitSignal("ERROR_ACCESS", { method });
                 emit caller->returnError(mID, NS_BGMRPC::ERR_ACCESS,
                                          m_ID + '.' + method);
-                emit caller->returnData(mID, QVariant(), method);
+                //emit caller->returnData(mID, QVariant(), method);
                 qWarning().noquote()
                     << QString("Object(%1), access, Not allow(%2) call %1.%3")
                            .arg(m_ID)

@@ -15,7 +15,7 @@ Caller::Caller(ObjectInterface* callee, QLocalSocket* socket, QObject* parent)
     m_exited = false;
     m_callType = NS_BGMRPC::CALL_UNDEFINED;
 
-    QObject::connect(m_cliDataSlot, &QLocalSocket::disconnected, this, [=]() {
+    /*QObject::connect(m_cliDataSlot, &QLocalSocket::disconnected, this, [=]() {
         m_exited = true;
         deleteLater();
     });
@@ -23,7 +23,11 @@ Caller::Caller(ObjectInterface* callee, QLocalSocket* socket, QObject* parent)
                      &QLocalSocket::deleteLater);
     QObject::connect(m_cliDataSlot, &QLocalSocket::disconnected, this, [=]() {
         if (m_callType == NS_BGMRPC::CALL_REMOTE) emit clientExited(m_ID);
-    });
+    });*/
+    /*QObject::connect(m_cliDataSlot, &QLocalSocket::disconnected, this,
+                     &Caller::destroy);*/
+    QObject::connect(m_cliDataSlot, &QLocalSocket::disconnected, this,
+                     &Caller::onExited);
 
     QObject::connect(this, &Caller::emitSignal, this, &Caller::onEmitSignal);
     QObject::connect(this, &Caller::returnData, this, &Caller::onReturnData);
@@ -70,15 +74,33 @@ Caller::grp() const {
     return m_callerGrp;
 }
 
+// void Caller::setID(quint64 id) { m_ID = id; }
+
 void
-Caller::unsetDataSocket() {
-    QObject::disconnect(m_cliDataSlot, &QLocalSocket::disconnected, 0, 0);
-    m_cliDataSlot->disconnectFromServer();
-    m_cliDataSlot->deleteLater();
-    m_cliDataSlot = nullptr;
+Caller::callIncrement() {
+    m_callingCounter++;
 }
 
-// void Caller::setID(quint64 id) { m_ID = id; }
+void
+Caller::release(bool decrement) {
+    m_callingCounter -= decrement ? 1 : 0;
+
+    if (m_callingCounter <= 0) {
+        unsetDataSocket();
+
+        onExited();
+    }
+}
+
+void
+Caller::unsetDataSocket() {
+    if (m_cliDataSlot) {
+        QObject::disconnect(m_cliDataSlot, &QLocalSocket::disconnected, 0, 0);
+        m_cliDataSlot->disconnectFromServer();
+        m_cliDataSlot->deleteLater();
+        m_cliDataSlot = nullptr;
+    }
+}
 
 void
 Caller::onReturnData(const QString& mID, const QVariant& data,
@@ -170,4 +192,17 @@ Caller::onReturnError(const QString& mID, quint8 errNO, const QString& errStr) {
     //    errData.append(errStr);
     m_cliDataSlot->write(int2bytes<quint64>(errData.length()) + errData);
     m_cliDataSlot->flush();
+}
+
+void
+Caller::onExited() {
+    if (m_cliDataSlot) {
+        m_cliDataSlot->deleteLater();
+        m_cliDataSlot = nullptr;
+    }
+
+    m_exited = true;
+    if (m_callType == NS_BGMRPC::CALL_REMOTE) emit clientExited(m_ID);
+
+    deleteLater();
 }

@@ -25,6 +25,8 @@ public:
     QString grp() const;
     //    void setID(quint64 id);
 
+    void callIncrement();
+    void release(bool decrement = true);
     void unsetDataSocket();
 
 signals:
@@ -39,12 +41,14 @@ private slots:
                       const QString& method);
     void onEmitSignal(const QString& signal, const QVariant& args);
     void onReturnError(const QString& mID, quint8 errNo, const QString& errStr);
+    void onExited();
 
 private:
 private:
     QLocalSocket* m_cliDataSlot;
     qint64 m_ID;
     //    bool m_localCall;
+    int m_callingCounter = 0;
     bool m_exited;
     ObjectInterface* m_callee;
     QString m_callerApp;
