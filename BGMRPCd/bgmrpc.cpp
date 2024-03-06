@@ -3,6 +3,7 @@
 #include <bgmrpccommon.h>
 
 #include <QDebug>
+#include <QDir>
 #include <QLocalSocket>
 #include <QProcess>
 #include <QSslKey>
@@ -14,8 +15,8 @@
 using namespace NS_BGMRPC;
 
 BGMRPC::BGMRPC(QObject* parent)
-    : m_defaultSettings(defaultEtcDir + "/BGMRPC.conf", QSettings::IniFormat),
-      QObject(parent) {
+    : QObject(parent),
+      m_defaultSettings(defaultEtcDir + "/BGMRPC.conf", QSettings::IniFormat) {
     m_serverCtrlServer = new QLocalServer(this);
     m_serverCtrlServer->setSocketOptions(QLocalServer::UserAccessOption);
 
@@ -23,7 +24,10 @@ BGMRPC::BGMRPC(QObject* parent)
     m_objectSocketServer->setSocketOptions(QLocalServer::WorldAccessOption);
 }
 
-BGMRPC::~BGMRPC() { m_serverCtrlServer->close(); }
+BGMRPC::~BGMRPC() {
+    m_serverCtrlServer->close();
+    logFile.close();
+}
 
 bool
 BGMRPC::start() {
@@ -80,33 +84,53 @@ BGMRPC::initial(const QString& file) {
     else
         m_settings = new QSettings(file, QSettings::IniFormat);
 
-    QString ip =
-        m_settings->value("server/ip", m_defaultSettings.value("server/ip"))
-            .toString();
+    /*QString logPath =
+        m_settings
+            ->value("path/logs",
+                    m_defaultSettings.value(
+                        "path/logs",
+                        m_settings->value("path/root",
+                                          m_defaultSettings.value(
+                                              "path/root", QDir::homePath()))))
+            .toString() + "/BGMRPC.log";
+    logPath.replace(QRegularExpression("^~"), QDir::homePath());
+    initialLogMessage(logPath);*/
+
+    QString rootPath = getConfig(CNF_PATH_ROOT);
+
+    QString logPath = getSetting("path/logs");
+    if (logPath.isEmpty())
+        logPath = rootPath + "/logs";
+    logPath += "/BGMRPC.log";
+    initialLogMessage(logPath);
+
+    QString ip = getSetting("server/ip");
+        /*m_settings->value("server/ip", m_defaultSettings.value("server/ip"))
+            .toString();*/
     m_address = !ip.isEmpty() ? QHostAddress(ip) : QHostAddress::Any;
-    m_port =
+    QString port = getSetting("server/port");
+    m_port = port.isEmpty() ? 8000 : port.toInt();
+    /*m_port =
         m_settings
             ->value("server/port", m_defaultSettings.value("server/port", 8000))
-            .toInt();
+            .toInt();*/
 
     bool ssl = false;
-    QString ssl_certificate =
-        m_settings
+    QString ssl_certificate = getSetting("server/ssl_certificate");
+        /*m_settings
             ->value("server/ssl_certificate",
                     m_defaultSettings.value("server/ssl_certificate"))
-            .toString();
-    QString ssl_certificate_key =
-        m_settings
+            .toString();*/
+    QString ssl_certificate_key = getSetting("server/ssl_certificate_key");
+        /*m_settings
             ->value("server/ssl_certificate_key",
                     m_defaultSettings.value("server/ssl_certificate_key"))
-            .toString();
+            .toString();*/
     if (!ssl_certificate.isEmpty() && !ssl_certificate_key.isEmpty()) {
         ssl_certificate =
             ssl_certificate.replace(QRegularExpression("^~"), QDir::homePath());
         ssl_certificate_key = ssl_certificate_key.replace(
             QRegularExpression("^~"), QDir::homePath());
-
-        QString rootPath = getConfig(CNF_PATH_ROOT);
 
         if (QDir::isRelativePath(ssl_certificate))
             ssl_certificate = rootPath + '/' + ssl_certificate;

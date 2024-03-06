@@ -7,7 +7,10 @@ using namespace NS_BGMRPCObjectInterface;
 
 ObjectInterface::ObjectInterface(QObject* parent) : QObject{ parent } {}
 
-ObjectInterface::~ObjectInterface() { detachObject(); }
+ObjectInterface::~ObjectInterface() {
+    detachObject();
+    logFile.close();
+}
 
 void
 ObjectInterface::setAppPath(const QString& path) {

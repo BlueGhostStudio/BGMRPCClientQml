@@ -63,7 +63,7 @@ main(int argc, char* argv[]) {
         getSettings(ctrlSocket, NS_BGMRPC::CNF_PATH_INTERFACES);
     QString rootPath = getSettings(ctrlSocket, NS_BGMRPC::CNF_PATH_ROOT);
 
-    initialLogMessage(/*0x1D*/);
+    // initialLogMessage(/*0x1D*/);
 
     QCoreApplication a(argc, argv);
 
@@ -109,6 +109,12 @@ main(int argc, char* argv[]) {
     }
 
     if (app.isEmpty()) app = remoteObjectName;
+
+    QString logPath = getSettings(ctrlSocket, "path/logs");
+    if (logPath.isEmpty()) logPath = rootPath + "/logs";
+    logPath += QString("/%1.log").arg(
+        genObjectName(appGroup, app, remoteObjectName, noAppPrefix));
+    initialLogMessage(logPath);
 
     qInfo().noquote()
         << QString("ObjectLoader,startRemoteObject,The name is %1. by %2")
@@ -160,100 +166,4 @@ main(int argc, char* argv[]) {
         else
             return -1;
     }
-
-    // Read some settings
-    /*QString interfacesPath;
-    QString rootPath;
-
-    QLocalSocket ctrlSocket;
-    ctrlSocket.connectToServer(BGMRPCServerCtrlSocket);
-
-    if (!ctrlSocket.waitForConnected(500)) return -1;
-
-    QByteArray cmd(1, NS_BGMRPC::CTRL_DAEMONCTRL);
-    ctrlSocket.write(cmd);
-    if (!ctrlSocket.waitForBytesWritten()) return -1;
-    if (ctrlSocket.waitForReadyRead())
-        ctrlSocket.readAll();
-    else
-        return -1;
-
-    interfacesPath = getSettings(ctrlSocket, NS_BGMRPC::CNF_PATH_INTERFACES);
-    rootPath = getSettings(ctrlSocket, NS_BGMRPC::CNF_PATH_ROOT);
-
-    // initial Log message
-    initialLogMessage();
-
-    QCoreApplication a(argc, argv);
-
-    QString remoteObjectName;
-    QString libName;
-    QString group;
-    QString app;
-    int opt = 0;
-    opterr = 0;
-    while ((opt = getopt(argc, argv, "g:a:n:I:p:")) != -1) {
-        switch (opt) {
-        case 'g':
-            group = optarg;
-            break;
-        case 'a':
-            app = optarg;
-            break;
-        case 'n':
-            remoteObjectName = optarg;
-            break;
-        case 'p':
-            interfacesPath = optarg;
-            break;
-        case 'I':
-            libName = optarg;
-            break;
-        case '?':
-            break;
-        }
-    }
-
-    if (app.isEmpty()) app = remoteObjectName;
-
-    qInfo().noquote()
-        << QString("ObjectLoader,startRemoteObject,The name is %1. by %2")
-               .arg(remoteObjectName)
-               .arg(libName);
-    // 13288999788
-    libName = interfacesPath + '/' + libName;
-    if (app.isEmpty())
-        QDir::setCurrent(rootPath);
-    else
-        QDir::setCurrent(rootPath + "/apps/" + app);
-
-    QLibrary IFLib(libName);
-    IFLib.setLoadHints(QLibrary::ExportExternalSymbolsHint);
-    if (IFLib.load()) {
-        qInfo().noquote()
-            << QString(
-                   "ObjectLoader,loadInterface,Load interface library(%1) - OK")
-                   .arg(libName);
-
-        typedef NS_BGMRPCObjectInterface::ObjectInterface* (*T_CREATE)();
-        T_CREATE create = (T_CREATE)IFLib.resolve("create");
-        NS_BGMRPCObjectInterface::ObjectInterface* objIF =
-            create();
-        objIF->registerObject(app.toLatin1(), remoteObjectName.toLatin1(),
-                              group.toLatin1());
-
-        if (group.isEmpty()) group = "default";
-        objIF->initial(rootPath + "/apps/" + app,
-                       rootPath + "/data/" + group + '/' + app, argc, argv);
-
-        QObject::connect(
-            objIF,
-            &NS_BGMRPCObjectInterface::ObjectInterface::objectDisconnected, &a,
-            &QCoreApplication::quit);
-
-        return a.exec();
-    } else
-        qWarning().noquote()
-            << "ObjectLoader,loadInterface,Can't load interface library"
-            << libName << ". " << IFLib.errorString();*/
 }

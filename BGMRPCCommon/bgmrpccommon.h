@@ -12,6 +12,7 @@ extern QByteArray BGMRPCServerCtrlSocket;
 // extern QByteArray BGMRPCObjectCtrlSocket;
 extern QByteArray BGMRPCObjectSocket;
 extern QString defaultEtcDir;
+extern QFile logFile;
 
 bool splitLocalSocketFragment(QLocalSocket* socket,
                               std::function<void(const QByteArray&)> callback);
@@ -40,6 +41,6 @@ ctrlCommand(QLocalSocket* ctrlSocket, quint8 cmd, const QByteArray& arg,
 
 bool checkObject(QLocalSocket* ctrlSocket, const QString& objName);
 
-void initialLogMessage(quint8 mf = 0x1f);
+void initialLogMessage(const QString& logFilePath, quint8 mf = 0x1f);
 
 #endif  // BGMRPCCOMMON_H

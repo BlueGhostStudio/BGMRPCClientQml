@@ -55,21 +55,11 @@ startServer(int argc, char* argv[]) {
                            defaultSettings.value("path/root", QDir::homePath()))
                    .toString();
     rootPath.replace(QRegularExpression("^~"), QDir::homePath());
-    logPath = settings
-                  ->value("path/logs", defaultSettings.value(
-                                           "path/logs", rootPath + "/logs"))
-                  .toString() +
-              "/BGMRPC.log";
-    logPath.replace(QRegularExpression("^~"), QDir::homePath());
+
     binPath = settings
                   ->value("path/bin",
                           defaultSettings.value("path/bin", optPath + "/bin"))
                   .toString();
-
-    if (qgetenv("BGMRPCDebug") != "1") {
-        BGMRPCProcess.setStandardOutputFile(logPath);
-        BGMRPCProcess.setStandardErrorFile(logPath);
-    }
 
     BGMRPCProcess.setProgram(binPath + "/BGMRPCd");
     BGMRPCProcess.setArguments(args);
@@ -118,14 +108,7 @@ createObject(const QByteArray& name, const QStringList& args) {
     if (checkObject(name)) return true;
 
     QProcess loaderProcess;
-    QString logPath = getSettings(ctrlSocket, NS_BGMRPC::CNF_PATH_LOGS) + "/" +
-                      QString(args[0]) + ".log";
     QString binPath = getSettings(ctrlSocket, NS_BGMRPC::CNF_PATH_BIN);
-
-    if (qgetenv("BGMRPCDebug") != "1") {
-        loaderProcess.setStandardOutputFile(logPath /*, QIODevice::Append*/);
-        loaderProcess.setStandardErrorFile(logPath /*, QIODevice::Append*/);
-    }
 
     loaderProcess.setProgram(binPath + (QT_VERSION > 0X060000
                                             ? "/BGMRPCObjectLoader"

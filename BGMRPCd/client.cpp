@@ -110,7 +110,7 @@ Client::requestCall(const QByteArray& data) {
         if (!dataConnecter) {
             dataConnecter = connectObject(mID, objName);
             if (!dataConnecter) {
-                /*if (m_BGMRPC->checkObject("MissingObjectHandler")) {
+                if (m_BGMRPC->checkObject("MissingObjectHandler")) {
                     QJsonArray args{ jsoCall["object"], jsoCall["method"],
                                      jsoCall["args"] };
                     jsoCall["object"] = "MissingObjectHandler";
@@ -119,7 +119,7 @@ Client::requestCall(const QByteArray& data) {
 
                     return requestCall(
                         QJsonDocument(jsoCall).toJson(QJsonDocument::Compact));
-                } else {*/
+                } else {
                     QJsonObject errJsonObj;
                     errJsonObj["type"] = "error";
                     errJsonObj["errNo"] = ERR_NOOBJ;
@@ -130,7 +130,7 @@ Client::requestCall(const QByteArray& data) {
                     returnData(QJsonDocument(errJsonObj)
                                    .toJson(QJsonDocument::Compact));
                     return false;
-                // }
+                }
             }
         }
 
