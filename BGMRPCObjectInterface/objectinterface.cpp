@@ -274,6 +274,12 @@ ObjectInterface::removeRelatedCaller(QPointer<Caller> caller) {
         return false;
 }
 
+bool
+ObjectInterface::containsRelatedCall(QPointer<Caller> caller) {
+    QMutexLocker locker(&m_objMutex);
+    return caller && m_relatedCaller.contains(caller->m_ID);
+}
+
 QPointer<Caller>
 ObjectInterface::findRelatedCaller(
     std::function<bool(QPointer<Caller>)> callback) {
@@ -459,7 +465,7 @@ ObjectInterface::exec(const QString& mID, QPointer<Caller> caller,
                             m_IFDict[method][0]));
                 };
             } else {
-                //emit caller->emitSignal("ERROR_ACCESS", { method });
+                // emit caller->emitSignal("ERROR_ACCESS", { method });
                 emit caller->returnError(mID, NS_BGMRPC::ERR_ACCESS,
                                          m_ID + '.' + method);
                 //emit caller->returnData(mID, QVariant(), method);

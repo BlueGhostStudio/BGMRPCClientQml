@@ -52,6 +52,7 @@ public:
 
     void addRelatedCaller(QPointer<Caller> caller);
     bool removeRelatedCaller(QPointer<Caller> caller);
+    bool containsRelatedCall(QPointer<Caller> caller);
     QPointer<Caller> findRelatedCaller(
         std::function<bool(QPointer<Caller>)> callback);
 

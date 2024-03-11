@@ -79,16 +79,33 @@ Caller::grp() const {
 void
 Caller::callIncrement() {
     m_callingCounter++;
+
+    qDebug() << "Calling Counter > callIncrement" << m_callingCounter
+             << m_callee->objectID();
 }
 
 void
 Caller::release(bool decrement) {
     m_callingCounter -= decrement ? 1 : 0;
 
-    if (m_callingCounter <= 0) {
-        unsetDataSocket();
+    qDebug() << "Calling Counter > release" << m_callingCounter
+             << m_callee->objectID();
 
-        onExited();
+    if (m_callingCounter <= 0 && !m_callee->containsRelatedCall(this)) {
+        qDebug() << "Calling Counter >> will unsetDataSocket and exit"
+                 << m_callee->objectID();
+        if (decrement) {
+            QObject::connect(
+                m_cliDataSlot, &QLocalSocket::bytesWritten, this, [=]() {
+                    qDebug() << "Calling Counter >>> bytesWritten"
+                             << m_callingCounter << m_callee->objectID();
+                    unsetDataSocket();
+                    onExited();
+                });
+        } else {
+            unsetDataSocket();
+            onExited();
+        }
     }
 }
 
@@ -105,6 +122,9 @@ Caller::unsetDataSocket() {
 void
 Caller::onReturnData(const QString& mID, const QVariant& data,
                      const QString& method) {
+    qDebug() << "Calling Counter > onReturnData" << m_callingCounter
+             << m_callee->objectID();
+
     if (!m_cliDataSlot) return;
 
     QJsonObject retJsonObj;
@@ -127,7 +147,9 @@ Caller::onReturnData(const QString& mID, const QVariant& data,
                              .arg(retData.length());
 
     m_cliDataSlot->write(int2bytes<quint64>(retData.length()) + retData);
-    m_cliDataSlot->flush();
+    // m_cliDataSlot->flush();
+    // if (m_cliDataSlot->waitForBytesWritten()) release();
+    release();
 }
 
 void
@@ -162,6 +184,9 @@ Caller::onEmitSignal(const QString& signal, const QVariant& args) {
 
 void
 Caller::onReturnError(const QString& mID, quint8 errNO, const QString& errStr) {
+    qDebug() << "Calling Counter > onReturnError" << m_callingCounter
+             << m_callee->objectID();
+
     if (!m_cliDataSlot) return;
     //    QByteArray errData(2, '\x0');
     //    errData[0] = (quint8) NS_BGMRPC::DATA_ERROR;
@@ -191,7 +216,9 @@ Caller::onReturnError(const QString& mID, quint8 errNO, const QString& errStr) {
 
     //    errData.append(errStr);
     m_cliDataSlot->write(int2bytes<quint64>(errData.length()) + errData);
-    m_cliDataSlot->flush();
+    // m_cliDataSlot->flush();
+    // if (m_cliDataSlot->waitForBytesWritten()) release();
+    release();
 }
 
 void
