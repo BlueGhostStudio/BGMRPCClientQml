@@ -59,8 +59,9 @@ main(int argc, char* argv[]) {
         return -1;
     }
 
-    QString interfacesPath =
+    QString defaultIFPath =
         getSettings(ctrlSocket, NS_BGMRPC::CNF_PATH_INTERFACES);
+    QString appIFPath;
     QString rootPath = getSettings(ctrlSocket, NS_BGMRPC::CNF_PATH_ROOT);
 
     // initialLogMessage(/*0x1D*/);
@@ -98,7 +99,7 @@ main(int argc, char* argv[]) {
             remoteObjectName = optarg;
             break;
         case 'p':
-            interfacesPath = optarg;
+            appIFPath = optarg;
             break;
         case 'I':
             libName = optarg;
@@ -119,13 +120,20 @@ main(int argc, char* argv[]) {
     qInfo().noquote()
         << QString("ObjectLoader,startRemoteObject,The name is %1. by %2")
                .arg(remoteObjectName, libName);
-    libName = interfacesPath + '/' + libName;
+
+    QString libPath;
+
+    if (!QFile::exists(libPath = appIFPath + "/lib" + libName + ".so") &&
+        !QFile::exists(libPath = rootPath + "/apps/" + app + "/lib" + libName +
+                                 ".so"))
+        libPath = defaultIFPath + "/lib" + libName + ".so";
+
     if (app.isEmpty())
         QDir::setCurrent(rootPath);
     else
         QDir::setCurrent(rootPath + "/apps/" + app);
 
-    QLibrary IFLib(libName);
+    QLibrary IFLib(libPath);
     IFLib.setLoadHints(QLibrary::ExportExternalSymbolsHint);
     if (IFLib.load()) {
         qInfo().noquote() << QString(

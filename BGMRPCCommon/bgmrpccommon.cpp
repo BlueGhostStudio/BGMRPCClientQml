@@ -104,10 +104,17 @@ getSettings(QLocalSocket& ctrlSocket, const QByteArray& key) {
 QElapsedTimer timer;
 int logOutput = 1;
 QFile logFile;
+QString logFileName;
 
 void
 initialLogMessage(const QString& logFilePath, quint8 mf) {
     logFile.setFileName(logFilePath);
+
+    logFileName = QFileInfo(logFilePath).baseName();
+    if (logFileName.length() > 15)
+        logFileName = "..." + logFileName.last(12);
+    else
+        logFileName = logFileName.leftJustified(15, ' ');
 
     if (logFile.open(QIODevice::Append)) logOutput = logFile.handle();
 
@@ -115,40 +122,33 @@ initialLogMessage(const QString& logFilePath, quint8 mf) {
     timer.start();
     qInstallMessageHandler([](QtMsgType type, const QMessageLogContext& context,
                               const QString& msg) {
-        const char* logMsg = msg.toLocal8Bit().constData();
-        const char* function = context.function ? context.function : "";
+        QString flag;
+        // const char* logMsg = std::move(msg.toLocal8Bit().constData());
+        // const char* function = context.function ? context.function : "";
+
         switch (type) {
         case QtMsgType::QtDebugMsg:
-            if (messageFlag & 0x01)
-                dprintf(logOutput, "%10.3f,DEBUG,%s:%u,%s\n",
-                        (double)timer.elapsed() / 1000, function, context.line,
-                        logMsg);
+            if (messageFlag & 0x01) flag = "D";
             break;
         case QtMsgType::QtInfoMsg:
-            if (messageFlag & 0x02)
-                dprintf(logOutput, "%10.3f,INFO,%s\n",
-                        (double)timer.elapsed() / 1000, logMsg);
+            if (messageFlag & 0x02) flag = "I";
             break;
         case QtMsgType::QtWarningMsg:
-            if (messageFlag & 0x04)
-                dprintf(logOutput, "%10.3f,WARNING,%s:%u,%s\n",
-                        (double)timer.elapsed() / 1000, function, context.line,
-                        logMsg);
+            if (messageFlag & 0x04) flag = "W";
             break;
         case QtMsgType::QtCriticalMsg:
-            if (messageFlag & 0x08)
-                dprintf(logOutput, "%10.3f,CRITICAL,%s:%u,%s\n",
-                        (double)timer.elapsed() / 1000, function, context.line,
-                        logMsg);
+            if (messageFlag & 0x08) flag = "C";
             break;
         case QtMsgType::QtFatalMsg:
-            if (messageFlag & 0x10)
-                dprintf(logOutput, "%10.3f,FATAL,%s:%u,%s\n",
-                        (double)timer.elapsed() / 1000, function, context.line,
-                        logMsg);
+            if (messageFlag & 0x10) flag = "F";
             break;
         }
+        dprintf(logOutput, "%10.3f <<%s>> [%s] %s\n",
+                (double)timer.elapsed() / 1000,
+                logFileName.toLatin1().constData(), flag.toLatin1().constData(),
+                msg.toLatin1().constData());
     });
+    logFile.flush();
 }
 
 QByteArray

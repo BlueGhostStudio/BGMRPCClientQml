@@ -389,8 +389,12 @@ runApp(const QString& app, const QString& grp, const QString& pApp) {
             QString interface = jsoObj["IF"].toString("");
             if (interface.isEmpty()) return false;
 
+            QString IFPath = jsoObj["IFPath"].toString("");
+
             // QStringList args({ "-n", objName, "-a", app });
             QStringList args;
+            if (!IFPath.isEmpty())
+                args << "-p" << IFPath;
 
             args << "-n" << objName;
 
