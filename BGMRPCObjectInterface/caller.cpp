@@ -81,7 +81,8 @@ Caller::unsetDataSocket() {
 // void Caller::setID(quint64 id) { m_ID = id; }
 
 void
-Caller::onReturnData(const QString& mID, const QVariant& data) {
+Caller::onReturnData(const QString& mID, const QVariant& data,
+                     const QString& method) {
     if (!m_cliDataSlot) return;
 
     QJsonObject retJsonObj;
@@ -97,9 +98,10 @@ Caller::onReturnData(const QString& mID, const QVariant& data) {
         QJsonDocument(retJsonObj).toJson(QJsonDocument::Compact);
 
     qInfo().noquote() << QString(
-                             "Object(%1),returnData,%1.%2 return data.Size: %3")
+                             "Object(%1), returnData, %2(%3) return data.Size: %4")
                              .arg(m_callee->objectID())
-                             .arg(m_calleeMethod)
+                             .arg(method)
+                             .arg(mID)
                              .arg(retData.length());
 
     m_cliDataSlot->write(int2bytes<quint64>(retData.length()) + retData);

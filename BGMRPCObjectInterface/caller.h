@@ -29,24 +29,24 @@ public:
 
 signals:
     void clientExited(qint64 id);
-    void returnData(const QString& mID, const QVariant& data);
+    void returnData(const QString& mID, const QVariant& data,
+                    const QString& method);
     void emitSignal(const QString& signal, const QVariant& args);
     void returnError(const QString& mID, quint8 errNo, const QString& errStr);
 
 private slots:
-    void onReturnData(const QString& mID, const QVariant& data);
+    void onReturnData(const QString& mID, const QVariant& data,
+                      const QString& method);
     void onEmitSignal(const QString& signal, const QVariant& args);
     void onReturnError(const QString& mID, quint8 errNo, const QString& errStr);
 
 private:
-
 private:
     QLocalSocket* m_cliDataSlot;
     qint64 m_ID;
     //    bool m_localCall;
     bool m_exited;
     ObjectInterface* m_callee;
-    QString m_calleeMethod;
     QString m_callerApp;
     QString m_callerObject;
     QString m_callerObjectID;
