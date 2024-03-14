@@ -197,7 +197,6 @@ JsEngine::initial(int argc, char** argv) {
 
     QString etcDir = getSettings(*m_objectConnecter, NS_BGMRPC::CNF_PATH_ETC);
 
-
     QString JSMSettingsFileName("/JsModules.conf");
     QString JSMSettingsFilePath(rootPath + JSMSettingsFileName);
     if (!QFile::exists(JSMSettingsFilePath))
@@ -232,29 +231,34 @@ JsEngine::registerMethods() {
     QJSValue methods = m_jsEngine->globalObject().property("methods");
     if (!methods.isNull()) {
         qInfo().noquote() << "Register Methods ...";
-        foreach (QVariant method, methods.toVariant().toList()) {
-            QString mn = method.toString();
-            QJSValue m = m_jsEngine->globalObject().property(mn);
-            if (m.isCallable()) {
-                qInfo().noquote() << "..." << mn;
-                //                m_jsMethods[mn] = m;
-                registerMethod(mn);
+        for (int i = 0; i < methods.property("length").toInt(); ++i) {
+            QJSValue jsMethod = methods.property(i);
+            QString methodName;
+            t_method theMethod;
+            bool isAsync = false;
+
+            if (jsMethod.isString())
+                methodName = jsMethod.toString();
+            else if (jsMethod.isObject()) {
+                methodName = jsMethod.property("name").toString();
+                isAsync = jsMethod.property("isAsync").toBool();
+                theMethod.m_desc = jsMethod.property("desc").toString();
             }
-            //            qInfo().noquote() << "..." << mn;
-            //            registerMethod(mn);
-            //            QJSValue m = m_jsEngine->globalObject().property(mn);
-            //            m_jsMethods[mn] = m;
+
+            if (!methodName.isEmpty() &&
+                m_jsEngine->globalObject().property(methodName).isCallable()) {
+                theMethod.m_decl =
+                    methodName + "(..." + (isAsync ? ") async" : ")");
+                theMethod.m_methodPtr =
+                    std::bind(&JsEngine::callJs, this, methodName,
+                              std::placeholders::_1, std::placeholders::_2);
+
+                m_methods[methodName] = theMethod;
+
+                qInfo().noquote() << "..." << methodName;
+            }
         }
     }
-}
-
-void
-JsEngine::registerMethod(const QString& methodName) {
-    m_methods[methodName] =
-        std::bind(&JsEngine::callJs, this, methodName, std::placeholders::_1,
-                  std::placeholders::_2);
-    m_IFDictIndex.append(methodName);
-    m_IFDict[methodName] = { methodName + "()", "" };
 }
 
 bool

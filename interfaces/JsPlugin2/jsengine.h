@@ -28,7 +28,6 @@ protected:
     bool initial(int argc, char** argv) override;
 
     void registerMethods() override;
-    void registerMethod(const QString& methodName);
     bool verification(QPointer<Caller> caller, const QString& method,
                       const QVariantList& args) override;
 

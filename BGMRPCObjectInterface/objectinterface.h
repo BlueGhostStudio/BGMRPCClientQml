@@ -14,7 +14,18 @@
 namespace NS_BGMRPCObjectInterface {
 
 class Caller;
-using T_METHOD = std::function<QVariant(QPointer<Caller>, const QVariantList&)>;
+using T_METHODPTR =
+    std::function<QVariant(QPointer<Caller>, const QVariantList&)>;
+
+struct t_method {
+    QString m_decl;
+    QString m_desc;
+    bool m_isAsync;
+    T_METHODPTR m_methodPtr;
+
+    t_method() = default;
+    t_method(const QString& desc, bool async = false);
+};
 
 class OBJECTINTERFACE_EXPORT ObjectInterface : public QObject {
     Q_OBJECT
@@ -57,6 +68,8 @@ public:
         std::function<bool(QPointer<Caller>)> callback);
 
     void emitSignal(const QString& signal, const QVariant& args);
+    void asyncReturn(QPointer<Caller> caller, const QVariantMap& callInfo,
+                     const QVariant& retData);
 
     void setPrivateData(QPointer<Caller> caller, const QString& name,
                         const QVariant& data);
@@ -83,37 +96,42 @@ protected:
     virtual void registerMethods() = 0;
 
     /*
-     *  RM: Register Method
-     * RMV: RMV: Register Method with Variable arguments. "V" signifies Variable
+     * RM: Register Method
+     * RMV: Register Method with Variable arguments. "V" signifies Variable
      * parameters stored in the argument list.
      */
     template <typename T, typename... Args, typename First, typename... Rest>
-    void RM(const QString& method, const QString& desc,
+    void RM(const QString& name, t_method method /*const QString& desc*/,
             QVariant (T::*funPtr)(Args...), const First& first,
             const Rest&... rest) {
         QStringList params;
         genParamInfo(params, first, rest...);
-        m_IFDictIndex.append(method);
-        m_IFDict[method] = { method + "(" + params.join(", ") + ")", desc };
-        m_methods[method] =
+
+        method.m_decl = name + "(" +
+                        (method.m_isAsync ? params.mid(1) : params).join(", ") +
+                        (method.m_isAsync ? ") async" : ")");
+        method.m_methodPtr =
             AdapIF(static_cast<T*>(this), funPtr, first, rest...);
+        m_methods[name] = method;
     }
     template <typename T, typename... Args>
-    void RM(const QString& method, const QString& desc,
+    void RM(const QString& name, t_method method,
             QVariant (T::*funPtr)(Args...)) {
-        m_IFDictIndex.append(method);
-        m_IFDict[method] = { method + "()", desc };
-        m_methods[method] = AdapIF(static_cast<T*>(this), funPtr);
+        // m_IFDict[method] = { method + "()", desc };
+        method.m_decl = name + "()";
+        method.m_methodPtr = AdapIF(static_cast<T*>(this), funPtr);
+        m_methods[name] = method;
     }
     template <typename T>
-    void RMV(const QString& methodName, const QString& desc,
+    void RMV(const QString& name, t_method method,
              QVariant (T::*memberMethod)(const QPointer<Caller>,
                                          const QVariantList&)) {
-        m_IFDictIndex.append(methodName);
-        m_IFDict[methodName] = { methodName + "(arg0, arg1, ...)", desc };
-        m_methods[methodName] =
+        // m_IFDict[name] = { name + "(arg0, arg1, ...)", desc };
+        method.m_decl = name + "(arg0, arg1, ...)";
+        method.m_methodPtr =
             std::bind(memberMethod, static_cast<T*>(this),
                       std::placeholders::_1, std::placeholders::_2);
+        m_methods[name] = method;
     }
 
 protected:
@@ -126,9 +144,8 @@ protected:
 
     QMutex m_objMutex;
 
-    QHash<QString, T_METHOD> m_methods;
-    QHash<QString, QStringList> m_IFDict;
-    QStringList m_IFDictIndex;
+    QHash<QString, t_method> m_methods;
+    // QHash<QString, QStringList> m_IFDict;
 
     QHash<quint64, QPointer<Caller>> m_relatedCaller;
     QHash<quint64, QVariantMap> m_privateDatas;

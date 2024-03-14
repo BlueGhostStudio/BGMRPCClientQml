@@ -6,6 +6,9 @@
 
 using namespace NS_BGMRPCObjectInterface;
 
+t_method::t_method(const QString& desc, bool async)
+    : m_desc(desc), m_isAsync(async) {}
+
 ObjectInterface::ObjectInterface(QObject* parent) : QObject{ parent } {}
 
 ObjectInterface::~ObjectInterface() {
@@ -58,21 +61,28 @@ ObjectInterface::interface(QPointer<Caller>, bool readable) {
     if (readable) {
         QString methodsInfo;
 
-        foreach (const QString& method, m_IFDictIndex) {
+        QHash<QString, t_method>::const_iterator it;
+        for (it = m_methods.constBegin(); it != m_methods.constEnd(); ++it) {
             if (!methodsInfo.isEmpty()) methodsInfo.append("\n\n");
 
-            QStringList mthdInfo = m_IFDict[method];
-            methodsInfo.append(mthdInfo[0]);
-            if (!mthdInfo[1].isEmpty())
-                methodsInfo.append("\n").append(mthdInfo[1]);
+            t_method theMethod = it.value();
+            methodsInfo.append(theMethod.m_decl);
+            if (!theMethod.m_desc.isEmpty())
+                methodsInfo.append("\n").append(theMethod.m_desc);
         }
 
         return methodsInfo;
     } else {
         QVariantList methodsInfo;
 
-        foreach (const QString& method, m_IFDictIndex)
-            methodsInfo.append(m_IFDict[method]);
+        QHash<QString, t_method>::const_iterator it;
+        for (it = m_methods.constBegin(); it != m_methods.constEnd(); ++it) {
+            t_method theMethod = it.value();
+
+            methodsInfo.append(
+                QVariantMap{ { "Declaration", theMethod.m_decl },
+                             { "Description", theMethod.m_desc } });
+        }
 
         return methodsInfo;
     }
@@ -303,6 +313,16 @@ ObjectInterface::emitSignal(const QString& signal, const QVariant& args) {
 }
 
 void
+ObjectInterface::asyncReturn(QPointer<Caller> caller,
+                             const QVariantMap& callInfo,
+                             const QVariant& retData) {
+    if (!caller.isNull()) {
+        emit caller->returnData(callInfo["mID"].toString(), retData,
+                                callInfo["method"].toString());
+    }
+}
+
+void
 ObjectInterface::setPrivateData(QPointer<Caller> caller, const QString& name,
                                 const QVariant& data) {
     if (caller.isNull() || caller->exited()) return;
@@ -421,8 +441,8 @@ ObjectInterface::newCaller() {
 
 bool
 ObjectInterface::initial(int, char**) {
-    RM("interface", "Method list of the interface", &ObjectInterface::interface,
-       ARG<bool>("readable", true));
+    RM("interface", { "Method list of the interface" },
+       &ObjectInterface::interface, ARG<bool>("readable", true));
     registerMethods();
 
     return true;
@@ -446,7 +466,14 @@ ObjectInterface::exec(const QString& mID, QPointer<Caller> caller,
                                          .arg(method)
                                          .arg(mID);
                 try {
-                    QVariant ret = m_methods[method](caller, args);
+                    const t_method& theMethod = m_methods[method];
+
+                    QVariantList __args__(std::move(args));
+                    if (theMethod.m_isAsync)
+                        __args__.prepend(QVariantMap{ { "mID", mID },
+                                                      { "method", method } });
+
+                    QVariant ret = theMethod.m_methodPtr(caller, __args__);
                     if (!caller.isNull()) {
                         qInfo().noquote()
                             << QString(
@@ -454,7 +481,9 @@ ObjectInterface::exec(const QString& mID, QPointer<Caller> caller,
                                    .arg(m_ID)
                                    .arg(method)
                                    .arg(mID);
-                        emit caller->returnData(mID, ret, method);
+
+                        if (!theMethod.m_isAsync)
+                            emit caller->returnData(mID, ret, method);
                     }
                 } catch (std::exception& e) {
                     /*emit caller->emitSignal("ERROR_INVALID_ARGUMENT",
@@ -462,13 +491,13 @@ ObjectInterface::exec(const QString& mID, QPointer<Caller> caller,
                     emit caller->returnError(
                         mID, NS_BGMRPC::ERR_INVALID_ARGUMENT,
                         QString("%1\n%2").arg(e.what()).arg(
-                            m_IFDict[method][0]));
+                            m_methods[method].m_decl));
                 };
             } else {
                 // emit caller->emitSignal("ERROR_ACCESS", { method });
                 emit caller->returnError(mID, NS_BGMRPC::ERR_ACCESS,
                                          m_ID + '.' + method);
-                //emit caller->returnData(mID, QVariant(), method);
+                // emit caller->returnData(mID, QVariant(), method);
                 qWarning().noquote()
                     << QString("Object(%1), access, Not allow(%2) call %1.%3")
                            .arg(m_ID)

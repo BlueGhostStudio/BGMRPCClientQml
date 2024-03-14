@@ -16,6 +16,8 @@ public:
 
     QVariant request(QPointer<Caller> caller, const QString& object,
                      const QString& method, const QVariantList& args);
+    QVariant testAsync(QPointer<Caller> caller, const QVariantMap& callInfo,
+                       const QVariant& testData);
 
 protected:
     void registerMethods() override;

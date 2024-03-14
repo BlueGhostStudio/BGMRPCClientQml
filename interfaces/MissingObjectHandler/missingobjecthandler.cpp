@@ -13,11 +13,23 @@ MissingObjectHandler::request(QPointer<Caller> caller, const QString& object,
                         { "method", method } };
 }
 
+QVariant
+MissingObjectHandler::testAsync(QPointer<Caller> caller,
+                                const QVariantMap& callInfo,
+                                const QVariant& testData) {
+    asyncReturn(caller, callInfo, testData);
+
+    return QVariant();
+}
+
 void
 MissingObjectHandler::registerMethods() {
-    RM("request", "Request call method no exist in object",
+    RM("request", { "Request call method no exist in object" },
        &MissingObjectHandler::request, ARG<QString>("object"),
        ARG<QString>("method"), ARG<QVariantList>("args"));
+    RM("testAsync", { "test async call", true },
+       &MissingObjectHandler::testAsync, ARG<QVariantMap>("callInfo"),
+       ARG<QVariant>("testData"));
 }
 
 ObjectInterface*

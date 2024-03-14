@@ -931,54 +931,54 @@ void
 BGCMS::registerMethods() {
     // clang-format off
 // =====================================================================================
-    RM("join", "", &BGCMS::join);
+    RM("join", { "" }, &BGCMS::join);
 // -------------------------------------------------------------------------------------
-    RMV("node", "Get node",
+    RMV("node", { "Get node" },
         &BGCMS::node);
 // -------------------------------------------------------------------------------------
-    RMV("refNode", "Get reference node",
+    RMV("refNode", { "Get reference node" },
         &BGCMS::refNode);
 // -------------------------------------------------------------------------------------
-    RMV("nodeInfo", "Get node info",
+    RMV("nodeInfo", { "Get node info" },
         &BGCMS::nodeInfo);
 // -------------------------------------------------------------------------------------
-    RMV("refNodeInfo", "Get reference node info",
+    RMV("refNodeInfo", { "Get reference node info" },
         &BGCMS::refNodeInfo);
 // -------------------------------------------------------------------------------------
-    RMV("exists", "Exists",
+    RMV("exists", { "Exists" },
         &BGCMS::exists);
 // = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-    RMV("CNode", "Get node and cover",
+    RMV("CNode", { "Get node and cover" },
         &BGCMS::CNode);
 // -------------------------------------------------------------------------------------
-    RMV("CRefNode", "Get reference node and cover",
+    RMV("CRefNode", { "Get reference node and cover" },
         &BGCMS::CRefNode);
 // =====================================================================================
-     RM("search", "Search node",
+     RM("search", { "Search node" },
         &BGCMS::search, ARG<QVariantMap>("query"), ARG<int>("filter", 0));
 // -------------------------------------------------------------------------------------
-     RM("list", "List nodes of the base path.",
+     RM("list", { "List nodes of the base path." },
         &BGCMS::list, ARG("basePath"), ARG<int>("filter", 0), ARG<QVariantMap>("query", QVariantMap{}));
 // -------------------------------------------------------------------------------------
-     RM("newNode", "Create new Node",
+     RM("newNode", { "Create new Node" },
         &BGCMS::newNode, ARG("basePath"), ARG<QVariantMap>("data"));
 // -------------------------------------------------------------------------------------
-     RM("updateNode", "Update node",
+     RM("updateNode", { "Update node" },
         &BGCMS::updateNode, ARG("node"), ARG<QVariantMap>("data"));
 // -------------------------------------------------------------------------------------
-     RM("removeNode", "Remove node",
+     RM("removeNode", { "Remove node" },
         &BGCMS::removeNode, ARG("node"));
 // =====================================================================================
-     RM("copyNode", "Copy node",
+     RM("copyNode", { "Copy node" },
           &BGCMS::copyNode, ARG("node"), ARG("target"), ARG<bool>("ref", false));
 // -------------------------------------------------------------------------------------
-     RM("copyRefNode", "Copy reference node",
+     RM("copyRefNode", { "Copy reference node" },
        &BGCMS::copyRefNode, ARG("node"), ARG("target"));
 // -------------------------------------------------------------------------------------
-     RM("moveNode", "Move node to new",
+     RM("moveNode", { "Move node to new" },
           &BGCMS::moveNode, ARG("node"), ARG<int>("target"));
 // -------------------------------------------------------------------------------------
-     RM("nodePath", "Get node path",
+     RM("nodePath", { "Get node path" },
           &BGCMS::nodePath, ARG("node"));
 // =====================================================================================
     // clang-format on
