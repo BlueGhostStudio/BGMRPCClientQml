@@ -70,6 +70,8 @@ public:
     void emitSignal(const QString& signal, const QVariant& args);
     void asyncReturn(QPointer<Caller> caller, const QVariantMap& callInfo,
                      const QVariant& retData);
+    void asyncReturnError(QPointer<Caller> caller, const QVariantMap& callInfo,
+                    quint8 errNo, const QString& errStr);
 
     void setPrivateData(QPointer<Caller> caller, const QString& name,
                         const QVariant& data);

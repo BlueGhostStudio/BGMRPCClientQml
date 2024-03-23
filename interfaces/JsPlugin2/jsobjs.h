@@ -177,6 +177,13 @@ public:
 
     Q_INVOKABLE void emitSignal(const QString& signal,
                                 const QJsonArray& args) const;
+    Q_INVOKABLE void asyncReturn(const QJSValue& caller,
+                                 const QJSValue& callInfo,
+                                 const QJSValue& retData);
+    Q_INVOKABLE void asyncReturnError(const QJSValue& caller,
+                                      const QJSValue& callInfo, quint8 errNo,
+                                      const QString& errStr);
+
     Q_INVOKABLE bool include(const QString& scrFileName) const;
     Q_INVOKABLE void loadModule(const QString& module) const;
 

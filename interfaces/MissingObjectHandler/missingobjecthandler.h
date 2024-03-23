@@ -14,10 +14,9 @@ class MISSINGOBJECTHANDLER_EXPORT MissingObjectHandler
 public:
     MissingObjectHandler(QObject* parent = nullptr);
 
-    QVariant request(QPointer<Caller> caller, const QString& object,
-                     const QString& method, const QVariantList& args);
-    QVariant testAsync(QPointer<Caller> caller, const QVariantMap& callInfo,
-                       const QVariant& testData);
+    QVariant request(QPointer<Caller> caller, const QVariantMap& callInfo,
+                     const QString& object, const QString& method,
+                     const QVariantList& args);
 
 protected:
     void registerMethods() override;

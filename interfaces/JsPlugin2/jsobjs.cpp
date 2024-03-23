@@ -314,6 +314,22 @@ JsJSObj::emitSignal(const QString& signal, const QJsonArray& args) const {
     m_jsEngine->emitSignal(signal, args.toVariantList());
 }
 
+void
+JsJSObj::asyncReturn(const QJSValue& caller, const QJSValue& callInfo,
+                     const QJSValue& retData) {
+    JsCaller* theJsCaller = qobject_cast<JsCaller*>(caller.toQObject());
+    m_jsEngine->asyncReturn(theJsCaller->caller(), callInfo.toVariant().toMap(),
+                            retData.toVariant());
+}
+
+void
+JsJSObj::asyncReturnError(const QJSValue& caller, const QJSValue& callInfo,
+                          quint8 errNo, const QString& errStr) {
+    JsCaller* theJsCaller = qobject_cast<JsCaller*>(caller.toQObject());
+    m_jsEngine->asyncReturnError(theJsCaller->caller(), callInfo.toVariant().toMap(),
+                                 errNo, errStr);
+}
+
 bool
 JsJSObj::include(const QString& scrFileName) const {
     QString scrPath;
