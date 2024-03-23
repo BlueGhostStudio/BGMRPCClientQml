@@ -324,8 +324,8 @@ ObjectInterface::asyncReturn(QPointer<Caller> caller,
 
 void
 ObjectInterface::asyncReturnError(QPointer<Caller> caller,
-                            const QVariantMap& callInfo, quint8 errNo,
-                            const QString& errStr) {
+                                  const QVariantMap& callInfo, quint8 errNo,
+                                  const QString& errStr) {
     if (!caller.isNull()) {
         emit caller->returnError(callInfo["mID"].toString(), errNo, errStr);
     }

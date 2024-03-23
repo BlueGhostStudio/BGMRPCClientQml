@@ -249,6 +249,7 @@ JsEngine::registerMethods() {
                 m_jsEngine->globalObject().property(methodName).isCallable()) {
                 theMethod.m_decl =
                     methodName + "(..." + (isAsync ? ") async" : ")");
+                theMethod.m_isAsync = isAsync;
                 theMethod.m_methodPtr =
                     std::bind(&JsEngine::callJs, this, methodName,
                               std::placeholders::_1, std::placeholders::_2);
