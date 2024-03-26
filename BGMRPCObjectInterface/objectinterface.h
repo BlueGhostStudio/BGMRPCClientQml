@@ -45,6 +45,8 @@ public:
     QString appName() const;
 
     QVariant interface(QPointer<Caller>, bool readable);
+    QVariant join(QPointer<Caller> caller);
+    QVariant quit(QPointer<Caller> caller);
 
     bool setup(const QByteArray& appName, const QByteArray& name,
                const QByteArray& grp = QByteArray(), int argc = 0,

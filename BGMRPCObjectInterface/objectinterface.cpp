@@ -88,6 +88,22 @@ ObjectInterface::interface(QPointer<Caller>, bool readable) {
     }
 }
 
+QVariant
+ObjectInterface::join(QPointer<Caller> caller) {
+    addRelatedCaller(caller);
+
+    return caller->ID();
+}
+
+QVariant
+ObjectInterface::quit(QPointer<Caller> caller) {
+    QVariant callerID = caller->ID();
+
+    removeRelatedCaller(caller);
+
+    return callerID;
+}
+
 bool
 ObjectInterface::setup(const QByteArray& appName, const QByteArray& name,
                        const QByteArray& grp, int argc, char** argv,
@@ -452,6 +468,9 @@ bool
 ObjectInterface::initial(int, char**) {
     RM("interface", { "Method list of the interface" },
        &ObjectInterface::interface, ARG<bool>("readable", true));
+    RM("join", { "Caller join to Object" }, &ObjectInterface::join);
+    RM("quit", { "Caller quit Object" }, &ObjectInterface::quit);
+
     registerMethods();
 
     return true;
@@ -462,6 +481,7 @@ ObjectInterface::verification(QPointer<Caller>, const QString&,
                               const QVariantList&) {
     return true;
 }
+
 void
 ObjectInterface::exec(const QString& mID, QPointer<Caller> caller,
                       const QString& method, const QVariantList& args) {
