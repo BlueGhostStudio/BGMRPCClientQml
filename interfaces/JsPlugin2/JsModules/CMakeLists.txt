@@ -1,5 +1,0 @@
-add_subdirectory(JsModuleCommon)
-add_subdirectory(jsByteArray)
-add_subdirectory(jsFile)
-add_subdirectory(jsDB)
-add_subdirectory(jsTimer)

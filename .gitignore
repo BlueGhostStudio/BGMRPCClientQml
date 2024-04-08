@@ -1,10 +1,15 @@
-# C++ objects and libs
-*.slo
-*.lo
-*.o
+# This file is used to ignore files which are generated
+# ----------------------------------------------------------------------------
+
+*~
+*.autosave
 *.a
-*.la
-*.lai
+*.core
+*.moc
+*.o
+*.obj
+*.orig
+*.rej
 *.so
 *.so.*
 *.dll
@@ -30,7 +35,25 @@ ui_*.h
 Makefile*
 *build-*
 *.qm
+.#*
+*.*#
+core
+!core/
+tags
+.DS_Store
+.directory
+*.debug
+Makefile*
 *.prl
+*.app
+moc_*.cpp
+ui_*.h
+qrc_*.cpp
+Thumbs.db
+*.res
+*.rc
+/.qmake.cache
+/.qmake.stash
 
 # Qt unit tests
 target_wrapper.*
@@ -45,10 +68,10 @@ target_wrapper.*
 # QtCreator CMake
 CMakeLists.txt.user*
 
-# QtCreator 4.8< compilation database 
+# QtCreator 4.8< compilation database
 compile_commands.json
 
 # QtCreator local machine specific files for imported projects
 *creator.user*
 
-/diy/BGMRPC/server/BGResourcePlugin/qhttp/
+*_qmlcache.qrc
